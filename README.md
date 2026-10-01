@@ -12,9 +12,9 @@ Pre-build. Currently in research/design phase — see [`research_notes/`](resear
 
 ## Why this approach
 
-Early framing ("digital twin for astronauts") turned out to be **not novel** — it's an actively published academic field (multiple 2025–2026 papers) and several other 2026 Space Apps teams on this same challenge are already building AI health-monitoring prototypes. See [`research_notes/competitor-analysis.md`](research_notes/competitor-analysis.md) for what they actually built and where the real gaps are.
+Early framing ("digital twin for astronauts") turned out to be **not novel** — it's an actively published academic field, and a broader sweep found **15+ other 2026 Space Apps teams** already building AI health-monitoring dashboards for this same challenge. See [`research_notes/competitor-analysis.md`](research_notes/competitor-analysis.md) for the full field and where the real gaps are.
 
-The differentiator we're building toward isn't a buzzword — it's **traceable, cited risk thresholds and explainable flags**, reusing the measure-don't-assume discipline from OncoVision, applied in a domain (space medicine) where every other current competitor's thresholds are self-disclosed as illustrative/arbitrary.
+Current direction: **ECHO** — instead of another self-report/wearable dashboard (what nearly every competitor built), it infers risk from passive signals astronauts already generate with zero added effort: voice cadence from routine comms, keystroke timing from normal laptop use, cabin CO2/environmental telemetry, and exercise-countermeasure usage logs — each threshold traced to a specific cited NASA source. Rendered as a real-time 3D "signal constellation" rather than a 2D chart dashboard. Full spec in [`docs/design.md`](docs/design.md).
 
 ## Repo layout
 
