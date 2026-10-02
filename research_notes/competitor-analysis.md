@@ -41,3 +41,13 @@ Researched 2026-10-01. Scope: other public repos already built for this exact Sp
 ## Caveat
 
 This list will grow between now and submission — more teams will register and publish repos as the event approaches. Re-check competitor landscape again closer to the hackathon date.
+
+## Update 2026-10-01 (second sweep) — field is much larger than first pass
+
+A broader search found **15+ public repos** already live for this exact 2026 challenge, not just the original 3: AUREON, AstroHealth / AstroHealth Telemetry, AL-KASAV ASTROHEALTH, H.E.L.I.O.S (nsaspace), Project-Astra, ASTRA-VITAL, Astro_Friend (Shift-Delete), astroguard-astronaut-health-monitor, astrohealth-monitor, Astronaut-Health-Monitor (Apollo 15 replay), astra-space-health, threshold, and several more with minimal public detail.
+
+Common shape across nearly all of them: self-report check-ins and/or simulated wearable vitals, fed into a 2D dashboard (chart grid, gauge cards, or a HUD panel). Several now explicitly claim offline-first and behavioral/mood self-assessment (loneliness, crew connection, cognitive focus) — so "self-report behavioral check-in" and "offline-first" are no longer unclaimed either. One (Apollo 15 Astronaut Health Monitor) replays real 1971 mission biomedical data instead of simulating — a legitimate use-real-data angle, but historical replay rather than an active monitoring system.
+
+**Conclusion:** concept-level novelty in "AI health-monitoring dashboard for astronauts" is now exhausted. None of the 15+ repos found use voice/speech biomarkers, keystroke dynamics, cabin-environment (CO2) driven cognitive-risk modeling, or 3D/WebGL visualization — these remain the open gaps as of this sweep. See `docs/design.md` for the resulting "ECHO" concept built on these specific gaps.
+
+**Standing caveat:** re-check again closer to submission — this field is growing fast.
