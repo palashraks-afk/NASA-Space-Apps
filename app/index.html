@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CALLSIGN — Astronaut Health Risk Prototype</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <h1>CALLSIGN</h1>
+  <p>Every transmission is a checkup. Prototype — NASA Space Apps 2026, Create Health Monitoring Software for Astronauts on Space Missions.</p>
+</header>
+
+<!-- Tier 1: safety-critical status row. Renders independently of the 3D layer below
+     and is never dependent on it loading — see docs/design.md critique log. -->
+<div id="status-row"></div>
+
+<main>
+  <div id="viz-panel">
+    <div id="viz-fallback-note">"The Signal" — secondary visualization layer. Tier-1 status above is authoritative.</div>
+  </div>
+
+  <div id="side-panel">
+    <div class="card">
+      <h2>Demo scenario</h2>
+      <div class="scenario-btns" id="scenario-btns"></div>
+      <input type="range" id="day-scrub" min="0" max="6" value="0" step="1" />
+      <div id="day-label">Mission day 1</div>
+    </div>
+
+    <div class="card">
+      <h2>Why this flag (cited)</h2>
+      <ul id="reasons-list"><li class="none">Select a scenario to see reasoning.</li></ul>
+    </div>
+
+    <div class="card">
+      <h2>Micro check-in (manual override)</h2>
+      <form id="checkin-form">
+        <label>Sleep hours: <span class="value" id="sleep-val"></span></label>
+        <input type="range" id="sleep" min="3" max="9" step="0.1" value="7.5" />
+        <label>Mood (1-5): <span class="value" id="mood-val"></span></label>
+        <input type="range" id="mood" min="1" max="5" step="1" value="4" />
+        <label>Exercise compliance: <span class="value" id="exercise-val"></span></label>
+        <input type="range" id="exercise" min="0" max="1" step="0.05" value="1.0" />
+      </form>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="risk-engine.js"></script>
+<script src="scenarios.js"></script>
+<script src="signal-viz.js"></script>
+<script>
+const CATEGORIES = ["behavioral", "bone", "cardiovascular", "immune"];
+
+const statusRow = document.getElementById("status-row");
+CATEGORIES.forEach((cat) => {
+  const chip = document.createElement("div");
+  chip.className = "chip";
+  chip.id = `chip-${cat}`;
+  chip.innerHTML = `<span class="dot normal"></span><span>${cat}: normal</span>`;
+  statusRow.appendChild(chip);
+});
+
+function renderStatusRow(risk) {
+  CATEGORIES.forEach((cat) => {
+    const chip = document.getElementById(`chip-${cat}`);
+    const level = risk[cat].level;
+    chip.querySelector(".dot").className = `dot ${level}`;
+    chip.querySelector("span:last-child").textContent = `${cat}: ${level}`;
+  });
+}
+
+function renderReasons(risk) {
+  const list = document.getElementById("reasons-list");
+  const allReasons = CATEGORIES.flatMap((cat) => risk[cat].reasons.map((r) => ({ ...r, category: cat })));
+  if (allReasons.length === 0) {
+    list.innerHTML = '<li class="none">No thresholds exceeded — all cited metrics within normal range.</li>';
+    return;
+  }
+  list.innerHTML = allReasons
+    .map(
+      (r) => `<li>
+        <div class="reason-head"><span>${r.category} / ${r.metric}</span><span>${r.level}</span></div>
+        <div>${r.note}</div>
+        <span class="reason-source">Source: ${r.source}</span>
+      </li>`
+    )
+    .join("");
+}
+
+// Scenario buttons
+const scenarioBtnsEl = document.getElementById("scenario-btns");
+const scenarioKeys = Object.keys(SCENARIOS);
+let activeScenario = scenarioKeys[0];
+let activeDay = 0;
+
+scenarioKeys.forEach((key) => {
+  const btn = document.createElement("button");
+  btn.textContent = SCENARIOS[key].label;
+  btn.onclick = () => {
+    activeScenario = key;
+    document.querySelectorAll("#scenario-btns button").forEach((b) => b.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("day-scrub").value = 0;
+    activeDay = 0;
+    update();
+  };
+  scenarioBtnsEl.appendChild(btn);
+});
+scenarioBtnsEl.children[0].classList.add("active");
+
+document.getElementById("day-scrub").addEventListener("input", (e) => {
+  activeDay = Number(e.target.value);
+  update();
+});
+
+// Manual check-in overrides (used when scrubber is at day 0 only, for hands-on demo)
+const sleepEl = document.getElementById("sleep");
+const moodEl = document.getElementById("mood");
+const exerciseEl = document.getElementById("exercise");
+[sleepEl, moodEl, exerciseEl].forEach((el) => el.addEventListener("input", updateManualLabels));
+
+function updateManualLabels() {
+  document.getElementById("sleep-val").textContent = `${sleepEl.value}h`;
+  document.getElementById("mood-val").textContent = moodEl.value;
+  document.getElementById("exercise-val").textContent = `${Math.round(exerciseEl.value * 100)}%`;
+}
+updateManualLabels();
+
+const viz = createSignalViz(document.getElementById("viz-panel"));
+
+function update() {
+  const scenario = SCENARIOS[activeScenario];
+  const day = scenario.days[activeDay];
+  document.getElementById("day-label").textContent = `Mission day ${activeDay + 1} — ${scenario.label}`;
+
+  const risk = computeRisk({ voiceFeatures: day.voiceFeatures, checkin: day.checkin });
+  renderStatusRow(risk);
+  renderReasons(risk);
+  viz.setRisk(risk);
+}
+
+update();
+</script>
+
+</body>
+</html>
