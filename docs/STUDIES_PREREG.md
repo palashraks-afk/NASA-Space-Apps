@@ -31,3 +31,10 @@ Published finding (Czeisler group, 2007, PNAS and PLoS ONE): moderately bright l
   - **Bar 3a:** second-half light locks every intrinsic period from 23.9 to 24.3 h.
   - **Bar 3b:** first-half light fails to lock at least the shortest intrinsic period (23.9 h).
   - If either bar fails, the body-clock station must say the model disagrees with the published human data.
+
+## Study 2b (added 2026-11-01 after Study 2 missed bar 2b; written before running 2b)
+
+Study 2's pooled intervals covered only 83% to 86% when people truly differ (bar: 90%), because the between-person spread was estimated from 4 to 6 people and then treated as known. Study 2b replaces the plug-in estimate with full integration over the between-person spread: a grid from 0 to 3 times the smallest worthwhile change, a half-normal prior with scale equal to the smallest worthwhile change, the crew mean integrated out under a flat prior, and each person's interval taken from the resulting normal mixture.
+
+- Same simulation settings, seeds and bars as Study 2 (2a: lower RMSE than individual-only at spread 0 and 0.5; 2b: coverage at least 90% in every setting).
+- Study 2's failure stays reported as a failure. If 2b also fails, the app will not offer pooled intervals.
