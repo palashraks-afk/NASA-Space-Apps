@@ -1,0 +1,236 @@
+{
+ "source": "Baigutanova et al. 2025, Scientific Data; Figshare doi 10.6084/m9.figshare.28509740 (CC BY 4.0). 49 healthy adults, about 4 weeks.",
+ "method": "Per person: SD and lag-1 autocorrelation over consecutive days (people with at least 14 days). Wearable outcomes are daily medians over available filtered 5-minute segments (at least 10 per day); they are daytime-weighted because few overnight segments exist.",
+ "outcomes": {
+  "sleep_duration": {
+   "label": "Sleep duration",
+   "unit": "h",
+   "people": 49,
+   "median_days_per_person": 28.0,
+   "within_person_sd": {
+    "p25": 1.0121388099492707,
+    "median": 1.3387253187752608,
+    "p75": 1.640064594876504
+   },
+   "lag1_autocorrelation": {
+    "p25": -0.15619561508440818,
+    "median": -0.019497798447074437,
+    "p75": 0.09470258878730659
+   },
+   "between_person_sd_of_means": 0.8449258050606864
+  },
+  "sleep_efficiency": {
+   "label": "Sleep efficiency",
+   "unit": "fraction",
+   "people": 49,
+   "median_days_per_person": 28.0,
+   "within_person_sd": {
+    "p25": 0.02348423049839535,
+    "median": 0.035254276311263294,
+    "p75": 0.07122095054340494
+   },
+   "lag1_autocorrelation": {
+    "p25": -0.11784520728458886,
+    "median": -0.004027187550631201,
+    "p75": 0.15498179643096469
+   },
+   "between_person_sd_of_means": 0.043829621083606066
+  },
+  "sleep_latency": {
+   "label": "Time to fall asleep",
+   "unit": "h",
+   "people": 49,
+   "median_days_per_person": 28.0,
+   "within_person_sd": {
+    "p25": 0.19472768486325867,
+    "median": 0.30135094121426453,
+    "p75": 0.6536999565220779
+   },
+   "lag1_autocorrelation": {
+    "p25": -0.12253650931496568,
+    "median": 0.024964644509716107,
+    "p75": 0.18248175182481743
+   },
+   "between_person_sd_of_means": 0.41912365939723023
+  },
+  "day_rmssd": {
+   "label": "Daily heart rate variability (median RMSSD, daytime-weighted)",
+   "unit": "ms",
+   "people": 32,
+   "median_days_per_person": 25.5,
+   "within_person_sd": {
+    "p25": 8.669316590091531,
+    "median": 10.32932701880646,
+    "p75": 14.022378708614482
+   },
+   "lag1_autocorrelation": {
+    "p25": -0.06402372754869079,
+    "median": 0.09087451889656474,
+    "p75": 0.26858627341622576
+   },
+   "between_person_sd_of_means": 11.325926176112942
+  },
+  "day_hr": {
+   "label": "Daily median heart rate (daytime-weighted)",
+   "unit": "bpm",
+   "people": 32,
+   "median_days_per_person": 25.5,
+   "within_person_sd": {
+    "p25": 4.659230551224162,
+    "median": 6.107056449759134,
+    "p75": 7.303768924079915
+   },
+   "lag1_autocorrelation": {
+    "p25": -0.012126623395133422,
+    "median": 0.10580273206873797,
+    "p75": 0.359125108680465
+   },
+   "between_person_sd_of_means": 6.736937249354175
+  }
+ },
+ "example_person": {
+  "id": "participant A (anonymised)",
+  "series": [
+   {
+    "date": "2021-03-09",
+    "sleep_duration": 8.5,
+    "sleep_efficiency": 0.9444444444444444
+   },
+   {
+    "date": "2021-03-10",
+    "sleep_duration": 6.833333333333333,
+    "sleep_efficiency": 0.9111111111111112
+   },
+   {
+    "date": "2021-03-11",
+    "sleep_duration": 9.0,
+    "sleep_efficiency": 0.9473684210526316
+   },
+   {
+    "date": "2021-03-12",
+    "sleep_duration": 9.166666666666666,
+    "sleep_efficiency": 0.9482758620689656
+   },
+   {
+    "date": "2021-03-13",
+    "sleep_duration": 8.583333333333334,
+    "sleep_efficiency": 0.980952380952381
+   },
+   {
+    "date": "2021-03-14",
+    "sleep_duration": 9.833333333333334,
+    "sleep_efficiency": 0.9365079365079364
+   },
+   {
+    "date": "2021-03-15",
+    "sleep_duration": 9.333333333333334,
+    "sleep_efficiency": 0.9572649572649572
+   },
+   {
+    "date": "2021-03-16",
+    "sleep_duration": 9.416666666666666,
+    "sleep_efficiency": 0.9495798319327732
+   },
+   {
+    "date": "2021-03-17",
+    "sleep_duration": 9.0,
+    "sleep_efficiency": 0.9473684210526316
+   },
+   {
+    "date": "2021-03-18",
+    "sleep_duration": 8.833333333333334,
+    "sleep_efficiency": 0.954954954954955
+   },
+   {
+    "date": "2021-03-19",
+    "sleep_duration": 8.416666666666666,
+    "sleep_efficiency": 0.9351851851851852
+   },
+   {
+    "date": "2021-03-20",
+    "sleep_duration": 9.5,
+    "sleep_efficiency": 0.9661016949152542
+   },
+   {
+    "date": "2021-03-21",
+    "sleep_duration": 11.5,
+    "sleep_efficiency": 0.9452054794520548
+   },
+   {
+    "date": "2021-03-22",
+    "sleep_duration": 9.583333333333334,
+    "sleep_efficiency": 0.9583333333333334
+   },
+   {
+    "date": "2021-03-23",
+    "sleep_duration": 9.166666666666666,
+    "sleep_efficiency": 0.9649122807017544
+   },
+   {
+    "date": "2021-03-24",
+    "sleep_duration": 9.416666666666666,
+    "sleep_efficiency": 0.9416666666666668
+   },
+   {
+    "date": "2021-03-25",
+    "sleep_duration": 9.5,
+    "sleep_efficiency": 0.95
+   },
+   {
+    "date": "2021-03-26",
+    "sleep_duration": 9.666666666666666,
+    "sleep_efficiency": 0.9666666666666666
+   },
+   {
+    "date": "2021-03-27",
+    "sleep_duration": 8.0,
+    "sleep_efficiency": 0.9411764705882352
+   },
+   {
+    "date": "2021-03-28",
+    "sleep_duration": 9.166666666666666,
+    "sleep_efficiency": 0.9649122807017544
+   },
+   {
+    "date": "2021-03-29",
+    "sleep_duration": 10.333333333333334,
+    "sleep_efficiency": 0.9393939393939394
+   },
+   {
+    "date": "2021-03-30",
+    "sleep_duration": 9.5,
+    "sleep_efficiency": 0.95
+   },
+   {
+    "date": "2021-03-31",
+    "sleep_duration": 9.416666666666666,
+    "sleep_efficiency": 0.9416666666666668
+   },
+   {
+    "date": "2021-04-01",
+    "sleep_duration": 7.75,
+    "sleep_efficiency": 0.9489795918367347
+   },
+   {
+    "date": "2021-04-02",
+    "sleep_duration": 9.833333333333334,
+    "sleep_efficiency": 0.9365079365079364
+   },
+   {
+    "date": "2021-04-03",
+    "sleep_duration": 11.083333333333334,
+    "sleep_efficiency": 0.95
+   },
+   {
+    "date": "2021-04-04",
+    "sleep_duration": 10.166666666666666,
+    "sleep_efficiency": 0.953125
+   },
+   {
+    "date": "2021-04-05",
+    "sleep_duration": 7.166666666666667,
+    "sleep_efficiency": 0.8958333333333334
+   }
+  ]
+ }
+}
