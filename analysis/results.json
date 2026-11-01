@@ -1,0 +1,566 @@
+{
+  "assumptions": "Assumptions (all labelled in the report): analytes independent; proportional noise;\nin-flight within-person variance equals ground variance unless the inflation factor\nf says otherwise; every person gets the same mean percentage shift; ground-based\nhealthy young adults. The simulation reports what the rules do under these assumptions.\nIt is not a measurement of astronauts.",
+  "N_per_cell": 200000,
+  "NU": 4,
+  "detection_power": {
+    "Erythrocytes, early flight": {
+      "analyte": "Erythrocytes",
+      "shift_pct": 9.09,
+      "n=3": {
+        "earth": 0.212,
+        "own_sd": 0.325,
+        "lit": 0.753,
+        "shrunk": 0.588
+      },
+      "n=5": {
+        "earth": 0.212,
+        "own_sd": 0.56,
+        "lit": 0.795,
+        "shrunk": 0.686
+      },
+      "n=10": {
+        "earth": 0.212,
+        "own_sd": 0.738,
+        "lit": 0.831,
+        "shrunk": 0.771
+      }
+    },
+    "Erythrocytes, late flight": {
+      "analyte": "Erythrocytes",
+      "shift_pct": 6.82,
+      "n=3": {
+        "earth": 0.141,
+        "own_sd": 0.218,
+        "lit": 0.517,
+        "shrunk": 0.352
+      },
+      "n=5": {
+        "earth": 0.142,
+        "own_sd": 0.366,
+        "lit": 0.56,
+        "shrunk": 0.442
+      },
+      "n=10": {
+        "earth": 0.142,
+        "own_sd": 0.504,
+        "lit": 0.598,
+        "shrunk": 0.529
+      }
+    },
+    "Hemoglobin, early flight": {
+      "analyte": "Hemoglobin",
+      "shift_pct": 6.38,
+      "n=3": {
+        "earth": 0.14,
+        "own_sd": 0.204,
+        "lit": 0.481,
+        "shrunk": 0.319
+      },
+      "n=5": {
+        "earth": 0.14,
+        "own_sd": 0.342,
+        "lit": 0.524,
+        "shrunk": 0.409
+      },
+      "n=10": {
+        "earth": 0.139,
+        "own_sd": 0.469,
+        "lit": 0.559,
+        "shrunk": 0.492
+      }
+    },
+    "Hemoglobin, landing day": {
+      "analyte": "Hemoglobin",
+      "shift_pct": -4.26,
+      "n=3": {
+        "earth": 0.092,
+        "own_sd": 0.129,
+        "lit": 0.27,
+        "shrunk": 0.157
+      },
+      "n=5": {
+        "earth": 0.093,
+        "own_sd": 0.197,
+        "lit": 0.295,
+        "shrunk": 0.213
+      },
+      "n=10": {
+        "earth": 0.092,
+        "own_sd": 0.264,
+        "lit": 0.315,
+        "shrunk": 0.269
+      }
+    },
+    "MCH, late flight": {
+      "analyte": "MCH",
+      "shift_pct": -1.26,
+      "n=3": {
+        "earth": 0.055,
+        "own_sd": 0.097,
+        "lit": 0.174,
+        "shrunk": 0.093
+      },
+      "n=5": {
+        "earth": 0.055,
+        "own_sd": 0.132,
+        "lit": 0.186,
+        "shrunk": 0.129
+      },
+      "n=10": {
+        "earth": 0.055,
+        "own_sd": 0.171,
+        "lit": 0.201,
+        "shrunk": 0.17
+      }
+    }
+  },
+  "false_alarm_null": {
+    "Hemoglobin": {
+      "ground variance": {
+        "n=3": {
+          "earth": 0.05,
+          "own_sd": 0.05,
+          "lit": 0.049,
+          "shrunk": 0.021
+        },
+        "n=5": {
+          "earth": 0.05,
+          "own_sd": 0.05,
+          "lit": 0.05,
+          "shrunk": 0.031
+        },
+        "n=10": {
+          "earth": 0.05,
+          "own_sd": 0.051,
+          "lit": 0.05,
+          "shrunk": 0.043
+        }
+      },
+      "in-flight variance x1.5": {
+        "n=3": {
+          "earth": 0.073,
+          "own_sd": 0.05,
+          "lit": 0.191,
+          "shrunk": 0.081
+        },
+        "n=5": {
+          "earth": 0.074,
+          "own_sd": 0.05,
+          "lit": 0.192,
+          "shrunk": 0.079
+        },
+        "n=10": {
+          "earth": 0.073,
+          "own_sd": 0.05,
+          "lit": 0.191,
+          "shrunk": 0.07
+        }
+      },
+      "in-flight variance x2": {
+        "n=3": {
+          "earth": 0.105,
+          "own_sd": 0.05,
+          "lit": 0.328,
+          "shrunk": 0.134
+        },
+        "n=5": {
+          "earth": 0.105,
+          "own_sd": 0.05,
+          "lit": 0.327,
+          "shrunk": 0.111
+        },
+        "n=10": {
+          "earth": 0.106,
+          "own_sd": 0.05,
+          "lit": 0.328,
+          "shrunk": 0.083
+        }
+      },
+      "people differ (h=0.5)": {
+        "n=3": {
+          "earth": 0.051,
+          "own_sd": 0.051,
+          "lit": 0.057,
+          "shrunk": 0.023
+        },
+        "n=5": {
+          "earth": 0.05,
+          "own_sd": 0.049,
+          "lit": 0.056,
+          "shrunk": 0.026
+        },
+        "n=10": {
+          "earth": 0.051,
+          "own_sd": 0.05,
+          "lit": 0.057,
+          "shrunk": 0.03
+        }
+      }
+    },
+    "MCH": {
+      "ground variance": {
+        "n=3": {
+          "earth": 0.05,
+          "own_sd": 0.05,
+          "lit": 0.05,
+          "shrunk": 0.022
+        },
+        "n=5": {
+          "earth": 0.05,
+          "own_sd": 0.05,
+          "lit": 0.05,
+          "shrunk": 0.031
+        },
+        "n=10": {
+          "earth": 0.05,
+          "own_sd": 0.05,
+          "lit": 0.05,
+          "shrunk": 0.043
+        }
+      },
+      "in-flight variance x1.5": {
+        "n=3": {
+          "earth": 0.054,
+          "own_sd": 0.05,
+          "lit": 0.192,
+          "shrunk": 0.081
+        },
+        "n=5": {
+          "earth": 0.055,
+          "own_sd": 0.05,
+          "lit": 0.19,
+          "shrunk": 0.079
+        },
+        "n=10": {
+          "earth": 0.054,
+          "own_sd": 0.05,
+          "lit": 0.191,
+          "shrunk": 0.069
+        }
+      },
+      "in-flight variance x2": {
+        "n=3": {
+          "earth": 0.06,
+          "own_sd": 0.049,
+          "lit": 0.327,
+          "shrunk": 0.134
+        },
+        "n=5": {
+          "earth": 0.061,
+          "own_sd": 0.05,
+          "lit": 0.328,
+          "shrunk": 0.111
+        },
+        "n=10": {
+          "earth": 0.061,
+          "own_sd": 0.05,
+          "lit": 0.327,
+          "shrunk": 0.085
+        }
+      },
+      "people differ (h=0.5)": {
+        "n=3": {
+          "earth": 0.05,
+          "own_sd": 0.051,
+          "lit": 0.058,
+          "shrunk": 0.024
+        },
+        "n=5": {
+          "earth": 0.05,
+          "own_sd": 0.05,
+          "lit": 0.057,
+          "shrunk": 0.026
+        },
+        "n=10": {
+          "earth": 0.051,
+          "own_sd": 0.05,
+          "lit": 0.057,
+          "shrunk": 0.03
+        }
+      }
+    },
+    "Platelets": {
+      "ground variance": {
+        "n=3": {
+          "earth": 0.051,
+          "own_sd": 0.05,
+          "lit": 0.05,
+          "shrunk": 0.021
+        },
+        "n=5": {
+          "earth": 0.052,
+          "own_sd": 0.05,
+          "lit": 0.05,
+          "shrunk": 0.032
+        },
+        "n=10": {
+          "earth": 0.051,
+          "own_sd": 0.05,
+          "lit": 0.051,
+          "shrunk": 0.043
+        }
+      },
+      "in-flight variance x1.5": {
+        "n=3": {
+          "earth": 0.074,
+          "own_sd": 0.05,
+          "lit": 0.191,
+          "shrunk": 0.08
+        },
+        "n=5": {
+          "earth": 0.073,
+          "own_sd": 0.05,
+          "lit": 0.192,
+          "shrunk": 0.079
+        },
+        "n=10": {
+          "earth": 0.074,
+          "own_sd": 0.05,
+          "lit": 0.189,
+          "shrunk": 0.069
+        }
+      },
+      "in-flight variance x2": {
+        "n=3": {
+          "earth": 0.107,
+          "own_sd": 0.05,
+          "lit": 0.327,
+          "shrunk": 0.134
+        },
+        "n=5": {
+          "earth": 0.107,
+          "own_sd": 0.051,
+          "lit": 0.328,
+          "shrunk": 0.111
+        },
+        "n=10": {
+          "earth": 0.106,
+          "own_sd": 0.05,
+          "lit": 0.328,
+          "shrunk": 0.084
+        }
+      },
+      "people differ (h=0.5)": {
+        "n=3": {
+          "earth": 0.05,
+          "own_sd": 0.051,
+          "lit": 0.058,
+          "shrunk": 0.024
+        },
+        "n=5": {
+          "earth": 0.05,
+          "own_sd": 0.051,
+          "lit": 0.057,
+          "shrunk": 0.026
+        },
+        "n=10": {
+          "earth": 0.051,
+          "own_sd": 0.05,
+          "lit": 0.057,
+          "shrunk": 0.03
+        }
+      }
+    }
+  },
+  "power_under_scenarios_RBC_early": {
+    "ground variance": {
+      "n=3": {
+        "earth": 0.211,
+        "own_sd": 0.325,
+        "lit": 0.752,
+        "shrunk": 0.587
+      },
+      "n=5": {
+        "earth": 0.212,
+        "own_sd": 0.561,
+        "lit": 0.797,
+        "shrunk": 0.687
+      }
+    },
+    "in-flight variance x1.5": {
+      "n=3": {
+        "earth": 0.231,
+        "own_sd": 0.183,
+        "lit": 0.677,
+        "shrunk": 0.461
+      },
+      "n=5": {
+        "earth": 0.232,
+        "own_sd": 0.3,
+        "lit": 0.711,
+        "shrunk": 0.487
+      }
+    },
+    "in-flight variance x2": {
+      "n=3": {
+        "earth": 0.255,
+        "own_sd": 0.129,
+        "lit": 0.643,
+        "shrunk": 0.391
+      },
+      "n=5": {
+        "earth": 0.256,
+        "own_sd": 0.19,
+        "lit": 0.672,
+        "shrunk": 0.377
+      }
+    },
+    "people differ (h=0.5)": {
+      "n=3": {
+        "earth": 0.209,
+        "own_sd": 0.496,
+        "lit": 0.813,
+        "shrunk": 0.683
+      },
+      "n=5": {
+        "earth": 0.21,
+        "own_sd": 0.706,
+        "lit": 0.852,
+        "shrunk": 0.778
+      }
+    }
+  },
+  "panel_false_alarm_per_draw_n5": {
+    "nominal": {
+      "k=1": {
+        "lit": 0.05,
+        "own_sd": 0.05,
+        "shrunk": 0.032
+      },
+      "k=3": {
+        "lit": 0.143,
+        "own_sd": 0.143,
+        "shrunk": 0.093
+      },
+      "k=5": {
+        "lit": 0.225,
+        "own_sd": 0.227,
+        "shrunk": 0.149
+      },
+      "k=8": {
+        "lit": 0.337,
+        "own_sd": 0.337,
+        "shrunk": 0.228
+      },
+      "k=12": {
+        "lit": 0.459,
+        "own_sd": 0.457,
+        "shrunk": 0.321
+      },
+      "k=21": {
+        "lit": 0.659,
+        "own_sd": 0.66,
+        "shrunk": 0.491
+      }
+    },
+    "bonferroni": {
+      "k=1": {
+        "lit": 0.049,
+        "own_sd": 0.05,
+        "shrunk": 0.031
+      },
+      "k=3": {
+        "lit": 0.049,
+        "own_sd": 0.049,
+        "shrunk": 0.019
+      },
+      "k=5": {
+        "lit": 0.049,
+        "own_sd": 0.049,
+        "shrunk": 0.013
+      },
+      "k=8": {
+        "lit": 0.049,
+        "own_sd": 0.049,
+        "shrunk": 0.009
+      },
+      "k=12": {
+        "lit": 0.049,
+        "own_sd": 0.049,
+        "shrunk": 0.006
+      },
+      "k=21": {
+        "lit": 0.048,
+        "own_sd": 0.049,
+        "shrunk": 0.003
+      }
+    }
+  },
+  "panel_theory_independent_nominal": {
+    "k=1": 0.05,
+    "k=3": 0.143,
+    "k=5": 0.226,
+    "k=8": 0.337,
+    "k=12": 0.46,
+    "k=21": 0.659
+  },
+  "bonferroni_cost_shrunk_n5": {
+    "Erythrocytes, early flight": {
+      "nominal": 0.686,
+      "bonferroni_k21": 0.105
+    },
+    "Erythrocytes, late flight": {
+      "nominal": 0.445,
+      "bonferroni_k21": 0.033
+    },
+    "Hemoglobin, early flight": {
+      "nominal": 0.408,
+      "bonferroni_k21": 0.027
+    },
+    "Hemoglobin, landing day": {
+      "nominal": 0.213,
+      "bonferroni_k21": 0.007
+    },
+    "MCH, late flight": {
+      "nominal": 0.131,
+      "bonferroni_k21": 0.003
+    }
+  },
+  "power_vs_panel_size_bonferroni_lit_n5": {
+    "Erythrocytes, early flight": {
+      "k=1": 0.798,
+      "k=2": 0.709,
+      "k=3": 0.654,
+      "k=5": 0.586,
+      "k=8": 0.522,
+      "k=12": 0.471,
+      "k=21": 0.399
+    },
+    "Erythrocytes, late flight": {
+      "k=1": 0.561,
+      "k=2": 0.45,
+      "k=3": 0.39,
+      "k=5": 0.322,
+      "k=8": 0.268,
+      "k=12": 0.226,
+      "k=21": 0.177
+    },
+    "Hemoglobin, early flight": {
+      "k=1": 0.523,
+      "k=2": 0.411,
+      "k=3": 0.354,
+      "k=5": 0.287,
+      "k=8": 0.237,
+      "k=12": 0.199,
+      "k=21": 0.154
+    },
+    "Hemoglobin, landing day": {
+      "k=1": 0.294,
+      "k=2": 0.204,
+      "k=3": 0.165,
+      "k=5": 0.123,
+      "k=8": 0.094,
+      "k=12": 0.075,
+      "k=21": 0.053
+    },
+    "MCH, late flight": {
+      "k=1": 0.188,
+      "k=2": 0.121,
+      "k=3": 0.094,
+      "k=5": 0.066,
+      "k=8": 0.048,
+      "k=12": 0.036,
+      "k=21": 0.024
+    }
+  }
+}

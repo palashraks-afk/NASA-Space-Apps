@@ -85,6 +85,28 @@ Monte Carlo (about 10^6 simulated person-draws), empirical-Bayes and hierarchica
 
 Interactive/visual and technical-depth "today" scores are plans, not built work, so they are held at 7 until something runs. Conditions for 8.0: (a) a teammate for design/story so feasibility reaches 7; (b) the OSDR Inspiration4 CBC/CMP files confirmed and loaded so data depth reaches 8; (c) the sampling-plan optimizer shown to be new in a recorded prior-art check, or a surprising calibration result, so novelty reaches 7; (d) the visuals and ML actually built and verified. None of these is guaranteed.
 
+## Update 2026-11-01 (night): first measured results
+
+`analysis/simulate_detection.py` now runs end to end on real published inputs (see `analysis/README.md`). Two errors of mine were caught and fixed along the way: a proportional-noise rule that inflated false alarms for high-variation analytes (fixed by working in log space; panel results now match theory), and an over-fragile "borrow the literature noise" rule (false alarms 19% to 33% if in-flight variability is 1.5x to 2x ground), which led to adding a shrinkage rule and a sensitivity analysis.
+
+Ledger, evidence-backed only:
+
+| Criterion | Score | Basis |
+|---|---|---|
+| Impact | 8 | Concrete measured gap; NASA's stated need (judgment) |
+| Creativity | 8 | Judgment |
+| Novelty | 7 | Quantified spaceflight comparison not found in searches; methods themselves are known |
+| Challenge fit | 8 | Judgment |
+| Rigor | 9 | Sensitivity analysis, self-caught errors, limits stated |
+| Data depth | 7.5 | Real in-flight shifts from 31 crew, but summary statistics only |
+| Feasibility | 6.5 | Pipeline runs in 22 s; app not built |
+| Profile fit | 9 | |
+| Interactive / visual | 7 | Static figures only; interactive app not built |
+| Technical depth | 7.5 | Monte Carlo built and verified; no real-person calibration yet |
+| **Mean** | **7.75** | |
+
+What would move it: building the interactive app (corridor, alarm landscape, virtual crew) is the only route to the last quarter point (interactive/visual 7 to 8.5). Real-person calibration on LifeSnaps would add technical depth and data depth. Nothing here is guaranteed.
+
 ## Open decisions for the owner
 
 - Approve or reject Baseline Budget as the direction.
