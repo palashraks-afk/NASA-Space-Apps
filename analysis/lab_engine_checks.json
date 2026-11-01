@@ -1,0 +1,235 @@
+{
+  "note": "Simulation under a Gaussian linear model with AR(1) noise, linear drift and a slow response. Units: the outcome's day-to-day spread = 1.",
+  "coverage_95pct_interval_56_days": {
+    "rho 0, modelled": {
+      "coverage": 0.957,
+      "meanWidth": 1.183
+    },
+    "rho 0.4, modelled (pre-whitened)": {
+      "coverage": 0.957,
+      "meanWidth": 1.548
+    },
+    "rho 0.4, correlation ignored": {
+      "coverage": 0.828,
+      "meanWidth": 1.067
+    },
+    "rho 0.7, modelled (pre-whitened)": {
+      "coverage": 0.975,
+      "meanWidth": 1.691
+    },
+    "rho 0.7, correlation ignored": {
+      "coverage": 0.712,
+      "meanWidth": 0.995
+    }
+  },
+  "false_call_rate_when_no_true_effect": {
+    "delta 0.3, rho 0.3": 0.01,
+    "delta 0.3, rho 0.6": 0.005
+  },
+  "power_by_day_delta_0_3": {
+    "true effect 1.0 (clearly worthwhile)": [
+      {
+        "day": 14,
+        "right": 0.01,
+        "wrong": 0,
+        "open": 0.99
+      },
+      {
+        "day": 21,
+        "right": 0.03,
+        "wrong": 0,
+        "open": 0.97
+      },
+      {
+        "day": 28,
+        "right": 0.11,
+        "wrong": 0,
+        "open": 0.89
+      },
+      {
+        "day": 35,
+        "right": 0.17,
+        "wrong": 0,
+        "open": 0.83
+      },
+      {
+        "day": 42,
+        "right": 0.27,
+        "wrong": 0,
+        "open": 0.73
+      },
+      {
+        "day": 49,
+        "right": 0.3,
+        "wrong": 0,
+        "open": 0.7
+      },
+      {
+        "day": 56,
+        "right": 0.35,
+        "wrong": 0,
+        "open": 0.65
+      },
+      {
+        "day": 63,
+        "right": 0.39,
+        "wrong": 0,
+        "open": 0.61
+      },
+      {
+        "day": 70,
+        "right": 0.45,
+        "wrong": 0,
+        "open": 0.55
+      },
+      {
+        "day": 77,
+        "right": 0.5,
+        "wrong": 0,
+        "open": 0.5
+      },
+      {
+        "day": 84,
+        "right": 0.56,
+        "wrong": 0,
+        "open": 0.45
+      }
+    ],
+    "true effect 0.6": [
+      {
+        "day": 14,
+        "right": 0,
+        "wrong": 0,
+        "open": 1
+      },
+      {
+        "day": 21,
+        "right": 0.01,
+        "wrong": 0,
+        "open": 0.98
+      },
+      {
+        "day": 28,
+        "right": 0.04,
+        "wrong": 0,
+        "open": 0.96
+      },
+      {
+        "day": 35,
+        "right": 0.06,
+        "wrong": 0,
+        "open": 0.94
+      },
+      {
+        "day": 42,
+        "right": 0.07,
+        "wrong": 0,
+        "open": 0.93
+      },
+      {
+        "day": 49,
+        "right": 0.09,
+        "wrong": 0,
+        "open": 0.91
+      },
+      {
+        "day": 56,
+        "right": 0.11,
+        "wrong": 0,
+        "open": 0.89
+      },
+      {
+        "day": 63,
+        "right": 0.11,
+        "wrong": 0,
+        "open": 0.89
+      },
+      {
+        "day": 70,
+        "right": 0.13,
+        "wrong": 0,
+        "open": 0.87
+      },
+      {
+        "day": 77,
+        "right": 0.13,
+        "wrong": 0,
+        "open": 0.88
+      },
+      {
+        "day": 84,
+        "right": 0.14,
+        "wrong": 0,
+        "open": 0.86
+      }
+    ],
+    "true effect 0 (proving there is none)": [
+      {
+        "day": 14,
+        "right": 0,
+        "wrong": 0,
+        "open": 1
+      },
+      {
+        "day": 21,
+        "right": 0,
+        "wrong": 0.01,
+        "open": 0.99
+      },
+      {
+        "day": 28,
+        "right": 0,
+        "wrong": 0.01,
+        "open": 0.99
+      },
+      {
+        "day": 35,
+        "right": 0,
+        "wrong": 0.01,
+        "open": 0.99
+      },
+      {
+        "day": 42,
+        "right": 0,
+        "wrong": 0.01,
+        "open": 0.99
+      },
+      {
+        "day": 49,
+        "right": 0,
+        "wrong": 0.01,
+        "open": 0.99
+      },
+      {
+        "day": 56,
+        "right": 0,
+        "wrong": 0.01,
+        "open": 0.99
+      },
+      {
+        "day": 63,
+        "right": 0,
+        "wrong": 0.01,
+        "open": 0.99
+      },
+      {
+        "day": 70,
+        "right": 0,
+        "wrong": 0.01,
+        "open": 0.99
+      },
+      {
+        "day": 77,
+        "right": 0,
+        "wrong": 0.01,
+        "open": 0.99
+      },
+      {
+        "day": 84,
+        "right": 0,
+        "wrong": 0.01,
+        "open": 0.99
+      }
+    ]
+  }
+}
