@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sol Lab</title>
+    <meta name="description" content="Design and run a small experiment on yourself aboard a spacecraft, and watch the evidence build." />
+  </head>
+  <body>
+    <div id="app">
+      <div id="stage" aria-hidden="true"></div>
+
+      <div class="brand"><span class="tape tape--title">Sol Lab</span><span class="brand__sub">Test what works for your own body, one mission at a time.</span></div>
+
+      <nav class="cuff" aria-label="Mission procedure">
+        <ol class="cuff__steps" id="steps"></ol>
+        <button class="cuff__aside" id="clockLink" type="button">Visit the body clock</button>
+        <button class="cuff__aside" id="overviewLink" type="button">Look around the module</button>
+      </nav>
+
+      <section class="deck" id="deck" aria-live="polite"></section>
+
+      <aside class="readout" id="readout" aria-live="polite"></aside>
+
+      <button class="numbers-toggle" id="numbersToggle" type="button" aria-expanded="false" aria-controls="numbers">Show the numbers</button>
+      <aside class="numbers" id="numbers" hidden></aside>
+
+      <div class="loading" id="loading"><span class="tape tape--title">Sol Lab</span><p id="loadingText">Pressurizing the module</p></div>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,40 @@
+import * as THREE from "three";
+import { brushedRoughness, kaptonBump, velcro, weave } from "./textures.js";
+
+export const PALETTE = {
+  alu: 0xe4e8eb,
+  graphite: 0x2a2f35,
+  gold: 0xc28a1e,
+  ink: 0x1d3f72,
+  inkLight: 0x6fa8f5,
+  tag: 0xd6342a,
+  tape: 0xf6f6f1,
+  marker: 0x16181b,
+};
+
+export function makeMaterials() {
+  const rough = brushedRoughness(11);
+  return {
+    alu: new THREE.MeshStandardMaterial({ color: PALETTE.alu, roughness: 0.62, metalness: 0.15, roughnessMap: rough }),
+    aluPanel: new THREE.MeshStandardMaterial({ color: 0xd9dee2, roughness: 0.55, metalness: 0.2, roughnessMap: rough }),
+    aluBright: new THREE.MeshStandardMaterial({ color: 0xf1f3f4, roughness: 0.5, metalness: 0.05 }),
+    graphite: new THREE.MeshStandardMaterial({ color: PALETTE.graphite, roughness: 0.55, metalness: 0.45 }),
+    graphiteMatte: new THREE.MeshStandardMaterial({ color: 0x23272c, roughness: 0.85, metalness: 0.1 }),
+    gold: new THREE.MeshStandardMaterial({ color: PALETTE.gold, roughness: 0.28, metalness: 1, bumpMap: kaptonBump(7), bumpScale: 0.6 }),
+    fabric: new THREE.MeshStandardMaterial({ map: weave(5), roughness: 0.95, metalness: 0 }),
+    fabricBlue: new THREE.MeshStandardMaterial({ map: weave(6, [176, 190, 210]), roughness: 0.95, metalness: 0 }),
+    velcro: new THREE.MeshStandardMaterial({ map: velcro(9), roughness: 1, metalness: 0 }),
+    ink: new THREE.MeshStandardMaterial({ color: PALETTE.ink, roughness: 0.4, metalness: 0.2 }),
+    tag: new THREE.MeshStandardMaterial({ color: PALETTE.tag, roughness: 0.7, metalness: 0 }),
+    led: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff3e2, emissiveIntensity: 2.6, roughness: 0.4 }),
+    ledCool: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xe8f1ff, emissiveIntensity: 2.0, roughness: 0.4 }),
+    glass: new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 1, thickness: 0.02, roughness: 0.04, ior: 1.5, metalness: 0, transparent: true, opacity: 1 }),
+    screen: new THREE.MeshStandardMaterial({ color: 0x0b1726, emissive: 0x9cc4ff, emissiveIntensity: 0.25, roughness: 0.2 }),
+    aluWarm: new THREE.MeshStandardMaterial({ color: 0xe9e6df, roughness: 0.6, metalness: 0.1, roughnessMap: rough }),
+    aluCool: new THREE.MeshStandardMaterial({ color: 0xcfd6dc, roughness: 0.5, metalness: 0.25, roughnessMap: rough }),
+    vent: new THREE.MeshStandardMaterial({ color: 0x3a4047, roughness: 0.6, metalness: 0.5 }),
+    strap: new THREE.MeshStandardMaterial({ color: 0x31363c, roughness: 0.95 }),
+    yellow: new THREE.MeshStandardMaterial({ color: 0xe6b422, roughness: 0.6 }),
+    fabricTan: new THREE.MeshStandardMaterial({ map: weave(12, [214, 203, 178]), roughness: 0.95 }),
+  };
+}
