@@ -1,27 +1,49 @@
-# NASA Space Apps 2026 — Astronaut Health Monitoring
+# Sol Lab
 
-**Challenge:** [Create Health Monitoring Software for Astronauts on Space Missions](https://www.spaceappschallenge.org/2026/challenges/create-health-monitoring-software-for-astronauts-on-space-missions/)
-**Local Event:** San Marino, CA
-**Event dates:** Nov 14-15, 2026 (judging begins Nov 16)
-**Team owner:** Palash (lead dev, OncoVision AI: cancer-risk platform; Python/JS, XGBoost; pre-registered, externally validated analyses)
+**NASA Space Apps 2026, "Create Health Monitoring Software for Astronauts on Space Missions."** Team owner: Palash (San Marino, CA).
 
-> Long-duration missions expose astronauts to space radiation, isolation and confinement, altered gravity, and a hostile closed environment, bringing immune changes, bone loss, cardiovascular events, and behavioral health problems. Astronauts carry much of the responsibility for spotting these changes themselves. Build health monitoring software that gathers health indicators and enables astronauts to evaluate and act on the status of their health.
+Every other entry we found watches astronauts and raises alerts. Sol Lab helps a crew member find out what actually works for *their own* body during a mission: design a small, fair experiment ("does cutting caffeine after noon help me fall asleep faster?"), run it in a 3D station module, and get an honest verdict, including "not settled". A whole crew can run the same experiment, and each person's answer gets sharper from what the crew shares.
 
-## Status (reset 2026-11-01)
+![Inside the module](docs/img/overview.png)
 
-**No concept is locked and no code is being written yet.** The earlier CALLSIGN and ECHO work was rushed, changed direction too often, and made novelty claims before checking them. It is preserved untouched in [`archive/callsign-echo-2026-10-01/`](archive/callsign-echo-2026-10-01/) and is not the current plan.
+| | |
+|---|---|
+| ![Schedule tokens drifting in zero gravity](docs/img/board-randomizing.png) | ![Crew mode mid-mission](docs/img/crew-running.png) |
+| Randomizing: schedule tokens float across the cabin (real zero-g physics) and stick to their days. | Crew mode: each member's chance it works, with the crew and alone. |
+| ![Mars through the window](docs/img/window-mars.png) | ![Body clock on Mars](docs/img/body-clock.png) |
+| Destination: real ISS orbit (SGP4, CelesTrak) or Moon or Mars. | Body clock: a published circadian model running live for four crew. |
 
-Current working candidate, pending the owner's approval: **Baseline Budget**. It asks how many days of *you* a monitor needs before an alarm means anything, and it tests that against real longitudinal data. See [`research_notes/idea-screening.md`](research_notes/idea-screening.md) for the full screening, scores and what is and is not verified.
+## Run it
 
-## Research notes
+```bash
+cd lab
+npm install
+npm run dev      # http://localhost:5199
+npm test         # 19 tests: statistics engine, pooling, missions, orbit
+npm run check    # syntax check of every file
+npm run build    # static, works offline (dist/)
+```
 
-- [`research_notes/idea-screening.md`](research_notes/idea-screening.md): the 8 criteria, 10+ screened candidates, prior art, data availability, honest scores
-- [`research_notes/judging-and-rules.md`](research_notes/judging-and-rules.md): how judging works, what is rewarded, AI-use rule, last year's winners
-- [`research_notes/competitor-analysis.md`](research_notes/competitor-analysis.md): the 2026 field (25+ public repos)
-- [`research_notes/award-criteria-mapping.md`](research_notes/award-criteria-mapping.md): the 10 Global Awards
+## What is new, and how we checked
 
-## Rules to follow
+- **Crew-run self-experiments for spaceflight.** We found no N-of-1, single-case or crew-run randomized self-experiment work in spaceflight or analog missions, and none among about ten public Space Apps 2026 repos for this challenge (search on 2026-11-01; private work cannot be ruled out). N-of-1 apps and pooled N-of-1 trials exist on Earth; the spaceflight crew application is the new part. Details: [docs/STUDIES_RESULTS.md](docs/STUDIES_RESULTS.md).
+- **Validated, not just built.** Three studies were pre-registered before running ([docs/STUDIES_PREREG.md](docs/STUDIES_PREREG.md)):
+  - On 49 real people's sleep diaries, the engine made a false call 0.68% of the time when nothing was there, its 95% intervals covered 94.7% to 97.3%, and the in-app power preview matched real-data power within 4 points.
+  - Crew pooling cut each person's error by 20% to 45%. Our first pooling method failed its coverage bar (83% to 86%); the fixed method, pre-registered after that failure, passed (90.9% to 97.8%).
+  - The circadian model failed one pre-registered check against a 2007 human Mars-sol study; the app says so.
+- **Honest about limits.** A single four-week self-experiment usually ends "not settled" (about 10% to 14% of the time it settles a change 1.5 times the smallest worthwhile one). The app shows this before you start.
 
-- Disclose clearly where and how AI tools were used in the submission.
-- No claim without a measurement or a citation; say what was and was not verified.
-- Original work is licensed open source (Apache 2.0 by default).
+## Where things are
+
+- `lab/`: the app and its tests ([lab/README.md](lab/README.md) explains what is real and what is simulated)
+- `docs/design.md`: concept, features, art direction
+- `docs/STUDIES_PREREG.md`, `docs/STUDIES_RESULTS.md`: validation studies
+- `docs/BUILD_LOG.md`: every decision made during the build, with reasons
+- `docs/PITCH.md`: 30-second summary, demo script, claims we can and cannot make
+- `analysis/`: all study outputs and simulations
+- `research_notes/`: judging research, competitor field, idea screening, evidence
+- `archive/`: earlier concepts (CALLSIGN, ECHO), kept for the record
+
+## Data and credits
+
+Open wearable and sleep-diary data (Baigutanova et al. 2025, CC BY), CelesTrak ISS elements, NASA Visible Earth imagery, Solar System Scope textures (CC BY). Full list: [lab/public/CREDITS.md](lab/public/CREDITS.md). Built with Claude Code (AI) assistance, disclosed as the Space Apps rules require. Not a medical device.

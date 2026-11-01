@@ -113,3 +113,24 @@ What would move it: building the interactive app (corridor, alarm landscape, vir
 - Team: any teammates for design/story/pitch? (Still unanswered.)
 - Paste the official 2026 challenge text and dataset list.
 - Whether to apply for any credentialed data now (long lead time).
+
+## Final ledger for Sol Lab (2026-11-01, after building and validating)
+
+Scores are my judgment; the basis column says what each rests on. Unlike earlier ledgers, every row now rests on something built or measured.
+
+| Criterion | Score | Basis |
+|---|---|---|
+| Impact | 7.5 | Real gap (personalized countermeasures; HRP Med03 / Medical-701). Limited by low single-person power, partly offset by crew pooling. |
+| Creativity | 8.5 | Zero-g token physics, posterior motes, live pacemaker, real orbit; verified in full-resolution renders. |
+| Novelty | 7.5 | No crew N-of-1 work found in spaceflight or the 2026 field; N-of-1 and pooled N-of-1 exist on Earth; the Mars light result is a replication. |
+| Challenge fit | 7.5 | Helps astronauts evaluate and act; real data analyzed; story and place. Little NASA health data (none is open at individual level). |
+| Rigor | 9.5 | Three pre-registered studies, two failed bars reported, calibrated on real diaries. |
+| Data depth | 8 | 49-person diaries drive simulation and validation; real ISS orbit; NASA imagery. |
+| Feasibility | 9 | Built, 19 tests, offline build, 60 fps measured. |
+| Profile fit | 9.5 | Pre-registration, real-data validation, reported nulls. |
+| Interactive and visual | 8.5 | 3D module, four stations, physics, transitions, verified renders. |
+| Technical depth | 9 | Bayesian engine integrating over autocorrelation, validated pooling, circadian ODE, SGP4, rigid-body physics, Monte Carlo worker. |
+| Uniqueness | 8.5 | Different in kind from the monitor-and-alert field. |
+| **Mean** | **8.5** | |
+
+Weakest: novelty, impact and challenge fit (7.5 each). The mean clears the owner's bar of 8; novelty alone does not reach 8, and claiming otherwise would overstate what the prior-art search can show.
