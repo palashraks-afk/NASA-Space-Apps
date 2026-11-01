@@ -224,7 +224,7 @@ async function boot() {
     const wrong = verdict !== "inconclusive" && verdict !== truth;
     const reveal = S.mode === "hidden" ? `<p>The hidden truth: the change was <b>${o.fmtDelta(Math.abs(S.mission.trueEffect))} ${S.mission.trueEffect * 1 >= 0 ? "better" : "worse"}</b>, which counts as "${words[truth] === "not settled" ? "in between" : words[truth]}".</p>` : "";
     const lesson = verdict === "inconclusive"
-      ? `${S.days} days were not enough to settle it. That is common for a single person: day-to-day spread is large compared with most real effects. A longer mission, a quieter measure, or a change that acts within a day would help."
+      ? `${S.days} days were not enough to settle it. That is common for a single person: day-to-day spread is large compared with most real effects. A longer mission, a quieter measure, or a change that acts within a day would help.`
       : right ? "The plan worked as designed: the verdict matches the truth." : "This is the rare wrong call the threshold allows. It happens; the threshold controls how often.";
     deck.innerHTML = `<h2>Verdict on day ${S.days}: <span class="verdict">${words[verdict]}</span></h2>
       ${reveal}<p>${lesson}</p>${S.mission.real ? `<p class="note">The day-to-day ups and downs in this mission were one real person's sleep diary (open dataset, CC BY); only the hidden change was added.</p>` : ""}
