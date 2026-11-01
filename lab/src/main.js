@@ -12,6 +12,8 @@ import { loadOutcomes, INTERVENTIONS, DESTINATIONS } from "./sim/presets.js";
 import { recommendDesign, drawMysteryEffect, buildMission, analyseDay, truthLabel } from "./sim/mission.js";
 import { makeISS, issState, countSunrises } from "./sim/orbit.js";
 import { renderNumbers } from "./ui/numbers.js";
+import { poolCrew, pooledVerdict } from "./engine/pooling.js";
+import { mulberry32, normal } from "./engine/rng.js";
 import { buildPrereg, downloadJSON } from "./ui/prereg.js";
 
 const $ = (s) => document.querySelector(s);
@@ -76,9 +78,9 @@ async function boot() {
     // Each view aims a little below its station so the station sits in the upper part of the
     // screen, clear of the control deck along the bottom.
     window: { pos: V(0, -0.05, -3.05), look: V(0, -0.42, -6), lookAround: 0.35 },
-    board: { pos: V(0.85, -0.12, 0.55), look: V(-1.1, -0.42, 0.55), axis: "z", lookAround: 0.2 },
-    evidence: { pos: V(-0.78, -0.02, -1.9), look: V(W - 0.44, -0.36, -1.9), axis: "z", lookAround: 0.12 },
-    clock: { pos: V(-0.45, -0.02, 1.95), look: V(W, -0.32, 1.95), axis: "z", lookAround: 0.12 },
+    board: { pos: V(0.9, -0.04, 0.55), look: V(-1.1, -0.26, 0.55), axis: "z", lookAround: 0.2 },
+    evidence: { pos: V(-0.9, 0.02, -1.9), look: V(W - 0.44, -0.22, -1.9), axis: "z", lookAround: 0.12 },
+    clock: { pos: V(-0.55, 0.02, 1.95), look: V(W, -0.2, 1.95), axis: "z", lookAround: 0.12 },
     overview: { pos: V(0, 0.28, 4.4), look: V(0, -0.05, -2), lookAround: 0.4 },
   };
   const rig = createCameraRig(camera, renderer.domElement, views);
@@ -92,7 +94,7 @@ async function boot() {
     seed: Math.floor(Math.random() * 1e6) + 1, days: 56,
     mission: null, locked: false, day: 0, playing: false, daysPerSec: 3, dayAcc: 0, history: [], last: null,
     power: null, powerId: 0, clockSpeed: 6, clockLux: 300, brightWake: false, crewSel: 0,
-    simHours: 0, randomizing: false, noise: "sim",
+    simHours: 0, randomizing: false, noise: "sim", crewMode: false, crew: null, member: 0,
   };
   S.simHours = dayStartHours;
   const outcome = () => OUTCOMES[S.outcomeKey];
@@ -101,7 +103,7 @@ async function boot() {
   const diary = realNoise.example_person.series;
   const realSeriesFor = (key) => key === "sleep_duration" ? diary.map((r) => r.sleep_duration) : key === "sleep_efficiency" ? diary.map((r) => r.sleep_efficiency * 100) : null;
   const syncDays = () => {
-    if (S.noise === "real" && !realSeriesFor(S.outcomeKey)) S.noise = "sim";
+    if (S.noise === "real" && (!realSeriesFor(S.outcomeKey) || S.crewMode)) S.noise = "sim";
     S.days = S.noise === "real" ? realSeriesFor(S.outcomeKey).length : 56;
   };
   S.destLabel = DESTINATIONS[S.dest].label;
@@ -184,7 +186,8 @@ async function boot() {
           <label>How fast does it act? (your judgment)${seg("speed", [["day", "Within a day"], ["days", "Over several days"]], S.speed)}</label>
           <label>Truth${seg("mode", [["hidden", "Hidden (game)"], ["practice", "I set it (practice)"]], S.mode)}</label>
           ${S.mode === "practice" ? `<label>True change: ${(S.practiceMult * S.delta).toFixed(2)} ${o.unit}<input type="range" data-in="practice" min="-2" max="4" step="0.25" value="${S.practiceMult}"/></label>` : ""}
-          ${realSeriesFor(S.outcomeKey) ? `<label>Daily ups and downs${seg("noise", [["sim", "Simulated from 49 people"], ["real", "One real person's diary (28 days)"]], S.noise)}</label>` : ""}
+          <label>Who runs it${seg("who", [["solo", "Just me"], ["crew", "The whole crew (4)"]], S.crewMode ? "crew" : "solo")}</label>
+          ${realSeriesFor(S.outcomeKey) && !S.crewMode ? `<label>Daily ups and downs${seg("noise", [["sim", "Simulated from 49 people"], ["real", "One real person's diary (28 days)"]], S.noise)}</label>` : ""}
         </div>
         <p style="margin-top:8px"><b>Design:</b> ${d.name}. ${d.why} ${pw === null ? "Working out the odds." : `If the real change is 1.5 times your smallest worthwhile change, this ${S.days}-day mission gives a clear answer <b>${pw}%</b> of the time.`} <span class="note">Typical day-to-day spread: ${o.fmtDelta(o.sd)} (${o.people} people).</span></p>
         <div class="actions"><button class="btn" data-act="toRandomize">Next: randomize the schedule</button></div>`;
@@ -216,6 +219,7 @@ async function boot() {
   }
 
   function renderResult() {
+    if (S.crew && S.crew.pooled) return renderCrewResult();
     const o = outcome(), v = S.last?.v;
     const truth = truthLabel(S.mission, S.delta);
     const words = { works: "it works for you", none: "no meaningful change", harms: "it backfires", inconclusive: "not settled" };
@@ -233,21 +237,41 @@ async function boot() {
     void wrong;
   }
 
+  function renderCrewResult() {
+    const o = outcome();
+    const words = { works: "works", none: "no meaningful change", harms: "backfires", inconclusive: "not settled" };
+    let rightPooled = 0, rightAlone = 0, wrongPooled = 0;
+    const rows = [0, 1, 2, 3].map((i) => {
+      const truth = truthLabel(S.crew.missions[i], S.delta);
+      const pv = S.crew.pooled[i].v.label, av = S.crew.last[i].v.label;
+      if (pv !== "inconclusive" && pv === truth) rightPooled++;
+      if (pv !== "inconclusive" && pv !== truth) wrongPooled++;
+      if (av !== "inconclusive" && av === truth) rightAlone++;
+      const eff = S.crew.effects[i];
+      return `<tr><td>${"ABCD"[i]}</td><td>${o.fmtDelta(Math.abs(eff))} ${eff >= 0 ? "better" : "worse"}</td><td><b>${words[pv]}</b></td><td>${words[av]}</td></tr>`;
+    }).join("");
+    deck.innerHTML = `<h2>Verdicts on day ${S.days}: <span class="verdict">${rightPooled} of 4 settled correctly with the crew</span></h2>
+      <p>Alone, ${rightAlone} of 4 would have been settled correctly. ${wrongPooled ? `${wrongPooled} wrong call${wrongPooled > 1 ? "s" : ""} with the crew; the threshold keeps that rare.` : "No wrong calls."} Each person still gets their own answer; the crew only sharpens it, and less so when people respond differently.</p>
+      <table class="crewtable"><thead><tr><th>Crew</th><th>Hidden truth</th><th>With the crew</th><th>Alone</th></tr></thead><tbody>${rows}</tbody></table>
+      <div class="actions"><button class="btn" data-act="again">Run another mission</button><button class="btn btn--quiet" data-act="change">Change the test</button></div>`;
+    if (rightPooled > 0) celebrate();
+  }
+
   function renderClockDeck() {
     const ro = clock.readout();
     const P = DESTINATIONS[S.dest].dayHours;
-    const rows = ro ? ro.members.map((m, i) => `<button type="button" class="btn btn--quiet" data-crew="${i}" aria-pressed="${i === S.crewSel}" style="${i === S.crewSel ? "box-shadow: inset 0 0 0 2px #1d3f72" : ""}">${m.id}: ${m.tau.toFixed(2)} h clock, ${m.ratePerDay == null ? "settling" : m.locked ? "locked to the day" : `${m.ratePerDay > 0 ? "running early" : "running late"} ${Math.abs(m.ratePerDay * 60).toFixed(0)} min a day`}</button>`).join("") : "";
+    const rows = ro ? ro.members.map((m, i) => `<button type="button" class="chip" data-crew="${i}" aria-pressed="${i === S.crewSel}"><b>${m.id}</b> ${m.tau.toFixed(2)} h clock: ${m.ratePerDay == null ? "measuring" : m.locked ? "locked to the day" : `${m.ratePerDay > 0 ? "running early" : "running late"} ${Math.abs(m.ratePerDay * 60).toFixed(0)} min a day`}</button>`).join("") : "";
     deck.innerHTML = `<h2>Body clock: ${DESTINATIONS[S.dest].label}, day ${ro ? Math.floor(ro.days) + 1 : 1}</h2>
-      <p>Each bead is one crew member's internal clock, simulated with the Forger-Jewett-Kronauer pacemaker model. The hand is local time on a ${P === 24 ? "24 h day" : "24 h 39 min Mars sol"}. A bead that rides with the hand is locked to the day; one that slips is drifting. The glowing loop in the middle is the selected crew member's oscillator.</p>
+      <p>Each bead is one crew member's internal clock (Forger-Jewett-Kronauer pacemaker model). The hand is local time on a ${P === 24 ? "24 h day" : "24 h 39 min Mars sol"}. A bead riding with the hand is locked to the day; a slipping bead is drifting.</p>
       <div class="row">
         <label>Cabin light${seg("lux", [["100", "Dim"], ["300", "Normal"], ["1000", "Bright"]], String(S.clockLux))}</label>
         <label>Bright light for 2 h after waking${seg("wake", [["0", "Off"], ["1", "On"]], S.brightWake ? "1" : "0")}</label>
         <label>Speed${seg("cspeed", [["2", "2 h/s"], ["6", "6 h/s"], ["24", "1 day/s"]], String(S.clockSpeed))}</label>
         <button class="btn btn--quiet" data-act="clockReset">Restart from launch</button>
       </div>
-      <div class="actions">${rows}</div>
-      ${S.dest === "mars" ? `<p style="margin-top:8px"><b>What the model says about Mars time:</b> under dim cabin light, a crew member whose clock runs short (23.9 h) never locks onto the 24 h 39 min sol and slips about 29 minutes a sol; normal light locks nearly everyone. Timing matters as much as brightness: light late in the day keeps the clock where it was on Earth, while light early in the day can lock it 7 to 9 hours off, like a night shift. This matches the direction of a 2007 human study that entrained people to the Mars sol with evening-half light. <span class="note">Caveat from our own pre-registered check: this model locks more easily than we expected from that study, so treat its numbers as approximate (docs/STUDIES_RESULTS.md).</span></p>` : ""}
-      <p class="note" style="margin-top:8px">Intrinsic periods are drawn around the measured human average of 24.18 h (Czeisler et al. 1999); the spread between crew members is an approximation. This is a model, not a measurement of anyone.</p>`;
+      <div class="chips">${rows}</div>
+      ${S.dest === "mars" ? `<details style="margin-top:8px"><summary><b>What the model says about Mars time</b></summary><p> under dim cabin light, a crew member whose clock runs short (23.9 h) never locks onto the 24 h 39 min sol and slips about 29 minutes a sol; normal light locks nearly everyone. Timing matters as much as brightness: light late in the day keeps the clock where it was on Earth, while light early in the day can lock it 7 to 9 hours off, like a night shift. This matches the direction of a 2007 human study that entrained people to the Mars sol with evening-half light. <span class="note">Caveat from our own pre-registered check: this model locks more easily than we expected from that study, so treat its numbers as approximate (docs/STUDIES_RESULTS.md).</span></p></details>` : ""}
+      <p class="note" style="margin-top:6px">Intrinsic periods are drawn around the measured human average of 24.18 h (Czeisler et al. 1999); the spread is an approximation. A model, not a measurement of anyone.</p>`;
   }
 
   deck.addEventListener("click", (e) => {
@@ -257,6 +281,7 @@ async function boot() {
       if (name === "dest") { S.dest = v; S.destLabel = DESTINATIONS[v].label; outside.show(v); resetClock(); }
       if (name === "speed") { S.speed = v; requestPower(); }
       if (name === "noise") { S.noise = v; syncDays(); requestPower(); }
+      if (name === "who") { S.crewMode = v === "crew"; syncDays(); requestPower(); }
       if (name === "mode") S.mode = v;
       if (name === "speed2") S.daysPerSec = +v;
       if (name === "lux") { S.clockLux = +v; resetClock(); }
@@ -308,7 +333,17 @@ async function boot() {
   function randomize() {
     S.seed = Math.floor(Math.random() * 1e6) + 1;
     syncDays();
-    S.mission = buildMission({ seed: S.seed, days: S.days, outcome: outcome(), design: design(), trueEffect: trueEffect(), baseSeries: S.noise === "real" ? realSeriesFor(S.outcomeKey) : null });
+    if (S.crewMode) {
+      // Game scenario: crew members share a typical response but differ around it.
+      const base = trueEffect(), r = mulberry32(S.seed ^ 0x9e3779b9);
+      const effects = [0, 1, 2, 3].map(() => base + 0.5 * S.delta * normal(r));
+      const missions = effects.map((e, i) => buildMission({ seed: S.seed + 7919 * (i + 1), days: S.days, outcome: outcome(), design: design(), trueEffect: e }));
+      S.crew = { effects, missions, last: [], pooled: null, hist: [[], [], [], []] };
+      S.mission = missions[S.member];
+    } else {
+      S.crew = null;
+      S.mission = buildMission({ seed: S.seed, days: S.days, outcome: outcome(), design: design(), trueEffect: trueEffect(), baseSeries: S.noise === "real" ? realSeriesFor(S.outcomeKey) : null });
+    }
     S.day = 0; S.history = []; S.last = null;
     S.randomizing = true;
     evidence.setRange({ delta: S.delta, sd: outcome().sd });
@@ -321,9 +356,20 @@ async function boot() {
   function advanceDay() {
     if (!S.mission || S.day >= S.days) return;
     S.day++;
-    const a = analyseDay(S.mission, S.day, S.delta, S.thr);
-    S.history.push(a);
-    if (a.post) { S.last = a; evidence.setPosterior(a.post); }
+    if (S.crew) {
+      S.crew.missions.forEach((m, i) => { const a = analyseDay(m, S.day, S.delta, S.thr); S.crew.last[i] = a; S.crew.hist[i].push(a); });
+      if (S.crew.last.every((a) => a.ci)) {
+        const est = S.crew.last.map((a) => a.mean), se = S.crew.last.map((a) => (a.ci[1] - a.ci[0]) / 3.92);
+        S.crew.pooled = poolCrew(est, se, S.delta).map((q) => ({ ...q, v: pooledVerdict(q, { delta: S.delta, thr: S.thr }) }));
+      }
+      S.history = S.crew.hist[S.member];
+      const a = S.crew.last[S.member];
+      if (a.post) { S.last = a; evidence.setPosterior(a.post); }
+    } else {
+      const a = analyseDay(S.mission, S.day, S.delta, S.thr);
+      S.history.push(a);
+      if (a.post) { S.last = a; evidence.setPosterior(a.post); }
+    }
     board.highlightDay(S.day - 1);
   }
   function finish() {
@@ -333,7 +379,7 @@ async function boot() {
     goStep(5);
   }
   function newMission(keepSettings) {
-    S.mission = null; S.locked = false; S.day = 0; S.history = []; S.last = null; S.playing = false;
+    S.mission = null; S.crew = null; S.locked = false; S.day = 0; S.history = []; S.last = null; S.playing = false;
     board.clear();
     board.highlightDay(null);
     evidence.setPosterior(priorAsPosterior(buildMission({ seed: 1, days: S.days, outcome: outcome(), design: design(), trueEffect: 0 }).prior), { snap: true });
@@ -344,8 +390,38 @@ async function boot() {
 
   // ---------------- readout ----------------
   const readout = $("#readout");
+  function selectMember(i) {
+    if (!S.crew) return;
+    S.member = i;
+    S.mission = S.crew.missions[i];
+    S.history = S.crew.hist[i];
+    S.last = S.crew.last[i] || null;
+    if (S.last && S.last.post) evidence.setPosterior(S.last.post);
+    else evidence.setPosterior(priorAsPosterior(S.mission.prior));
+    board.randomize(S.mission.schedule, { instant: true });
+    board.highlightDay(S.day ? S.day - 1 : null);
+    renderReadout();
+    if (!numbers.hidden) renderNumbers(numbers, S, outcome());
+  }
+  readout.addEventListener("click", (e) => { const b = e.target.closest("[data-member]"); if (b) selectMember(+b.dataset.member); });
   function renderReadout() {
     if (!S.mission) { readout.innerHTML = ""; return; }
+    if (S.day === 0) {
+      readout.innerHTML = `<div class="day"><b>Day 0</b><span>of ${S.days}, ${S.destLabel.toLowerCase()}${S.crew ? ", crew of 4" : ""}</span></div>
+        <div class="prob"><span>${design().name}.</span><span class="note" style="color:#aab3bb">The evidence starts building on day 1. Verdict needs ${Math.round(S.thr * 100)}%, read on day ${S.days}.</span></div>`;
+      return;
+    }
+    if (S.crew) {
+      const rows = [0, 1, 2, 3].map((i) => {
+        const pooled = S.crew.pooled ? S.crew.pooled[i].v.pWork : 0;
+        const alone = S.crew.last[i] ? S.crew.last[i].v.pWork : 0;
+        return `<button type="button" class="crewrow" data-member="${i}" aria-pressed="${i === S.member}"><span class="crewrow__id">${"ABCD"[i]}</span><span class="track"><span class="fill" style="width:${(pooled * 100).toFixed(1)}%;background:#6fa8f5"></span></span><span class="num">${Math.round(pooled * 100)}%</span><span class="alone">alone ${Math.round(alone * 100)}%</span></button>`;
+      }).join("");
+      readout.innerHTML = `<div class="day"><b>Day ${S.day}</b><span>of ${S.days}, ${S.destLabel.toLowerCase()}, crew of 4</span></div>
+        <div class="prob"><span class="note" style="color:#cfd6dc">Chance it works for each crew member, using what the crew shares. Click a row to see that person's schedule and evidence.</span>${rows}
+        <span class="note" style="color:#aab3bb">Verdict needs ${Math.round(S.thr * 100)}%, read on day ${S.days}.</span></div>`;
+      return;
+    }
     const v = S.last?.v || { pWork: 0, pNone: 0, pHarm: 0 };
     const bar = (label, p, color) => `<div class="bar"><span>${label}</span><span class="track"><span class="fill" style="width:${(p * 100).toFixed(1)}%;background:${color}"></span></span><span class="num">${Math.round(p * 100)}%</span></div>`;
     readout.innerHTML = `<div class="day"><b>Day ${S.day}</b><span>of ${S.days}, ${S.destLabel.toLowerCase()}</span></div>
@@ -498,6 +574,8 @@ async function boot() {
         run: () => { click('[data-act="next"]'); click('[data-act="toRandomize"]'); click('[data-act="randomize"]'); settle(); click('[data-act="lock"]'); click('[data-act="toRun"]'); S.daysPerSec = 4; click('[data-act="play"]'); adv(4.2); S.playing = false; renderDeck(); },
         result: () => { click('[data-act="next"]'); click('[data-act="toRandomize"]'); click('[data-act="randomize"]'); settle(); click('[data-act="lock"]'); click('[data-act="toRun"]'); click('[data-act="skip"]'); },
         resultnum: () => { steps.result(); setTimeout(() => click("#numbersToggle"), 500); },
+        crew: () => { click('[data-act="next"]'); S.crewMode = true; syncDays(); click('[data-act="toRandomize"]'); click('[data-act="randomize"]'); settle(); click('[data-act="lock"]'); click('[data-act="toRun"]'); click('[data-act="skip"]'); },
+        crewrun: () => { click('[data-act="next"]'); S.crewMode = true; syncDays(); click('[data-act="toRandomize"]'); click('[data-act="randomize"]'); settle(); click('[data-act="lock"]'); click('[data-act="toRun"]'); S.daysPerSec = 4; click('[data-act="play"]'); adv(6); S.playing = false; renderDeck(); },
         mars: () => { S.dest = "mars"; S.destLabel = DESTINATIONS.mars.label; outside.show("mars"); resetClock(); renderDeck(); },
         clock: () => { S.dest = "mars"; S.destLabel = DESTINATIONS.mars.label; S.clockLux = 100; resetClock(); goStation("clock"); clock.advance(24 * 9); },
       };

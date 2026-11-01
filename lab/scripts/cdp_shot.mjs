@@ -7,7 +7,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-const EDGE = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
+const EDGE = "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe";
 const PORT = 9333;
 const profile = path.join(os.tmpdir(), "sol-edge-cdp-profile");
 const outDir = path.resolve(".shots");
@@ -44,7 +44,7 @@ await send("Runtime.enable");
 
 // Extra steps after the ?auto= driver has run, for states that need real-time animation.
 const after = {
-  rand: 0, step2: 4000, numbers2: 5000, overview: 0, locked: 0, run: 0, result: 0, resultnum: 1500, mars: 2500, clock: 3000,
+  rand: 0, crew: 1500, crewrun: 0, step2: 4000, numbers2: 5000, overview: 0, locked: 0, run: 0, result: 0, resultnum: 1500, mars: 2500, clock: 3000,
 };
 
 for (const sc of process.argv.slice(2)) {
