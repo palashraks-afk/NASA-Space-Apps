@@ -1,0 +1,20 @@
+{
+  "note": "Exploratory, not pre-registered. Offset = size of the shift of the settled clock relative to its Earth-entrained timing at the start of each sleep schedule, in hours.",
+  "rows": [
+    {
+      "tau": 23.9,
+      "first_half_offset_h": 8.61,
+      "second_half_offset_h": 0.4
+    },
+    {
+      "tau": 24.18,
+      "first_half_offset_h": 8.2,
+      "second_half_offset_h": 0.37
+    },
+    {
+      "tau": 24.5,
+      "first_half_offset_h": 7.43,
+      "second_half_offset_h": 0.29
+    }
+  ]
+}

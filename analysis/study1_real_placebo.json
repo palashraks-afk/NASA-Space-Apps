@@ -1,0 +1,78 @@
+{
+  "study": "1: placebo and injection on real sleep diaries",
+  "bars": {
+    "1a overall false-call rate <= 5%": {
+      "value": 0.0068,
+      "pass": true
+    },
+    "1b real power within 10 points of predicted": {
+      "sleep_duration": {
+        "real": 0.099,
+        "predicted": 0.092,
+        "pass": true
+      },
+      "sleep_efficiency": {
+        "real": 0.098,
+        "predicted": 0.11,
+        "pass": true
+      },
+      "sleep_latency": {
+        "real": 0.139,
+        "predicted": 0.098,
+        "pass": true
+      }
+    },
+    "1c interval coverage >= 90%": {
+      "sleep_duration": {
+        "value": 0.947,
+        "pass": true
+      },
+      "sleep_efficiency": {
+        "value": 0.973,
+        "pass": true
+      },
+      "sleep_latency": {
+        "value": 0.956,
+        "pass": true
+      }
+    }
+  },
+  "results": {
+    "sleep_duration": {
+      "people": 49,
+      "schedules_per_person": 200,
+      "placebo_false_call_rate": 0.0055,
+      "injection_real_power": 0.099,
+      "injection_predicted_power": 0.092,
+      "injection_interval_coverage": 0.947,
+      "noise_used_by_simulator": {
+        "sd": 1.339,
+        "rho": 0
+      }
+    },
+    "sleep_efficiency": {
+      "people": 49,
+      "schedules_per_person": 200,
+      "placebo_false_call_rate": 0.0042,
+      "injection_real_power": 0.098,
+      "injection_predicted_power": 0.11,
+      "injection_interval_coverage": 0.973,
+      "noise_used_by_simulator": {
+        "sd": 3.525,
+        "rho": 0
+      }
+    },
+    "sleep_latency": {
+      "people": 49,
+      "schedules_per_person": 200,
+      "placebo_false_call_rate": 0.0108,
+      "injection_real_power": 0.139,
+      "injection_predicted_power": 0.098,
+      "injection_interval_coverage": 0.956,
+      "noise_used_by_simulator": {
+        "sd": 18.081,
+        "rho": 0.025
+      }
+    }
+  }
+}

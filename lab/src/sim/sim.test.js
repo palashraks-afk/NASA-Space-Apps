@@ -17,6 +17,18 @@ describe("presets from real data", () => {
   });
 });
 
+describe("real-data replay", () => {
+  it("uses the real diary as noise and adds the effect only through the schedule", () => {
+    const series = real.example_person.series.map((r) => r.sleep_duration);
+    const o = outcomes.sleep_duration;
+    const zero = buildMission({ seed: 9, days: 56, outcome: o, design: recommendDesign("day"), trueEffect: 0, baseSeries: series });
+    expect(zero.days).toBe(series.length);
+    zero.values.forEach((v, i) => expect(v).toBeCloseTo(series[i], 10));
+    const plus = buildMission({ seed: 9, days: 56, outcome: o, design: recommendDesign("day"), trueEffect: 0.5, baseSeries: series });
+    plus.schedule.forEach((d, i) => expect(plus.values[i] - series[i]).toBeCloseTo(d.arm ? 0.5 : 0, 10));
+  });
+});
+
 describe("mission", () => {
   it("recommends daily randomization for fast effects and blocks for slow ones", () => {
     expect(recommendDesign("day").blockLen).toBe(1);

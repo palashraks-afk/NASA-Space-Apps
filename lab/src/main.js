@@ -92,12 +92,18 @@ async function boot() {
     seed: Math.floor(Math.random() * 1e6) + 1, days: 56,
     mission: null, locked: false, day: 0, playing: false, daysPerSec: 3, dayAcc: 0, history: [], last: null,
     power: null, powerId: 0, clockSpeed: 6, clockLux: 300, brightWake: false, crewSel: 0,
-    simHours: 0, randomizing: false,
+    simHours: 0, randomizing: false, noise: "sim",
   };
   S.simHours = dayStartHours;
   const outcome = () => OUTCOMES[S.outcomeKey];
   const intervention = () => INTERVENTIONS[S.intervention];
   const design = () => recommendDesign(S.speed);
+  const diary = realNoise.example_person.series;
+  const realSeriesFor = (key) => key === "sleep_duration" ? diary.map((r) => r.sleep_duration) : key === "sleep_efficiency" ? diary.map((r) => r.sleep_efficiency * 100) : null;
+  const syncDays = () => {
+    if (S.noise === "real" && !realSeriesFor(S.outcomeKey)) S.noise = "sim";
+    S.days = S.noise === "real" ? realSeriesFor(S.outcomeKey).length : 56;
+  };
   S.destLabel = DESTINATIONS[S.dest].label;
 
   const worker = new Worker(new URL("./sim/powerWorker.js", import.meta.url), { type: "module" });
@@ -178,6 +184,7 @@ async function boot() {
           <label>How fast does it act? (your judgment)${seg("speed", [["day", "Within a day"], ["days", "Over several days"]], S.speed)}</label>
           <label>Truth${seg("mode", [["hidden", "Hidden (game)"], ["practice", "I set it (practice)"]], S.mode)}</label>
           ${S.mode === "practice" ? `<label>True change: ${(S.practiceMult * S.delta).toFixed(2)} ${o.unit}<input type="range" data-in="practice" min="-2" max="4" step="0.25" value="${S.practiceMult}"/></label>` : ""}
+          ${realSeriesFor(S.outcomeKey) ? `<label>Daily ups and downs${seg("noise", [["sim", "Simulated from 49 people"], ["real", "One real person's diary (28 days)"]], S.noise)}</label>` : ""}
         </div>
         <p style="margin-top:8px"><b>Design:</b> ${d.name}. ${d.why} ${pw === null ? "Working out the odds." : `If the real change is 1.5 times your smallest worthwhile change, this ${S.days}-day mission gives a clear answer <b>${pw}%</b> of the time.`} <span class="note">Typical day-to-day spread: ${o.fmtDelta(o.sd)} (${o.people} people).</span></p>
         <div class="actions"><button class="btn" data-act="toRandomize">Next: randomize the schedule</button></div>`;
@@ -217,10 +224,10 @@ async function boot() {
     const wrong = verdict !== "inconclusive" && verdict !== truth;
     const reveal = S.mode === "hidden" ? `<p>The hidden truth: the change was <b>${o.fmtDelta(Math.abs(S.mission.trueEffect))} ${S.mission.trueEffect * 1 >= 0 ? "better" : "worse"}</b>, which counts as "${words[truth] === "not settled" ? "in between" : words[truth]}".</p>` : "";
     const lesson = verdict === "inconclusive"
-      ? "Fifty-six days were not enough to settle it. That is common for a single person: day-to-day spread is large compared with most real effects. A longer mission, a quieter measure, or a change that acts within a day would help."
+      ? `${S.days} days were not enough to settle it. That is common for a single person: day-to-day spread is large compared with most real effects. A longer mission, a quieter measure, or a change that acts within a day would help."
       : right ? "The plan worked as designed: the verdict matches the truth." : "This is the rare wrong call the threshold allows. It happens; the threshold controls how often.";
     deck.innerHTML = `<h2>Verdict on day ${S.days}: <span class="verdict">${words[verdict]}</span></h2>
-      ${reveal}<p>${lesson}</p>
+      ${reveal}<p>${lesson}</p>${S.mission.real ? `<p class="note">The day-to-day ups and downs in this mission were one real person's sleep diary (open dataset, CC BY); only the hidden change was added.</p>` : ""}
       <div class="actions"><button class="btn" data-act="again">Run another mission</button><button class="btn btn--quiet" data-act="change">Change the test</button></div>`;
     if (right) celebrate();
     void wrong;
@@ -239,6 +246,7 @@ async function boot() {
         <button class="btn btn--quiet" data-act="clockReset">Restart from launch</button>
       </div>
       <div class="actions">${rows}</div>
+      ${S.dest === "mars" ? `<p style="margin-top:8px"><b>What the model says about Mars time:</b> under dim cabin light, a crew member whose clock runs short (23.9 h) never locks onto the 24 h 39 min sol and slips about 29 minutes a sol; normal light locks nearly everyone. Timing matters as much as brightness: light late in the day keeps the clock where it was on Earth, while light early in the day can lock it 7 to 9 hours off, like a night shift. This matches the direction of a 2007 human study that entrained people to the Mars sol with evening-half light. <span class="note">Caveat from our own pre-registered check: this model locks more easily than we expected from that study, so treat its numbers as approximate (docs/STUDIES_RESULTS.md).</span></p>` : ""}
       <p class="note" style="margin-top:8px">Intrinsic periods are drawn around the measured human average of 24.18 h (Czeisler et al. 1999); the spread between crew members is an approximation. This is a model, not a measurement of anyone.</p>`;
   }
 
@@ -248,6 +256,7 @@ async function boot() {
       const name = sb.parentElement.dataset.seg, v = sb.dataset.v;
       if (name === "dest") { S.dest = v; S.destLabel = DESTINATIONS[v].label; outside.show(v); resetClock(); }
       if (name === "speed") { S.speed = v; requestPower(); }
+      if (name === "noise") { S.noise = v; syncDays(); requestPower(); }
       if (name === "mode") S.mode = v;
       if (name === "speed2") S.daysPerSec = +v;
       if (name === "lux") { S.clockLux = +v; resetClock(); }
@@ -284,6 +293,7 @@ async function boot() {
       S.delta = OUTCOMES[S.outcomeKey].delta;
     }
     if (k === "outcome") { S.outcomeKey = e.target.value; S.delta = OUTCOMES[S.outcomeKey].delta; }
+    syncDays();
     if (k === "delta") S.delta = Math.max(0.01, +e.target.value || OUTCOMES[S.outcomeKey].delta);
     if (k === "practice") S.practiceMult = +e.target.value;
     evidence.setRange({ delta: S.delta, sd: outcome().sd });
@@ -297,7 +307,8 @@ async function boot() {
   }
   function randomize() {
     S.seed = Math.floor(Math.random() * 1e6) + 1;
-    S.mission = buildMission({ seed: S.seed, days: S.days, outcome: outcome(), design: design(), trueEffect: trueEffect() });
+    syncDays();
+    S.mission = buildMission({ seed: S.seed, days: S.days, outcome: outcome(), design: design(), trueEffect: trueEffect(), baseSeries: S.noise === "real" ? realSeriesFor(S.outcomeKey) : null });
     S.day = 0; S.history = []; S.last = null;
     S.randomizing = true;
     evidence.setRange({ delta: S.delta, sd: outcome().sd });

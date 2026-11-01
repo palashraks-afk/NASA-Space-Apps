@@ -26,15 +26,28 @@ export function drawMysteryEffect(seed, delta) {
 // Builds a full mission: schedule, the day-by-day data a crew member would log, and the
 // truth. Outcome values are in display units; "improvement" units flip sign so that larger
 // always means better, which is what the engine analyses.
-export function buildMission({ seed, days, outcome, design, trueEffect }) {
+// baseSeries (optional): a real person's logged values, in display units, used as the
+// day-to-day noise. The hidden effect is added on change days (with the same slow-response
+// rule as the simulator), so everything except the effect is real data.
+export function buildMission({ seed, days, outcome, design, trueEffect, baseSeries = null }) {
   const rng = mulberry32(seed);
-  const schedule = makeDesign({ days, blockLen: design.blockLen, washout: design.washout, rng });
+  const n = baseSeries ? Math.min(days, baseSeries.length) : days;
+  const schedule = makeDesign({ days: n, blockLen: design.blockLen, washout: design.washout, rng });
   const better = outcome.better;
-  const improvement = simulateOutcomes(schedule, {
-    b0: better * TYPICAL_LEVEL[outcome.key], effect: trueEffect, response: design.response, sigma: outcome.sd, rho: outcome.rho,
-  }, rng);
+  let improvement;
+  if (baseSeries) {
+    let exposure = schedule[0].arm;
+    improvement = schedule.map((d, t) => {
+      exposure += design.response * (d.arm - exposure);
+      return better * baseSeries[t] + trueEffect * exposure;
+    });
+  } else {
+    improvement = simulateOutcomes(schedule, {
+      b0: better * TYPICAL_LEVEL[outcome.key], effect: trueEffect, response: design.response, sigma: outcome.sd, rho: outcome.rho,
+    }, rng);
+  }
   const values = improvement.map((v) => better * v);
-  return { seed, days, schedule, improvement, values, trueEffect, prior: makePrior(outcome.sd) };
+  return { seed, days: n, schedule, improvement, values, trueEffect, prior: makePrior(outcome.sd), real: !!baseSeries };
 }
 
 export function analyseDay(mission, day, delta, thr) {

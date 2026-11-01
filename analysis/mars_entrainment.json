@@ -1,0 +1,148 @@
+{
+  "sol_hours": 24.65972222222222,
+  "model": "Forger-Jewett-Kronauer 1999, Serkh-Forger 2014 parameters (HCRSimPY)",
+  "schedule": "lights on 16 of 24.66 h at the stated lux; optional 1000 lux for 2 h after waking",
+  "locked_rule": "phase drift under 3 minutes per sol over the last 10 of 40 sols",
+  "rows": [
+    {
+      "tau": 23.9,
+      "lux": 100,
+      "brightWake": false,
+      "driftMinPerSol": 28.8,
+      "locked": false
+    },
+    {
+      "tau": 23.9,
+      "lux": 300,
+      "brightWake": false,
+      "driftMinPerSol": 2.8,
+      "locked": true
+    },
+    {
+      "tau": 23.9,
+      "lux": 1000,
+      "brightWake": false,
+      "driftMinPerSol": 0.1,
+      "locked": true
+    },
+    {
+      "tau": 23.9,
+      "lux": 300,
+      "brightWake": true,
+      "driftMinPerSol": 9.4,
+      "locked": false
+    },
+    {
+      "tau": 24.05,
+      "lux": 100,
+      "brightWake": false,
+      "driftMinPerSol": 7.5,
+      "locked": false
+    },
+    {
+      "tau": 24.05,
+      "lux": 300,
+      "brightWake": false,
+      "driftMinPerSol": 0.3,
+      "locked": true
+    },
+    {
+      "tau": 24.05,
+      "lux": 1000,
+      "brightWake": false,
+      "driftMinPerSol": 0,
+      "locked": true
+    },
+    {
+      "tau": 24.05,
+      "lux": 300,
+      "brightWake": true,
+      "driftMinPerSol": 1,
+      "locked": true
+    },
+    {
+      "tau": 24.18,
+      "lux": 100,
+      "brightWake": false,
+      "driftMinPerSol": 1,
+      "locked": true
+    },
+    {
+      "tau": 24.18,
+      "lux": 300,
+      "brightWake": false,
+      "driftMinPerSol": 0,
+      "locked": true
+    },
+    {
+      "tau": 24.18,
+      "lux": 1000,
+      "brightWake": false,
+      "driftMinPerSol": 0,
+      "locked": true
+    },
+    {
+      "tau": 24.18,
+      "lux": 300,
+      "brightWake": true,
+      "driftMinPerSol": 0.1,
+      "locked": true
+    },
+    {
+      "tau": 24.3,
+      "lux": 100,
+      "brightWake": false,
+      "driftMinPerSol": 0.2,
+      "locked": true
+    },
+    {
+      "tau": 24.3,
+      "lux": 300,
+      "brightWake": false,
+      "driftMinPerSol": 0,
+      "locked": true
+    },
+    {
+      "tau": 24.3,
+      "lux": 1000,
+      "brightWake": false,
+      "driftMinPerSol": 0,
+      "locked": true
+    },
+    {
+      "tau": 24.3,
+      "lux": 300,
+      "brightWake": true,
+      "driftMinPerSol": 0,
+      "locked": true
+    },
+    {
+      "tau": 24.45,
+      "lux": 100,
+      "brightWake": false,
+      "driftMinPerSol": 0,
+      "locked": true
+    },
+    {
+      "tau": 24.45,
+      "lux": 300,
+      "brightWake": false,
+      "driftMinPerSol": 0,
+      "locked": true
+    },
+    {
+      "tau": 24.45,
+      "lux": 1000,
+      "brightWake": false,
+      "driftMinPerSol": 0,
+      "locked": true
+    },
+    {
+      "tau": 24.45,
+      "lux": 300,
+      "brightWake": true,
+      "driftMinPerSol": 0,
+      "locked": true
+    }
+  ]
+}

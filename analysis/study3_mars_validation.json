@@ -1,0 +1,62 @@
+{
+  "study": "3: circadian model vs published Mars-sol entrainment",
+  "bars": {
+    "3a second-half light locks tau 23.9 to 24.3": {
+      "pass": true
+    },
+    "3b first-half light fails at tau 23.9": {
+      "pass": false
+    }
+  },
+  "rows": [
+    {
+      "tau": 23.9,
+      "second_half_drift_min_per_sol": 0,
+      "second_half_locked": true,
+      "first_half_drift_min_per_sol": 0.1,
+      "first_half_locked": true
+    },
+    {
+      "tau": 24,
+      "second_half_drift_min_per_sol": 0,
+      "second_half_locked": true,
+      "first_half_drift_min_per_sol": 0.1,
+      "first_half_locked": true
+    },
+    {
+      "tau": 24.1,
+      "second_half_drift_min_per_sol": 0,
+      "second_half_locked": true,
+      "first_half_drift_min_per_sol": 0.1,
+      "first_half_locked": true
+    },
+    {
+      "tau": 24.18,
+      "second_half_drift_min_per_sol": 0,
+      "second_half_locked": true,
+      "first_half_drift_min_per_sol": 0.1,
+      "first_half_locked": true
+    },
+    {
+      "tau": 24.3,
+      "second_half_drift_min_per_sol": 0,
+      "second_half_locked": true,
+      "first_half_drift_min_per_sol": 0.2,
+      "first_half_locked": true
+    },
+    {
+      "tau": 24.4,
+      "second_half_drift_min_per_sol": 0,
+      "second_half_locked": true,
+      "first_half_drift_min_per_sol": 0.3,
+      "first_half_locked": true
+    },
+    {
+      "tau": 24.5,
+      "second_half_drift_min_per_sol": 0,
+      "second_half_locked": true,
+      "first_half_drift_min_per_sol": 0.5,
+      "first_half_locked": true
+    }
+  ]
+}

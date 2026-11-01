@@ -43,7 +43,7 @@ export function dataChart(mission, day, outcome) {
   const Y = (v) => f.y0 - ((v - lo) / (hi - lo)) * (f.y0 - f.y1);
   let s = `<svg viewBox="0 0 ${f.w} ${f.h}" role="img" aria-label="Daily values">`;
   const ticks = [lo, (lo + hi) / 2, hi].map((v) => [outcome.fmt(v), Y(v)]);
-  s += axis(f, [0, 14, 28, 42, 55].map((d) => [d + 1, X(d)]), ticks, "mission day", outcome.label.toLowerCase());
+  s += axis(f, [0, 13, 27, 41, 55].filter((d) => d < mission.days).map((d) => [d + 1, X(d)]), ticks, "mission day", outcome.label.toLowerCase());
   vals.forEach((v, d) => {
     const sch = mission.schedule[d];
     const fill = sch.washout ? "none" : sch.arm ? "#1d3f72" : "#9aa4ad";
@@ -75,5 +75,5 @@ export function renderNumbers(el, S, outcome) {
     ${dataChart(S.mission, S.day, outcome)}
     <h3>How the estimate settles</h3>
     ${effectChart(S.history, S.delta, outcome, S.days)}
-    <p class="src">Day-to-day spread for "${outcome.label.toLowerCase()}" (${outcome.fmtDelta(outcome.sd)} SD, autocorrelation ${outcome.rho.toFixed(2)}) is the median across ${outcome.people} people in an open wearable and sleep-diary dataset (Baigutanova et al. 2025, CC BY). The daily values in a mission are simulated from that spread. Nothing here is medical advice.</p>`;
+    <p class="src">Day-to-day spread for "${outcome.label.toLowerCase()}" (${outcome.fmtDelta(outcome.sd)} SD, autocorrelation ${outcome.rho.toFixed(2)}) is the median across ${outcome.people} people in an open wearable and sleep-diary dataset (Baigutanova et al. 2025, CC BY). ${S.mission && S.mission.real ? "In this mission the daily values are one real person's 28-day sleep diary from that dataset, with the hidden change added on change days." : "The daily values in a mission are simulated from that spread."} Nothing here is medical advice.</p>`;
 }

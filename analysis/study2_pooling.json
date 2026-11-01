@@ -1,0 +1,121 @@
+{
+  "study": "2: crew pooling",
+  "outcome": "time to fall asleep",
+  "sd": 18.08105647285587,
+  "rho": 0.024964644509716107,
+  "delta": 8,
+  "days": 56,
+  "crews": 2000,
+  "settings": [
+    {
+      "crew": 4,
+      "between_person_spread_x_delta": 0,
+      "rmse_individual": 4.484,
+      "rmse_pooled": 2.794,
+      "coverage_individual": 0.949,
+      "coverage_pooled": 0.936
+    },
+    {
+      "crew": 4,
+      "between_person_spread_x_delta": 0.5,
+      "rmse_individual": 4.497,
+      "rmse_pooled": 3.765,
+      "coverage_individual": 0.947,
+      "coverage_pooled": 0.854
+    },
+    {
+      "crew": 4,
+      "between_person_spread_x_delta": 1,
+      "rmse_individual": 4.509,
+      "rmse_pooled": 4.491,
+      "coverage_individual": 0.947,
+      "coverage_pooled": 0.858
+    },
+    {
+      "crew": 6,
+      "between_person_spread_x_delta": 0,
+      "rmse_individual": 4.543,
+      "rmse_pooled": 2.437,
+      "coverage_individual": 0.943,
+      "coverage_pooled": 0.946
+    },
+    {
+      "crew": 6,
+      "between_person_spread_x_delta": 0.5,
+      "rmse_individual": 4.547,
+      "rmse_pooled": 3.675,
+      "coverage_individual": 0.945,
+      "coverage_pooled": 0.831
+    },
+    {
+      "crew": 6,
+      "between_person_spread_x_delta": 1,
+      "rmse_individual": 4.556,
+      "rmse_pooled": 4.501,
+      "coverage_individual": 0.941,
+      "coverage_pooled": 0.862
+    }
+  ],
+  "bars": {
+    "2a pooled RMSE lower when spread is 0 or 0.5": [
+      {
+        "crew": 4,
+        "spread": 0,
+        "pass": true
+      },
+      {
+        "crew": 4,
+        "spread": 0.5,
+        "pass": true
+      },
+      {
+        "crew": 6,
+        "spread": 0,
+        "pass": true
+      },
+      {
+        "crew": 6,
+        "spread": 0.5,
+        "pass": true
+      }
+    ],
+    "2b pooled coverage >= 90% in every setting": [
+      {
+        "crew": 4,
+        "spread": 0,
+        "value": 0.936,
+        "pass": true
+      },
+      {
+        "crew": 4,
+        "spread": 0.5,
+        "value": 0.854,
+        "pass": false
+      },
+      {
+        "crew": 4,
+        "spread": 1,
+        "value": 0.858,
+        "pass": false
+      },
+      {
+        "crew": 6,
+        "spread": 0,
+        "value": 0.946,
+        "pass": true
+      },
+      {
+        "crew": 6,
+        "spread": 0.5,
+        "value": 0.831,
+        "pass": false
+      },
+      {
+        "crew": 6,
+        "spread": 1,
+        "value": 0.862,
+        "pass": false
+      }
+    ]
+  }
+}
