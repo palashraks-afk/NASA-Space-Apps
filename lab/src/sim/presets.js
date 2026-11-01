@@ -3,10 +3,11 @@
 // `better` is +1 when higher is better and -1 when lower is better.
 // `delta` is the smallest change worth acting on; it is a judgment, shown to the user as one.
 
+// `min`/`max` are physical limits used when simulating daily values.
 export const OUTCOMES = {
-  sleep_duration: { label: "Sleep duration", unit: "h", better: 1, delta: 0.5, fmt: (v) => `${v.toFixed(2)} h`, fmtDelta: (v) => `${Math.round(v * 60)} min` },
-  sleep_efficiency: { label: "Sleep efficiency", unit: "%", scale: 100, better: 1, delta: 2, fmt: (v) => `${v.toFixed(1)}%`, fmtDelta: (v) => `${v.toFixed(1)} points` },
-  sleep_latency: { label: "Time to fall asleep", unit: "min", scale: 60, better: -1, delta: 8, fmt: (v) => `${Math.round(v)} min`, fmtDelta: (v) => `${Math.round(v)} min` },
+  sleep_duration: { label: "Sleep duration", unit: "h", better: 1, delta: 0.5, min: 0, max: 16, fmt: (v) => `${v.toFixed(2)} h`, fmtDelta: (v) => `${Math.round(v * 60)} min` },
+  sleep_efficiency: { label: "Sleep efficiency", unit: "%", scale: 100, better: 1, delta: 2, min: 0, max: 100, fmt: (v) => `${v.toFixed(1)}%`, fmtDelta: (v) => `${v.toFixed(1)} points` },
+  sleep_latency: { label: "Time to fall asleep", unit: "min", scale: 60, better: -1, delta: 8, min: 1, max: 600, fmt: (v) => `${Math.round(v)} min`, fmtDelta: (v) => `${Math.round(v)} min` },
   day_rmssd: { label: "Heart rate variability", unit: "ms", better: 1, delta: 5, fmt: (v) => `${v.toFixed(0)} ms`, fmtDelta: (v) => `${v.toFixed(1)} ms` },
   day_hr: { label: "Daily heart rate", unit: "bpm", better: -1, delta: 3, fmt: (v) => `${v.toFixed(0)} bpm`, fmtDelta: (v) => `${v.toFixed(1)} bpm` },
 };
@@ -42,6 +43,11 @@ export function loadOutcomes(realNoise) {
       rhoIQR: [r.lag1_autocorrelation.p25, r.lag1_autocorrelation.p75],
       people: r.people,
       source: r.label,
+      // Real people's own typical level and logged day-to-day deviations (display units),
+      // for outcomes the diaries cover. Each simulated person is one of these real people.
+      realPeople: realNoise.deviations && realNoise.deviations[key]
+        ? realNoise.deviations[key].people.map((p) => ({ mean: p.mean * scale, devs: p.devs.map((d) => d * scale) }))
+        : null,
     };
   }
   return out;

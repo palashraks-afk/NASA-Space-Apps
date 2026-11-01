@@ -13,13 +13,13 @@ function axis(f, xs, ys, xLab, yLab) {
   for (const [v, px] of xs) s += `<text x="${px}" y="${f.y0 + 15}" font-size="11" text-anchor="middle" fill="#4a535c">${esc(v)}</text>`;
   for (const [v, py] of ys) s += `<text x="${f.x0 - 6}" y="${py + 4}" font-size="11" text-anchor="end" fill="#4a535c">${esc(v)}</text><line x1="${f.x0}" x2="${f.x1}" y1="${py}" y2="${py}" stroke="#e3e7ea"/>`;
   s += `<text x="${(f.x0 + f.x1) / 2}" y="${f.h - 2}" font-size="11" text-anchor="middle" fill="#4a535c">${esc(xLab)}</text>`;
-  s += `<text x="12" y="${(f.y0 + f.y1) / 2}" font-size="11" text-anchor="middle" fill="#4a535c" transform="rotate(-90 12 ${(f.y0 + f.y1) / 2})">${esc(yLab)}</text>`;
+  s += `<text x="11" y="${(f.y0 + f.y1) / 2}" font-size="11" text-anchor="middle" fill="#4a535c" transform="rotate(-90 12 ${(f.y0 + f.y1) / 2})">${esc(yLab)}</text>`;
   return s;
 }
 
 export function powerChart(power, days) {
   if (!power) return `<p>Working out the odds for this design.</p>`;
-  const f = frame(380, 190, { l: 44, r: 12, t: 12, b: 34 });
+  const f = frame(380, 190, { l: 60, r: 12, t: 12, b: 34 });
   const X = (d) => f.x0 + ((d - 14) / (days - 14)) * (f.x1 - f.x0);
   const Y = (p) => f.y0 - p * (f.y0 - f.y1);
   const line = (curve, key, color, dash = "") => `<polyline fill="none" stroke="${color}" stroke-width="2.5" ${dash} points="${curve.map((c) => `${X(c.day)},${Y(c[key])}`).join(" ")}"/>`;
@@ -37,8 +37,8 @@ export function dataChart(mission, day, outcome) {
   if (!mission) return `<p>No data yet. Randomize and lock a plan, then run the mission.</p>`;
   const n = Math.max(1, Math.min(day, mission.days));
   const vals = mission.values.slice(0, n);
-  const lo = Math.min(...mission.values) - outcome.sd * 0.2, hi = Math.max(...mission.values) + outcome.sd * 0.2;
-  const f = frame(380, 170, { l: 44, r: 12, t: 10, b: 34 });
+  const lo = Math.max(outcome.min ?? -Infinity, Math.min(...mission.values) - outcome.sd * 0.2), hi = Math.min(outcome.max ?? Infinity, Math.max(...mission.values) + outcome.sd * 0.2);
+  const f = frame(380, 170, { l: 62, r: 12, t: 10, b: 34 });
   const X = (d) => f.x0 + (d / (mission.days - 1)) * (f.x1 - f.x0);
   const Y = (v) => f.y0 - ((v - lo) / (hi - lo)) * (f.y0 - f.y1);
   let s = `<svg viewBox="0 0 ${f.w} ${f.h}" role="img" aria-label="Daily values">`;
@@ -56,7 +56,7 @@ export function effectChart(history, delta, outcome, days) {
   const pts = history.filter((h) => h.ci);
   if (pts.length < 2) return `<p>The estimate appears once a few days are logged.</p>`;
   const span = Math.max(3 * delta, ...pts.map((p) => Math.max(Math.abs(p.ci[0]), Math.abs(p.ci[1]))));
-  const f = frame(380, 180, { l: 52, r: 12, t: 10, b: 34 });
+  const f = frame(380, 180, { l: 66, r: 12, t: 10, b: 34 });
   const X = (d) => f.x0 + ((d - 1) / (days - 1)) * (f.x1 - f.x0);
   const Y = (v) => f.y0 - ((v + span) / (2 * span)) * (f.y0 - f.y1);
   let s = `<svg viewBox="0 0 ${f.w} ${f.h}" role="img" aria-label="Estimated effect over time">`;
@@ -75,5 +75,5 @@ export function renderNumbers(el, S, outcome) {
     ${dataChart(S.mission, S.day, outcome)}
     <h3>How the estimate settles</h3>
     ${effectChart(S.history, S.delta, outcome, S.days)}
-    <p class="src">Day-to-day spread for "${outcome.label.toLowerCase()}" (${outcome.fmtDelta(outcome.sd)} SD, autocorrelation ${outcome.rho.toFixed(2)}) is the median across ${outcome.people} people in an open wearable and sleep-diary dataset (Baigutanova et al. 2025, CC BY). ${S.mission && S.mission.real ? "In this mission the daily values are one real person's 28-day sleep diary from that dataset, with the hidden change added on change days." : "The daily values in a mission are simulated from that spread."} Nothing here is medical advice.</p>`;
+    <p class="src">Day-to-day spread for "${outcome.label.toLowerCase()}" (${outcome.fmtDelta(outcome.sd)} SD, autocorrelation ${outcome.rho.toFixed(2)}) is the median across ${outcome.people} people in an open wearable and sleep-diary dataset (Baigutanova et al. 2025, CC BY). ${S.mission && S.mission.real ? "In this mission the daily values are one real person's 28-day sleep diary from that dataset, with the hidden change added on change days." : "In a mission, each simulated person is one of those real people: their own typical level, with each day drawn from their own logged ups and downs (wearable measures use a Gaussian model with the same spread)."} Nothing here is medical advice.</p>`;
 }

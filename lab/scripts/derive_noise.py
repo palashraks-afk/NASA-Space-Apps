@@ -58,6 +58,18 @@ for col, unit, label in [("sleep_duration", "h", "Sleep duration"), ("sleep_effi
                          ("sleep_latency", "h", "Time to fall asleep")]:
     results[col] = summarise(person_stats(sd, col), unit, label)
 
+# Real day-to-day deviations (value minus that person's own mean) for the sleep outcomes,
+# used by the app to simulate realistic, skewed, physically bounded daily values.
+deviations = {}
+for col in ["sleep_duration", "sleep_efficiency", "sleep_latency"]:
+    people_list = []
+    for pid, g in sd.groupby("pid"):
+        v = g[col].dropna().values
+        if len(v) < 14:
+            continue
+        people_list.append({"mean": round(float(v.mean()), 4), "devs": (v - v.mean()).round(4).tolist()})
+    deviations[col] = {"people": people_list}
+
 # Wearable: the filtered 5-minute segments are mostly daytime (few overnight), so the
 # outcomes are daily medians over whatever segments exist that day (at least 10), not
 # overnight measures. Steps are dropped: filtered segments would undercount them.
@@ -82,6 +94,7 @@ out = {
     "method": "Per person: SD and lag-1 autocorrelation over consecutive days (people with at least 14 days). Wearable outcomes are daily medians over available filtered 5-minute segments (at least 10 per day); they are daytime-weighted because few overnight segments exist.",
     "outcomes": results,
     "example_person": {"id": "participant A (anonymised)", "series": ex_series.to_dict(orient="records")},
+    "deviations": deviations,
 }
 with open("public/data/real_noise.json", "w") as f:
     json.dump(out, f, indent=1, default=float)

@@ -41,6 +41,18 @@ export function buildMission({ seed, days, outcome, design, trueEffect, baseSeri
       exposure += design.response * (d.arm - exposure);
       return better * baseSeries[t] + trueEffect * exposure;
     });
+  } else if (outcome.realPeople) {
+    // One real person from the open diaries: their typical level, and each day one of their
+    // own logged deviations drawn at random. The change acts through the same slow-response
+    // rule; values are kept within physical limits (e.g. at least 1 minute to fall asleep).
+    const person = outcome.realPeople[Math.floor(rng() * outcome.realPeople.length)];
+    let exposure = schedule[0].arm;
+    improvement = schedule.map((d) => {
+      exposure += design.response * (d.arm - exposure);
+      const raw = person.mean + person.devs[Math.floor(rng() * person.devs.length)];
+      const shifted = raw + better * trueEffect * exposure;
+      return better * Math.min(outcome.max, Math.max(outcome.min, shifted));
+    });
   } else {
     improvement = simulateOutcomes(schedule, {
       b0: better * TYPICAL_LEVEL[outcome.key], effect: trueEffect, response: design.response, sigma: outcome.sd, rho: outcome.rho,

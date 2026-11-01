@@ -48,7 +48,8 @@ describe("mission", () => {
     const o = outcomes.sleep_latency;
     const m = buildMission({ seed: 3, days: 56, outcome: o, design: recommendDesign("day"), trueEffect: 2 * o.delta });
     expect(m.values.length).toBe(56);
-    expect(Math.abs(m.values.reduce((a, b) => a + b, 0) / 56 - 20)).toBeLessThan(10);
+    // values come from real people's diaries, so they stay within physical limits
+    m.values.forEach((v) => { expect(v).toBeGreaterThanOrEqual(1); expect(v).toBeLessThanOrEqual(600); });
     let last;
     for (let d = 7; d <= 56; d++) {
       last = analyseDay(m, d, o.delta, 0.95);
