@@ -8,12 +8,12 @@ function frame(w, h, pad) {
 }
 
 function axis(f, xs, ys, xLab, yLab) {
-  let s = `<line x1="${f.x0}" y1="${f.y0}" x2="${f.x1}" y2="${f.y0}" stroke="#9aa4ad"/>`;
-  s += `<line x1="${f.x0}" y1="${f.y0}" x2="${f.x0}" y2="${f.y1}" stroke="#9aa4ad"/>`;
-  for (const [v, px] of xs) s += `<text x="${px}" y="${f.y0 + 15}" font-size="11" text-anchor="middle" fill="#4a535c">${esc(v)}</text>`;
-  for (const [v, py] of ys) s += `<text x="${f.x0 - 6}" y="${py + 4}" font-size="11" text-anchor="end" fill="#4a535c">${esc(v)}</text><line x1="${f.x0}" x2="${f.x1}" y1="${py}" y2="${py}" stroke="#e3e7ea"/>`;
-  s += `<text x="${(f.x0 + f.x1) / 2}" y="${f.h - 2}" font-size="11" text-anchor="middle" fill="#4a535c">${esc(xLab)}</text>`;
-  s += `<text x="11" y="${(f.y0 + f.y1) / 2}" font-size="11" text-anchor="middle" fill="#4a535c" transform="rotate(-90 12 ${(f.y0 + f.y1) / 2})">${esc(yLab)}</text>`;
+  let s = `<line x1="${f.x0}" y1="${f.y0}" x2="${f.x1}" y2="${f.y0}" stroke="#3a4552"/>`;
+  s += `<line x1="${f.x0}" y1="${f.y0}" x2="${f.x0}" y2="${f.y1}" stroke="#3a4552"/>`;
+  for (const [v, px] of xs) s += `<text x="${px}" y="${f.y0 + 15}" font-size="11" text-anchor="middle" fill="#93a1b0">${esc(v)}</text>`;
+  for (const [v, py] of ys) s += `<text x="${f.x0 - 6}" y="${py + 4}" font-size="11" text-anchor="end" fill="#93a1b0">${esc(v)}</text><line x1="${f.x0}" x2="${f.x1}" y1="${py}" y2="${py}" stroke="#262e38"/>`;
+  s += `<text x="${(f.x0 + f.x1) / 2}" y="${f.h - 2}" font-size="11" text-anchor="middle" fill="#93a1b0">${esc(xLab)}</text>`;
+  s += `<text x="11" y="${(f.y0 + f.y1) / 2}" font-size="11" text-anchor="middle" fill="#93a1b0" transform="rotate(-90 12 ${(f.y0 + f.y1) / 2})">${esc(yLab)}</text>`;
   return s;
 }
 
@@ -25,12 +25,12 @@ export function powerChart(power, days) {
   const line = (curve, key, color, dash = "") => `<polyline fill="none" stroke="${color}" stroke-width="2.5" ${dash} points="${curve.map((c) => `${X(c.day)},${Y(c[key])}`).join(" ")}"/>`;
   let s = `<svg viewBox="0 0 ${f.w} ${f.h}" role="img" aria-label="Chance of a clear answer by day">`;
   s += axis(f, [14, 28, 42, 56].filter((d) => d <= days).map((d) => [d, X(d)]), [0, 0.5, 1].map((p) => [`${p * 100}%`, Y(p)]), "mission day", "chance");
-  s += line(power.big, "pRight", "#1d3f72");
+  s += line(power.big, "pRight", "#9cc4ff");
   s += line(power.worth, "pRight", "#6fa8f5");
   s += line(power.none, "pWrong", "#d6342a", 'stroke-dasharray="5 4"');
   s += `</svg>`;
   const last = (c, k) => Math.round(c.at(-1)[k] * 100);
-  return s + `<p><b style="color:#1d3f72">Dark blue:</b> chance of a clear "it works" if the real change is 3 times the smallest worthwhile change (${last(power.big, "pRight")}% by the end). <b style="color:#3b78c9">Light blue:</b> if it is 1.5 times (${last(power.worth, "pRight")}%). <b style="color:#d6342a">Red dashed:</b> chance of a wrong "it works" or "it backfires" when there is no real change (${last(power.none, "pWrong")}%).</p>`;
+  return s + `<p><b style="color:#9cc4ff">Dark blue:</b> chance of a clear "it works" if the real change is 3 times the smallest worthwhile change (${last(power.big, "pRight")}% by the end). <b style="color:#6fa8f5">Light blue:</b> if it is 1.5 times (${last(power.worth, "pRight")}%). <b style="color:#d6342a">Red dashed:</b> chance of a wrong "it works" or "it backfires" when there is no real change (${last(power.none, "pWrong")}%).</p>`;
 }
 
 export function dataChart(mission, day, outcome) {
@@ -46,8 +46,8 @@ export function dataChart(mission, day, outcome) {
   s += axis(f, [0, 13, 27, 41, 55].filter((d) => d < mission.days).map((d) => [d + 1, X(d)]), ticks, "mission day", outcome.label.toLowerCase());
   vals.forEach((v, d) => {
     const sch = mission.schedule[d];
-    const fill = sch.washout ? "none" : sch.arm ? "#1d3f72" : "#9aa4ad";
-    s += `<circle cx="${X(d)}" cy="${Y(v)}" r="3.6" fill="${fill}" stroke="${sch.arm ? "#1d3f72" : "#7b858f"}" stroke-width="1.2"/>`;
+    const fill = sch.washout ? "none" : sch.arm ? "#6fa8f5" : "#66727f";
+    s += `<circle cx="${X(d)}" cy="${Y(v)}" r="3.6" fill="${fill}" stroke="${sch.arm ? "#6fa8f5" : "#66727f"}" stroke-width="1.2"/>`;
   });
   return s + `</svg><p>Blue dots: days with the change. Grey: usual days. Hollow: settling days that do not count.</p>`;
 }
@@ -61,9 +61,9 @@ export function effectChart(history, delta, outcome, days) {
   const Y = (v) => f.y0 - ((v + span) / (2 * span)) * (f.y0 - f.y1);
   let s = `<svg viewBox="0 0 ${f.w} ${f.h}" role="img" aria-label="Estimated effect over time">`;
   s += axis(f, [1, 14, 28, 42, 56].filter((d) => d <= days).map((d) => [d, X(d)]), [[`-${outcome.fmtDelta(span)}`, Y(-span)], ["0", Y(0)], [`+${outcome.fmtDelta(span)}`, Y(span)]], "mission day", "change (better is up)");
-  s += `<rect x="${f.x0}" y="${Y(delta)}" width="${f.x1 - f.x0}" height="${Y(-delta) - Y(delta)}" fill="#c9d1d8" opacity="0.35"/>`;
+  s += `<rect x="${f.x0}" y="${Y(delta)}" width="${f.x1 - f.x0}" height="${Y(-delta) - Y(delta)}" fill="#93a1b0" opacity="0.15"/>`;
   s += `<polygon fill="#6fa8f5" opacity="0.3" points="${pts.map((p) => `${X(p.day)},${Y(p.ci[1])}`).join(" ")} ${pts.slice().reverse().map((p) => `${X(p.day)},${Y(p.ci[0])}`).join(" ")}"/>`;
-  s += `<polyline fill="none" stroke="#1d3f72" stroke-width="2.2" points="${pts.map((p) => `${X(p.day)},${Y(p.mean)}`).join(" ")}"/>`;
+  s += `<polyline fill="none" stroke="#9cc4ff" stroke-width="2.2" points="${pts.map((p) => `${X(p.day)},${Y(p.mean)}`).join(" ")}"/>`;
   return s + `</svg><p>Line: best estimate of the change. Blue band: 95% credible range. Grey band: too small to matter (under ${outcome.fmtDelta(delta)}).</p>`;
 }
 

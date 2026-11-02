@@ -74,7 +74,8 @@ export function buildModule(mats) {
         }
       }
       // Clutter: strapped cargo bags, vent grilles and warning tags, seeded so the layout is stable.
-      const busy = Math.abs(z - 0.55) > 0.9 && Math.abs(z + 1.9) > 0.7 && Math.abs(z - 1.95) > 0.7;
+      // Keep wall racks behind a station clear of clutter (stations at these z positions).
+      const busy = [0.55, -2.45, 2.8, -1.9, 1.95, 3.7].every((sz) => Math.abs(z - sz) > 0.85);
       if (busy && r() < 0.55) {
         const bw = 0.26 + r() * 0.16, bh = 0.18 + r() * 0.14, bd = 0.1 + r() * 0.07;
         const bagMat = [mats.fabric, mats.fabricBlue, mats.fabricTan][Math.floor(r() * 3)];
@@ -120,26 +121,6 @@ export function buildModule(mats) {
       }
       g.add(rack);
     }
-  }
-
-  // Two laptops on swing arms, screens showing a live-looking trace.
-  for (const [x, z, ry] of [[-W + 0.25, -2.6, Math.PI / 2 - 0.5], [W - 0.25, 3.2, -Math.PI / 2 + 0.4]]) {
-    const lap = new THREE.Group();
-    const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.3, 10), mats.graphite);
-    arm.rotation.z = Math.PI / 2;
-    arm.position.x = x < 0 ? -0.15 : 0.15;
-    const base = new THREE.Mesh(new RoundedBoxGeometry(0.34, 0.02, 0.24, 2, 0.008), mats.graphite);
-    const lid = new THREE.Mesh(new RoundedBoxGeometry(0.34, 0.22, 0.012, 2, 0.006), mats.graphite);
-    lid.position.set(0, 0.11, -0.12);
-    lid.rotation.x = -0.25;
-    const scr = new THREE.Mesh(new THREE.PlaneGeometry(0.31, 0.19), new THREE.MeshStandardMaterial({ map: screenTexture(Math.floor(r() * 1e6)), emissive: 0xffffff, emissiveMap: screenTexture(7), emissiveIntensity: 0.9, roughness: 0.3 }));
-    scr.position.set(0, 0.11, -0.112);
-    scr.rotation.x = -0.25;
-    lap.add(arm, base, lid, scr);
-    lap.position.set(x, -0.25, z);
-    lap.rotation.y = ry;
-    lap.traverse((o) => (o.castShadow = true));
-    g.add(lap);
   }
 
   // Corner light strips: emissive LED bars and matching rect-area lights.

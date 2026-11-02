@@ -17,7 +17,8 @@
     "median": -0.019497798447074437,
     "p75": 0.09470258878730659
    },
-   "between_person_sd_of_means": 0.8449258050606864
+   "between_person_sd_of_means": 0.8449258050606864,
+   "median_person_mean": 7.8011904761904765
   },
   "sleep_efficiency": {
    "label": "Sleep efficiency",
@@ -34,7 +35,8 @@
     "median": -0.004027187550631201,
     "p75": 0.15498179643096469
    },
-   "between_person_sd_of_means": 0.043829621083606066
+   "between_person_sd_of_means": 0.043829621083606066,
+   "median_person_mean": 0.9466759503240317
   },
   "sleep_latency": {
    "label": "Time to fall asleep",
@@ -51,7 +53,8 @@
     "median": 0.024964644509716107,
     "p75": 0.18248175182481743
    },
-   "between_person_sd_of_means": 0.41912365939723023
+   "between_person_sd_of_means": 0.41912365939723023,
+   "median_person_mean": 0.43214285714285705
   },
   "day_rmssd": {
    "label": "Daily heart rate variability (median RMSSD, daytime-weighted)",
@@ -68,7 +71,8 @@
     "median": 0.09087451889656474,
     "p75": 0.26858627341622576
    },
-   "between_person_sd_of_means": 11.325926176112942
+   "between_person_sd_of_means": 11.325926176112942,
+   "median_person_mean": 75.05092822260954
   },
   "day_hr": {
    "label": "Daily median heart rate (daytime-weighted)",
@@ -85,7 +89,8 @@
     "median": 0.10580273206873797,
     "p75": 0.359125108680465
    },
-   "between_person_sd_of_means": 6.736937249354175
+   "between_person_sd_of_means": 6.736937249354175,
+   "median_person_mean": 76.73448583153478
   }
  },
  "example_person": {

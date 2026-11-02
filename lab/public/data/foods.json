@@ -1,0 +1,272 @@
+{
+ "source": "USDA FoodData Central, SR Legacy release 2018-04 (fdc.nal.usda.gov), public domain.",
+ "note": "Nutrients per 100 g as published. Serving sizes are approximate and chosen by us. These are Earth versions of foods similar to station menu items, not the actual space-food formulations.",
+ "foods": [
+  {
+   "name": "Scrambled eggs",
+   "slot": "breakfast",
+   "serving_g": 100,
+   "fdcId": 172187,
+   "usda_description": "Egg, whole, cooked, scrambled",
+   "per100": {
+    "kcal": 149.0,
+    "protein_g": 9.99,
+    "calcium_mg": 66.0,
+    "sodium_mg": 145.0,
+    "vitamin_d_IU": 72.0
+   }
+  },
+  {
+   "name": "Oatmeal",
+   "slot": "breakfast",
+   "serving_g": 240,
+   "fdcId": 173905,
+   "usda_description": "Cereals, oats, regular and quick, unenriched, cooked with water (includes boiling and microwaving), without salt",
+   "per100": {
+    "kcal": 71.0,
+    "protein_g": 2.54,
+    "calcium_mg": 9.0,
+    "sodium_mg": 4.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Flour tortilla",
+   "slot": "any",
+   "serving_g": 45,
+   "fdcId": 167535,
+   "usda_description": "Tortillas, ready-to-bake or -fry, flour, shelf stable",
+   "per100": {
+    "kcal": 297.0,
+    "protein_g": 8.01,
+    "calcium_mg": 163.0,
+    "sodium_mg": 742.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Macaroni and cheese",
+   "slot": "main",
+   "serving_g": 200,
+   "fdcId": 173325,
+   "usda_description": "Macaroni and Cheese, canned entree",
+   "per100": {
+    "kcal": 82.0,
+    "protein_g": 3.38,
+    "calcium_mg": 35.0,
+    "sodium_mg": 302.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Shrimp cocktail",
+   "slot": "main",
+   "serving_g": 85,
+   "fdcId": 175180,
+   "usda_description": "Crustaceans, shrimp, cooked",
+   "per100": {
+    "kcal": 99.0,
+    "protein_g": 23.98,
+    "calcium_mg": 70.0,
+    "sodium_mg": 111.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Beef brisket",
+   "slot": "main",
+   "serving_g": 100,
+   "fdcId": 169440,
+   "usda_description": "Beef, brisket, flat half, separable lean and fat, trimmed to 0\" fat, choice, cooked, braised",
+   "per100": {
+    "kcal": 221.0,
+    "protein_g": 32.21,
+    "calcium_mg": 17.0,
+    "sodium_mg": 52.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Grilled chicken",
+   "slot": "main",
+   "serving_g": 100,
+   "fdcId": 171477,
+   "usda_description": "Chicken, broilers or fryers, breast, meat only, cooked, roasted",
+   "per100": {
+    "kcal": 165.0,
+    "protein_g": 31.02,
+    "calcium_mg": 15.0,
+    "sodium_mg": 74.0,
+    "vitamin_d_IU": 5.0
+   }
+  },
+  {
+   "name": "Tuna",
+   "slot": "main",
+   "serving_g": 85,
+   "fdcId": 173709,
+   "usda_description": "Fish, tuna, light, canned in water, drained solids (Includes foods for USDA's Food Distribution Program)",
+   "per100": {
+    "kcal": 86.0,
+    "protein_g": 19.44,
+    "calcium_mg": 17.0,
+    "sodium_mg": 247.0,
+    "vitamin_d_IU": 47.0
+   }
+  },
+  {
+   "name": "White rice",
+   "slot": "side",
+   "serving_g": 160,
+   "fdcId": 168878,
+   "usda_description": "Rice, white, long-grain, regular, enriched, cooked",
+   "per100": {
+    "kcal": 130.0,
+    "protein_g": 2.69,
+    "calcium_mg": 10.0,
+    "sodium_mg": 1.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Green beans",
+   "slot": "side",
+   "serving_g": 125,
+   "fdcId": 169141,
+   "usda_description": "Beans, snap, green, cooked, boiled, drained, without salt",
+   "per100": {
+    "kcal": 35.0,
+    "protein_g": 1.89,
+    "calcium_mg": 44.0,
+    "sodium_mg": 1.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Broccoli",
+   "slot": "side",
+   "serving_g": 90,
+   "fdcId": 169967,
+   "usda_description": "Broccoli, cooked, boiled, drained, without salt",
+   "per100": {
+    "kcal": 35.0,
+    "protein_g": 2.38,
+    "calcium_mg": 40.0,
+    "sodium_mg": 41.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Dried apricots",
+   "slot": "snack",
+   "serving_g": 40,
+   "fdcId": 173941,
+   "usda_description": "Apricots, dried, sulfured, uncooked",
+   "per100": {
+    "kcal": 241.0,
+    "protein_g": 3.39,
+    "calcium_mg": 55.0,
+    "sodium_mg": 10.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Granola bar",
+   "slot": "snack",
+   "serving_g": 25,
+   "fdcId": 167542,
+   "usda_description": "Snacks, granola bars, hard, plain",
+   "per100": {
+    "kcal": 471.0,
+    "protein_g": 10.1,
+    "calcium_mg": 61.0,
+    "sodium_mg": 294.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Vanilla pudding",
+   "slot": "snack",
+   "serving_g": 113,
+   "fdcId": 169608,
+   "usda_description": "Puddings, vanilla, ready-to-eat",
+   "per100": {
+    "kcal": 130.0,
+    "protein_g": 1.45,
+    "calcium_mg": 49.0,
+    "sodium_mg": 172.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Peanut butter",
+   "slot": "any",
+   "serving_g": 32,
+   "fdcId": 172470,
+   "usda_description": "Peanut butter, smooth style, without salt",
+   "per100": {
+    "kcal": 598.0,
+    "protein_g": 22.21,
+    "calcium_mg": 49.0,
+    "sodium_mg": 17.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Cheese spread",
+   "slot": "any",
+   "serving_g": 30,
+   "fdcId": 171254,
+   "usda_description": "Cheese spread, pasteurized process, American",
+   "per100": {
+    "kcal": 290.0,
+    "protein_g": 16.41,
+    "calcium_mg": 562.0,
+    "sodium_mg": 1625.0,
+    "vitamin_d_IU": 16.0
+   }
+  },
+  {
+   "name": "Orange juice",
+   "slot": "drink",
+   "serving_g": 240,
+   "fdcId": 169100,
+   "usda_description": "Orange juice, chilled, includes from concentrate",
+   "per100": {
+    "kcal": 49.0,
+    "protein_g": 0.68,
+    "calcium_mg": 11.0,
+    "sodium_mg": 2.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Coffee",
+   "slot": "drink",
+   "serving_g": 240,
+   "fdcId": 171890,
+   "usda_description": "Beverages, coffee, brewed, prepared with tap water",
+   "per100": {
+    "kcal": 1.0,
+    "protein_g": 0.12,
+    "calcium_mg": 2.0,
+    "sodium_mg": 2.0,
+    "vitamin_d_IU": 0.0
+   }
+  },
+  {
+   "name": "Milk, from powder",
+   "slot": "drink",
+   "serving_g": 25,
+   "fdcId": 170877,
+   "usda_description": "Milk, dry, nonfat, regular, without added vitamin A and vitamin D",
+   "per100": {
+    "kcal": 362.0,
+    "protein_g": 36.16,
+    "calcium_mg": 1257.0,
+    "sodium_mg": 535.0,
+    "vitamin_d_IU": 0.0
+   }
+  }
+ ]
+}

@@ -4,28 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sol Lab</title>
-    <meta name="description" content="Design and run a small experiment on yourself aboard a spacecraft, and watch the evidence build." />
+    <meta name="description" content="Crew health console: monitor each crew member against their own usual range, track cabin air and nutrition, and run fair self-experiments." />
   </head>
   <body>
     <div id="app">
       <div id="stage" aria-hidden="true"></div>
 
-      <div class="brand"><span class="tape tape--title">Sol Lab</span><span class="brand__sub">Test what works for your own body, one mission at a time.</span></div>
+      <header class="topbar">
+        <div class="brand"><b>Sol Lab</b><span>Crew health console</span></div>
+        <nav class="tabs" id="tabs" role="tablist" aria-label="Stations"></nav>
+        <div class="status" id="status"></div>
+      </header>
 
-      <nav class="cuff" aria-label="Mission procedure">
-        <ol class="cuff__steps" id="steps"></ol>
-        <button class="cuff__aside" id="clockLink" type="button">Visit the body clock</button>
-        <button class="cuff__aside" id="overviewLink" type="button">Look around the module</button>
-      </nav>
+      <aside class="inspector" id="inspector" aria-live="polite"></aside>
 
-      <section class="deck" id="deck" aria-live="polite"></section>
+      <footer class="timeline" id="timeline"></footer>
 
-      <aside class="readout" id="readout" aria-live="polite"></aside>
-
-      <button class="numbers-toggle" id="numbersToggle" type="button" aria-expanded="false" aria-controls="numbers">Show the numbers</button>
-      <aside class="numbers" id="numbers" hidden></aside>
-
-      <div class="loading" id="loading"><span class="tape tape--title">Sol Lab</span><p id="loadingText">Pressurizing the module</p></div>
+      <div class="loading" id="loading"><b>Sol Lab</b><p id="loadingText">Loading</p></div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

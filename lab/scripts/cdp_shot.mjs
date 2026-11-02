@@ -34,7 +34,10 @@ const pending = new Map();
 ws.addEventListener("message", (e) => {
   const m = JSON.parse(e.data);
   if (m.id && pending.has(m.id)) { pending.get(m.id)(m); pending.delete(m.id); }
+  if (m.method === "Runtime.exceptionThrown") errors.push(m.params.exceptionDetails.exception?.description || m.params.exceptionDetails.text);
+  if (m.method === "Runtime.consoleAPICalled" && m.params.type === "error") errors.push(m.params.args.map((a) => a.value ?? a.description).join(" "));
 });
+const errors = [];
 const send = (method, params = {}) => new Promise((res) => { const i = ++id; pending.set(i, res); ws.send(JSON.stringify({ id: i, method, params })); });
 const evaluate = async (expr) => (await send("Runtime.evaluate", { expression: expr, awaitPromise: true, returnByValue: true })).result?.result?.value;
 
@@ -44,7 +47,7 @@ await send("Runtime.enable");
 
 // Extra steps after the ?auto= driver has run, for states that need real-time animation.
 const after = {
-  rand: 0, crew: 1500, crewrun: 0, step2: 4000, numbers2: 5000, overview: 0, locked: 0, run: 0, result: 0, resultnum: 1500, mars: 2500, clock: 3000,
+  rand: 0, crew: 1500, medical: 0, air: 0, galley: 0, window: 1500, setup: 0, crewrun: 0, step2: 4000, numbers2: 5000, overview: 0, locked: 0, run: 0, result: 0, resultnum: 1500, mars: 2500, clock: 3000,
 };
 
 for (const sc of process.argv.slice(2)) {
@@ -55,7 +58,7 @@ for (const sc of process.argv.slice(2)) {
   const shot = await send("Page.captureScreenshot", { format: "png" });
   fs.writeFileSync(path.join(outDir, `C_${sc}.png`), Buffer.from(shot.result.data, "base64"));
   const fps = await evaluate("window.__solFps");
-  console.log(`${sc}: saved, fps ${fps ? fps.toFixed(1) : "n/a"}`);
+  console.log(`${sc}: saved, fps ${fps ? fps.toFixed(1) : "n/a"}${errors.length ? `, errors: ${errors.splice(0).join(" | ").slice(0, 600)}` : ""}`);
 }
 await send("Browser.close").catch(() => {});
 setTimeout(() => { try { browser.kill(); } catch {} process.exit(0); }, 500);

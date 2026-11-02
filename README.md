@@ -4,14 +4,18 @@
 
 Every other entry we found watches astronauts and raises alerts. Sol Lab helps a crew member find out what actually works for *their own* body during a mission: design a small, fair experiment ("does cutting caffeine after noon help me fall asleep faster?"), run it in a 3D station module, and get an honest verdict, including "not settled". A whole crew can run the same experiment, and each person's answer gets sharper from what the crew shares.
 
-![Inside the module](docs/img/overview.png)
+It is laid out as a crew health console: a 3D station module on the left, an inspector on the right, and a mission timeline along the bottom. Each station in the module is a working part of the tool.
+
+![Console overview](docs/img/console-overview.png)
 
 | | |
 |---|---|
-| ![Schedule tokens drifting in zero gravity](docs/img/board-randomizing.png) | ![Crew mode mid-mission](docs/img/crew-running.png) |
-| Randomizing: schedule tokens float across the cabin (real zero-g physics) and stick to their days. | Crew mode: each member's chance it works, with the crew and alone. |
-| ![Mars through the window](docs/img/window-mars.png) | ![Body clock on Mars](docs/img/body-clock.png) |
-| Destination: real ISS orbit (SGP4, CelesTrak) or Moon or Mars. | Body clock: a published circadian model running live for four crew. |
+| ![Medical station](docs/img/medical.png) | ![Air station](docs/img/air.png) |
+| Medical: heart rate, HRV, core temperature and sleep for each crew member, against their own pre-flight range. Out-of-range values are marked, never alarmed. | Air: cabin CO2, 7-day average, headache risk (Law et al. 2014), temperature and humidity against NASA-STD-3001. The fan and airflow respond to CO2. |
+| ![Galley station](docs/img/galley.png) | ![Crew mode mid-mission](docs/img/crew-running.png) |
+| Galley: each day's menu with USDA nutrient values, against NASA exploration targets for vitamin D, calcium and sodium. | Experiments: a randomized self-experiment run by the whole crew; each member's chance it works, with the crew and alone. |
+| ![Body clock on Mars](docs/img/body-clock.png) | ![Mars through the window](docs/img/window-mars.png) |
+| Body clock: a published circadian model running for four crew. | Destination: real ISS orbit (SGP4, CelesTrak), Moon or Mars. |
 
 ## Run it
 
@@ -19,7 +23,7 @@ Every other entry we found watches astronauts and raises alerts. Sol Lab helps a
 cd lab
 npm install
 npm run dev      # http://localhost:5199
-npm test         # 19 tests: statistics engine, pooling, missions, orbit
+npm test         # 24 tests: statistics engine, pooling, missions, orbit, crew health
 npm run check    # syntax check of every file
 npm run build    # static, works offline (dist/)
 ```
@@ -46,4 +50,4 @@ npm run build    # static, works offline (dist/)
 
 ## Data and credits
 
-Open wearable and sleep-diary data (Baigutanova et al. 2025, CC BY), CelesTrak ISS elements, NASA Visible Earth imagery, Solar System Scope textures (CC BY). Full list: [lab/public/CREDITS.md](lab/public/CREDITS.md). Built with Claude Code (AI) assistance, disclosed as the Space Apps rules require. Not a medical device.
+Open wearable and sleep-diary data (Baigutanova et al. 2025, CC BY), USDA FoodData Central nutrient values (public domain), CelesTrak ISS elements, NASA Visible Earth imagery, Solar System Scope textures (CC BY). Full list: [lab/public/CREDITS.md](lab/public/CREDITS.md). Built with Claude Code (AI) assistance, disclosed as the Space Apps rules require. Not a medical device.

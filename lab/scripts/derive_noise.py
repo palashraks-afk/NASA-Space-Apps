@@ -48,6 +48,7 @@ def summarise(ps, unit, label):
         "within_person_sd": {"p25": q(ps.sd, 25), "median": q(ps.sd, 50), "p75": q(ps.sd, 75)},
         "lag1_autocorrelation": {"p25": q(ps.rho, 25), "median": q(ps.rho, 50), "p75": q(ps.rho, 75)},
         "between_person_sd_of_means": float(ps["mean"].std(ddof=1)),
+        "median_person_mean": float(ps["mean"].median()),
     }
 
 # Sleep diary outcomes
