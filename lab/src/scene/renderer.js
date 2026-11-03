@@ -39,7 +39,11 @@ export function createRenderer(container, { quality = "high" } = {}) {
     gtao.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.5, thickness: 1.2, scale: 1.1, samples: 12 });
     composer.addPass(gtao);
   }
-  const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.55, 0.5, 1.15);
+  // Glow only for true emitters (LED strips, screens), not lit walls. The threshold used to sit right
+  // where lit panels land, so tiny camera moves pushed pixels in and out of the glow and the lights
+  // flickered while gliding between stations. A higher threshold with a soft knee keeps it steady.
+  const bloom = new UnrealBloomPass(new THREE.Vector2(w, h), 0.3, 0.4, 1.5);
+  bloom.highPassUniforms.smoothWidth.value = 0.6;
   composer.addPass(bloom);
   composer.addPass(new OutputPass());
 

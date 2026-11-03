@@ -53,6 +53,8 @@ async function boot() {
   const { scene, camera, composer, renderer } = R;
   // From outside the hatch end the closed hatch would block the view down the module, so a global
   // clip plane slices the hatch end away while the camera is out there (no clipping otherwise).
+  // The cut sits 0.2 behind the hatch wall so its handle bar and posts (0.1 to 0.2 deep) go with it.
+  const HATCH_CUT = ZMAX - 0.2;
   const hatchCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 1e4);
   renderer.clippingPlanes = [hatchCut];
   const mats = makeMaterials();
@@ -719,7 +721,7 @@ async function boot() {
     uiT += dt;
     if (uiT > 0.25) { uiT = 0; refresh(); }
     rig.update();
-    hatchCut.constant = camera.position.z > ZMAX - 0.1 ? ZMAX - 0.1 : 1e4;
+    hatchCut.constant = camera.position.z > HATCH_CUT + 0.05 ? HATCH_CUT : 1e4;
     nav.update();
     if (draw) composer.render(dt);
     fpsT += dt; fpsN++;
@@ -733,7 +735,7 @@ async function boot() {
   requestAnimationFrame(frame);
 
   // ---------------- development hooks ----------------
-  window.__sol = { S, E, H, showTab, goStep, selectCrew };
+  window.__sol = { S, E, H, showTab, goStep, selectCrew, goView, R, rig, camera, scene, hatchCut };
   if (import.meta.env.DEV) {
     window.__solAdvance = (seconds, step = 1 / 60) => { for (let k = 0; k < seconds / step; k++) tick(step, false); return E.day; };
     const auto = new URLSearchParams(location.search).get("auto");
