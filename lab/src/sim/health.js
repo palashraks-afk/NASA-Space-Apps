@@ -8,8 +8,8 @@
 // - Core body temperature: rises about 1 degC over roughly 2.5 months in flight, then
 //   plateaus (Stahn et al. 2017, 11 ISS astronauts); individual series simulated.
 // - Meals: real USDA nutrient values for station-like foods; daily menus simulated.
-// - Cabin air: carbon dioxide, temperature, humidity simulated within NASA-STD-3001 ranges,
-//   with occasional days of reduced scrubber capacity; headache risk from Law et al. 2014
+// - Cabin air: real ISS daily CO2, temperature and humidity when `cabin` is given (NASA OSDR
+//   Environmental Data App); otherwise simulated. Headache risk from Law et al. 2014
 //   (odds double per +1 mmHg CO2; 7-day average under 2.5 mmHg keeps risk under 1%).
 import { mulberry32, normal } from "../engine/rng.js";
 
@@ -43,7 +43,7 @@ function ar1Series(n, mean, sd, rho, rng) {
   return out;
 }
 
-export function buildCrewHealth({ seed = 2026, days = 180, realNoise, foods }) {
+export function buildCrewHealth({ seed = 2026, days = 180, realNoise, foods, cabin = null }) {
   const rng = mulberry32(seed);
   const n = PREFLIGHT + days;
   const dayOf = (i) => i - PREFLIGHT; // -14 .. days-1
@@ -52,21 +52,34 @@ export function buildCrewHealth({ seed = 2026, days = 180, realNoise, foods }) {
   const effPeople = realNoise.deviations.sleep_efficiency.people;
   const latPeople = realNoise.deviations.sleep_latency.people;
 
-  // Cabin environment, shared by the crew.
-  const env = { co2: [], co2_7d: [], temp: [], rh: [], headache: [], scrubberReduced: [] };
+  // Cabin environment, shared by the crew. With `cabin` (real ISS telemetry, one row per day)
+  // day i replays real day i in order, wrapping if the mission is longer; otherwise simulated.
+  const env = { co2: [], co2_7d: [], peak1h: [], temp: [], rh: [], headache: [], date: [], mission: [] };
   let co2 = 2.2, reducedLeft = 0;
   for (let i = 0; i < n; i++) {
-    if (dayOf(i) >= 0 && reducedLeft === 0 && rng() < 0.035) reducedLeft = 3 + Math.floor(rng() * 4);
-    const target = reducedLeft > 0 ? 3.6 : 2.2;
-    co2 += 0.45 * (target - co2) + 0.12 * normal(rng);
-    if (reducedLeft > 0) reducedLeft--;
-    env.scrubberReduced.push(target > 3);
-    env.co2.push(Math.max(1.2, co2));
+    if (cabin) {
+      const row = cabin[i % cabin.length];
+      env.co2.push(row.co2);
+      env.peak1h.push(row.peak1h);
+      env.temp.push(row.temp ?? 22.6);
+      env.rh.push(row.rh ?? 46);
+      env.date.push(row.date);
+      env.mission.push(row.mission);
+    } else {
+      if (dayOf(i) >= 0 && reducedLeft === 0 && rng() < 0.035) reducedLeft = 3 + Math.floor(rng() * 4);
+      const target = reducedLeft > 0 ? 3.6 : 2.2;
+      co2 += 0.45 * (target - co2) + 0.12 * normal(rng);
+      if (reducedLeft > 0) reducedLeft--;
+      env.co2.push(Math.max(1.2, co2));
+      env.peak1h.push(Math.max(1.2, co2) + 0.4);
+      env.temp.push(22.6 + 0.5 * normal(rng));
+      env.rh.push(Math.min(70, Math.max(30, 46 + 5 * normal(rng))));
+      env.date.push(null);
+      env.mission.push(null);
+    }
     const w = env.co2.slice(Math.max(0, i - 6));
     env.co2_7d.push(w.reduce((a, b) => a + b, 0) / w.length);
     env.headache.push(headacheRisk(env.co2_7d[i]));
-    env.temp.push(22.6 + 0.5 * normal(rng));
-    env.rh.push(Math.min(70, Math.max(30, 46 + 5 * normal(rng))));
   }
 
   const crew = ["A", "B", "C", "D"].map((id, k) => {

@@ -122,7 +122,7 @@ export function buildModule(mats) {
       }
       // Clutter: strapped cargo bags, vent grilles and warning tags, seeded so the layout is stable.
       // Keep wall racks behind a station clear of clutter (stations at these z positions).
-      const busy = [0.55, -2.45, 2.8, -1.9, 1.95, 3.7].every((sz) => Math.abs(z - sz) > 0.85);
+      const busy = [0.05, 0.55, -2.45, 2.8, -1.9, 1.95, 3.7].every((sz) => Math.abs(z - sz) > 0.85);
       if (busy && r() < 0.55) {
         const bw = 0.26 + r() * 0.16, bh = 0.18 + r() * 0.14, bd = 0.1 + r() * 0.07;
         const bagMat = [mats.fabric, mats.fabricBlue, mats.fabricTan][Math.floor(r() * 3)];

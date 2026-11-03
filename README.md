@@ -4,18 +4,32 @@
 
 Every other entry we found watches astronauts and raises alerts. Sol Lab helps a crew member find out what actually works for *their own* body during a mission: design a small, fair experiment ("does cutting caffeine after noon help me fall asleep faster?"), run it in a 3D station module, and get an honest verdict, including "not settled". A whole crew can run the same experiment, and each person's answer gets sharper from what the crew shares.
 
-It is laid out as a crew health console: a 3D station module on the left, an inspector on the right, and a mission timeline along the bottom. Each station in the module is a working part of the tool.
+It is laid out as a crew health console: a 3D station module on the left, an inspector on the right, and a mission timeline along the bottom. Each station in the module is a working part of the tool. Keys 1 to 0 switch stations, Space plays the mission (1 h/s runs the daily routine with gentle reminders), and the overview exports a crew report.
 
 ![Console overview](docs/img/console-overview.png)
 
 | | |
 |---|---|
+| ![Daily check-in](docs/img/checkin.png) | ![Overview with hazards](docs/img/console-overview.png) |
+| Check-in: the astronaut logs blood pressure, heart rate, blood sugar, temperature, sleep, mood and exercise, each with how-to instructions; every value gets one of three calm levels (within range / keep an eye on it / talk to the flight surgeon) with actions to take. | Overview: each crew member's vitals and check-in status, cabin air, radiation, and NASA's five hazards of spaceflight linked to the stations that track them. |
+| ![Body figure](docs/img/body.png) | ![Orbit and radiation map](docs/img/map-orbit.png) |
+| Body: a clickable 3D figure; each part (brain, eyes, heart, lungs, gut, bones, muscles, immune system) is coloured by today's measurements and explains what it does and how spaceflight affects it. | Maps: the ISS ground track from real orbital elements over Earth's day and night, with the radiation dose measured along the orbit. |
+| ![Station module map](docs/img/map-station.png) | ![Life support map](docs/img/map-life-support.png) |
+| Station map: measured daily dose in six ISS modules (REM detectors, Dec 2019). | Life support: the CO2, water and oxygen loop, with the replayed day's real cabin readings. |
 | ![Medical station](docs/img/medical.png) | ![Air station](docs/img/air.png) |
 | Medical: heart rate, HRV, core temperature and sleep for each crew member, against their own pre-flight range. Out-of-range values are marked, never alarmed. | Air: cabin CO2, 7-day average, headache risk (Law et al. 2014), temperature and humidity against NASA-STD-3001. The fan and airflow respond to CO2. |
+| ![Radiation station](docs/img/radiation.png) | ![Bloodwork](docs/img/bloodwork.png) |
+| Radiation: real ISS dose readings (NASA OSDR RadLab, DOSTEL-1, 2022) on a globe; the station marker flies a real day of track through the South Atlantic Anomaly. | Bloodwork: real blood tests of the four Inspiration4 astronauts (SpaceX, 2021; NASA OSDR), each compared with their own pre-flight draws. |
 | ![Galley station](docs/img/galley.png) | ![Crew mode mid-mission](docs/img/crew-running.png) |
 | Galley: each day's menu with USDA nutrient values, against NASA exploration targets for vitamin D, calcium and sodium. | Experiments: a randomized self-experiment run by the whole crew; each member's chance it works, with the crew and alone. |
 | ![Body clock on Mars](docs/img/body-clock.png) | ![Mars through the window](docs/img/window-mars.png) |
 | Body clock: a published circadian model running for four crew. | Destination: real ISS orbit (SGP4, CelesTrak), Moon or Mars. |
+
+## Guided tour
+
+The app opens with a 10-step tour on first visit (or add `?tour=1` to the address, or press **Tour** in the top bar). Mission patches on the overview reward check-ins, exploring and finished experiments; nothing is ever taken away.
+
+![Guided tour](docs/img/tour.png)
 
 ## Run it
 
@@ -23,9 +37,9 @@ It is laid out as a crew health console: a 3D station module on the left, an ins
 cd lab
 npm install
 npm run dev      # http://localhost:5199
-npm test         # 24 tests: statistics engine, pooling, missions, orbit, crew health
+npm test         # 34 tests: statistics engine, pooling, missions, orbit, crew health, guidance, real data files
 npm run check    # syntax check of every file
-npm run build    # static, works offline (dist/)
+npm run build    # static, works offline from any folder (dist/)
 ```
 
 ## What is new, and how we checked
@@ -48,6 +62,18 @@ npm run build    # static, works offline (dist/)
 - `research_notes/`: judging research, competitor field, idea screening, evidence
 - `archive/`: earlier concepts (CALLSIGN, ECHO), kept for the record
 
+## Publish it (GitHub Pages)
+
+`.github/workflows/pages.yml` checks, tests and builds every push, and deploys `main` to GitHub Pages. One-time setup by the repo owner: make the repository public (Space Apps requires open source anyway; Pages on a private repo needs a paid plan), then Settings > Pages > Source: **GitHub Actions**. The site appears at `https://palashraks-afk.github.io/NASA-Space-Apps/`.
+
+## 3D models
+
+Teammates can drop `.glb` files into `lab/public/models/` and list them in `models.json` to replace any station's built-in shapes or the body figure. See [docs/MODELS.md](docs/MODELS.md).
+
+## Licence
+
+Code: Apache 2.0 ([LICENSE](LICENSE)). Data and textures keep their own licences, listed in [lab/public/CREDITS.md](lab/public/CREDITS.md).
+
 ## Data and credits
 
-Open wearable and sleep-diary data (Baigutanova et al. 2025, CC BY), USDA FoodData Central nutrient values (public domain), CelesTrak ISS elements, NASA Visible Earth imagery, Solar System Scope textures (CC BY). Full list: [lab/public/CREDITS.md](lab/public/CREDITS.md). Built with Claude Code (AI) assistance, disclosed as the Space Apps rules require. Not a medical device.
+Open wearable and sleep-diary data (Baigutanova et al. 2025, CC BY), USDA FoodData Central nutrient values (public domain), NASA OSDR RadLab ISS radiation readings and Inspiration4 bloodwork, CelesTrak ISS elements, NASA Visible Earth imagery, Solar System Scope textures (CC BY). Full list: [lab/public/CREDITS.md](lab/public/CREDITS.md). Built with Claude Code (AI) assistance, disclosed as the Space Apps rules require. Not a medical device.

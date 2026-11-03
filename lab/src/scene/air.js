@@ -115,16 +115,16 @@ export function buildAir(mats) {
     ctx.fillText("mmHg CO2", 180, 128);
     ctx.fillText(`7-day average ${env.co2_7d.toFixed(2)} mmHg`, 26, 180);
     ctx.fillText(`Temperature ${env.temp.toFixed(1)} °C   Humidity ${env.rh.toFixed(0)} %`, 26, 222);
-    ctx.fillText(env.scrubberReduced ? "Scrubber running at reduced capacity" : "Scrubber nominal", 26, 264);
+    ctx.fillText(`Peak 1-hour CO2 ${env.peak1h.toFixed(1)} mmHg`, 26, 264);
     ctx.fillStyle = "#5f7186"; ctx.font = "600 20px Archivo, sans-serif";
-    ctx.fillText("Simulated within NASA-STD-3001 ranges", 26, 360);
+    ctx.fillText(env.date ? `ISS telemetry ${env.date} (${env.mission}), NASA OSDR` : "Simulated", 26, 360);
     tex.needsUpdate = true;
   }
 
   const warm = new THREE.Color(0xf0c27a), cool = new THREE.Color(0xdfe8f2), tmp = new THREE.Color();
   let lastEnv = null;
   function update(dt, env) {
-    if (env && env !== lastEnv) { lastEnv = env; co2 = env.co2; draw(env); }
+    if (env && (!lastEnv || env.day !== lastEnv.day)) { lastEnv = env; co2 = env.co2; draw(env); }
     const targetSpeed = 0.8 + 0.6 * Math.min(1, Math.max(0, (co2 - 2) / 1.8));
     fanSpeed += (targetSpeed - fanSpeed) * Math.min(1, dt);
     rotor.rotation.z -= dt * 14 * fanSpeed;
@@ -144,5 +144,9 @@ export function buildAir(mats) {
     geo.attributes.position.needsUpdate = true;
     geo.attributes.color.needsUpdate = true;
   }
+  // Live-data parts stay visible when a loaded model replaces the built-in props.
+  panel.userData.data = true;
+  pts.userData.data = true;
+  rotor.userData.data = true;
   return { group, update };
 }

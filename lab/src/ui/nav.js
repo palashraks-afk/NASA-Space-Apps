@@ -4,7 +4,7 @@ import * as THREE from "three";
 // stops, and the keyboard (Left/Right to step along the stops, Escape to go home).
 // `stops` are listed left to right as they sit in the room, each with its own camera view and the
 // 3D point its dot hangs at. Everything funnels through goTo(view), so mouse, dots and keys agree.
-export function createNav({ root, camera, stops, home, getCurrent, goTo }) {
+export function createNav({ root, camera, stops, home, getCurrent, goTo, blocked = () => false }) {
   const order = stops.map((s) => s.view);
   const label = Object.fromEntries(stops.map((s) => [s.view, s.label]));
 
@@ -61,12 +61,12 @@ export function createNav({ root, camera, stops, home, getCurrent, goTo }) {
   });
 
   window.addEventListener("keydown", (e) => {
-    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
-    const t = e.target;
+    if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey || blocked()) return;
+    const t = e.target instanceof Element ? e.target : null;
     if (t && (t.isContentEditable || /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName))) return; // those own the arrow keys and Escape
     if (e.key === "ArrowLeft") goTo(step(-1));
     else if (e.key === "ArrowRight") goTo(step(1));
-    else if (e.key === "Escape" && getCurrent() !== home) goTo(home);
+    else if (e.key === "Escape") goTo(home); // goTo ignores it when already home
     else return;
     e.preventDefault();
   });
