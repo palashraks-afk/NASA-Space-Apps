@@ -11,6 +11,9 @@ import { buildMedical } from "./scene/medical.js";
 import { buildAir } from "./scene/air.js";
 import { buildGalley } from "./scene/galley.js";
 import { buildRadiation } from "./scene/radiation.js";
+import { buildBody } from "./scene/body.js";
+import { createMaps } from "./ui/maps.js";
+import { BODY_PARTS, ROUTINE, clockText } from "./sim/bodyParts.js";
 import { createCameraRig } from "./scene/cameraRig.js";
 import { loadOutcomes, INTERVENTIONS, DESTINATIONS } from "./sim/presets.js";
 import { recommendDesign, drawMysteryEffect, buildMission, analyseDay, truthLabel } from "./sim/mission.js";
@@ -70,6 +73,7 @@ async function boot() {
   const galley = place(buildGalley(mats), -W + 0.06, 0.05, 2.8, Math.PI / 2);
   const air = place(buildAir(mats), W - 0.06, 0.08, 3.7, -Math.PI / 2);
   const radiation = place(buildRadiation(mats, { earthDay, data: RAD }), W - 0.06, 0.06, 0.05, -Math.PI / 2);
+  const body = place(buildBody(mats), -0.35, 0.0, -1.1, 0.5);
 
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const views = {
@@ -82,12 +86,14 @@ async function boot() {
     galley: { pos: V(0.3, 0.0, 2.8), look: V(-1.1, -0.06, 2.8) },
     air: { pos: V(-0.3, 0.04, 3.7), look: V(1.1, 0.02, 3.7) },
     radiation: { pos: V(-0.5, 0.08, 0.05), look: V(W, -0.02, 0.05) },
+    body: { pos: V(0.1, 0.1, 0.3), look: V(-0.35, -0.04, -1.1) },
   };
   const rig = createCameraRig(camera, renderer.domElement, views);
+  const maps = createMaps({ host: $("#app"), rad: RAD, iss, epoch: issEpoch, earthImg: earthDay && earthDay.image, onTab: (t) => showTab(t) });
   rig.setReduced(reduced);
 
   // ---------------- state ----------------
-  const S = { tab: "overview", met: 0, playing: false, speed: 1, crewSel: 0, dest: "iss", destLabel: DESTINATIONS.iss.label, simHours: dayStartHours, clockLux: 300, brightWake: false };
+  const S = { tab: "overview", met: 0.3, bodyPart: "heart", mapsOn: false, playing: false, speed: 1, crewSel: 0, dest: "iss", destLabel: DESTINATIONS.iss.label, simHours: dayStartHours, clockLux: 300, brightWake: false };
   const E = {
     step: 1, maxStep: 1, intervention: "caffeine", outcomeKey: "sleep_latency", speed: INTERVENTIONS.caffeine.speed,
     delta: OUTCOMES.sleep_latency.delta, thr: 0.95, mode: "hidden", practiceMult: 1.5, noise: "sim", crewMode: false,
@@ -187,12 +193,12 @@ async function boot() {
   const chip = (tier) => `<span class="lvl lvl-${tier}">${LEVELS[tier].label}</span>`;
 
   // ---------------- tabs ----------------
-  const TABS = [["overview", "Overview"], ["checkin", "Check-in"], ["medical", "Vitals"], ["bloodwork", "Bloodwork"], ["air", "Air"], ["radiation", "Radiation"], ["galley", "Galley"], ["clock", "Body clock"], ["experiments", "Experiments"], ["window", "Window"]];
+  const TABS = [["overview", "Overview"], ["checkin", "Check-in"], ["body", "Body"], ["medical", "Vitals"], ["bloodwork", "Bloodwork"], ["air", "Air"], ["radiation", "Radiation"], ["galley", "Galley"], ["clock", "Body clock"], ["experiments", "Experiments"], ["window", "Window"], ["maps", "Maps"]];
   const tabsEl = $("#tabs");
   tabsEl.innerHTML = TABS.map(([k, l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k === S.tab}">${l}</button>`).join("");
   tabsEl.addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) showTab(b.dataset.tab); });
   let inspectorEl = $("#inspector");
-  const viewFor = (tab) => (tab === "experiments" ? (E.step <= 2 ? "board" : "evidence") : tab === "bloodwork" || tab === "checkin" ? "medical" : tab);
+  const viewFor = (tab) => (tab === "experiments" ? (E.step <= 2 ? "board" : "evidence") : tab === "bloodwork" || tab === "checkin" ? "medical" : tab === "maps" ? "overview" : tab);
   let panel = null;
   function showTab(tab) {
     S.tab = tab;
@@ -202,10 +208,11 @@ async function boot() {
     inspectorEl.replaceWith(fresh);
     inspectorEl = fresh;
     panel.mount(fresh);
+    maps.show(tab === "maps");
     refresh();
     rig.go(viewFor(tab));
   }
-  function refresh() { if (panel) panel.update(); renderTimeline(); renderStatus(); }
+  function refresh() { if (panel) panel.update(); renderTimeline(); renderStatus(); body.setStatus(bodyStatusMap(S.crewSel)); }
 
   // ---------------- panels ----------------
   const PANELS = {};
@@ -245,6 +252,7 @@ async function boot() {
       root.innerHTML = `<h2 id="ckTitle"></h2><p class="lede">Log today's measurements. Each one is checked against health guidelines and, where there is enough history, against your own normal, then given one of three levels with what to do next.</p>
         <div class="levels">${Object.keys(LEVELS).map((t) => chip(t)).join("")}</div>
         <div class="kpis" id="ckK"></div>
+        <h3>Today's routine</h3><div id="ckRoutine" class="routine"></div>
         <div id="ckSurgeon"></div>
         <div id="ckList">${INDICATORS.map((ind) => `<section class="ck" data-ck="${ind.key}">
           <div class="ck-head"><span class="name">${esc(ind.label)}</span><span class="ck-lvl"></span></div>
@@ -263,6 +271,8 @@ async function boot() {
         </section>`).join("")}</div>
         <p class="src">Values you log are stored in this browser only. Days you have not logged are filled from the crew health model (heart rate, temperature, sleep) or simulated (blood pressure, blood sugar, mood, exercise), and labelled. Guidance follows the sources on each card; where a source gives no escalation point, the team chose one, and it needs review by a clinician. Not a medical device.</p>`;
       root.addEventListener("click", (e) => {
+        const j = e.target.closest("[data-jump]");
+        if (j) { const sec = $(`[data-ck="${j.dataset.jump}"]`); sec.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" }); sec.querySelector("input:not([type=hidden]), [data-scale]")?.focus({ preventScroll: true }); return; }
         const b = e.target.closest("[data-scale]");
         if (!b) return;
         const form = b.closest("form");
@@ -279,7 +289,7 @@ async function boot() {
         CK.set(S.crewSel, idx(), ind.key, value);
         form.reset();
         form.querySelectorAll("[data-scale]").forEach((x) => x.setAttribute("aria-pressed", "false"));
-        ckKey = null;
+        ckKey = null; bodyKey = null;
         refresh();
         const sec = form.closest(".ck");
         sec.classList.add("just-logged");
@@ -288,6 +298,9 @@ async function boot() {
     },
     update() {
       const k = S.crewSel, i = idx(), key = `${k}|${i}`;
+      const rhtml = routineState(k).map((r) => `<button type="button" class="r r-${r.state}" data-jump="${r.key}"><span class="t">${clockText(r.hour)}</span><span>${esc(r.what)}</span><span class="st">${r.state === "done" ? "Logged" : r.state === "due" ? "Due" : "Later"}</span></button>`).join("");
+      const rEl = $("#ckRoutine");
+      if (rEl.dataset.h !== rhtml) { rEl.innerHTML = rhtml; rEl.dataset.h = rhtml; }
       if (key === ckKey) return;
       ckKey = key;
       $("#ckTitle").textContent = `Daily check-in: crew ${H.crew[k].id}, mission day ${today()}`;
@@ -309,6 +322,75 @@ async function boot() {
     },
   };
   let ckKey = null;
+
+  // ---------------- body figure ----------------
+  const TIER_RANK = { ok: 0, watch: 1, surgeon: 2 };
+  function partStatus(k, part, i = idx()) {
+    const found = part.indicators.map((key) => ({ ind: INDICATOR[key], a: assessDay(k, i, INDICATOR[key]) })).filter((x) => x.a);
+    const extra = [];
+    if (part.also === "air") {
+      const e = H.env;
+      if (e.peak1h[i] > 3) extra.push({ tier: "watch", text: `Cabin CO2 peaked at ${e.peak1h[i].toFixed(1)} mmHg today (limit 3).` });
+      else if (e.co2_7d[i] > 2.5) extra.push({ tier: "watch", text: `7-day cabin CO2 ${e.co2_7d[i].toFixed(2)} mmHg, above the 2.5 headache guidance.` });
+      else extra.push({ tier: "ok", text: `Cabin CO2 ${e.co2[i].toFixed(1)} mmHg today.` });
+    }
+    const tiers = [...found.map((x) => x.a.tier), ...extra.map((x) => x.tier)];
+    const tier = tiers.length ? tiers.reduce((a, b) => (TIER_RANK[b] > TIER_RANK[a] ? b : a)) : null;
+    return { tier, found, extra };
+  }
+  const bodyStatusMap = (k) => Object.fromEntries(BODY_PARTS.map((p) => [p.key, partStatus(k, p).tier || "none"]));
+  let bodyKey = null;
+
+  PANELS.body = {
+    mount(root) {
+      bodyKey = null;
+      root.innerHTML = `<h2 id="bdTitle"></h2><p class="lede">Click a part of the figure, or pick one below. Colour shows the most serious level among the measurements linked to that part today.</p>
+        <div class="levels">${Object.keys(LEVELS).map((t) => chip(t)).join("")}<span class="lvl lvl-none">Not measured</span></div>
+        <div class="parts" id="bdParts">${BODY_PARTS.map((p) => `<button type="button" class="part" data-part="${p.key}"><span>${esc(p.name)}</span><span class="pl"></span></button>`).join("")}</div>
+        <div id="bdDetail"></div>
+        <p class="src">Spaceflight effects summarised from NASA Human Research Program material. Levels come from the check-in guidance (see each card there). Not a medical device.</p>`;
+      root.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-part]");
+        if (b) { S.bodyPart = b.dataset.part; body.select(S.bodyPart); bodyKey = null; refresh(); return; }
+        const g = e.target.closest("[data-go]");
+        if (g) showTab(g.dataset.go);
+      });
+      body.select(S.bodyPart);
+    },
+    update() {
+      const k = S.crewSel, i = idx(), key = `${k}|${i}|${S.bodyPart}`;
+      if (key === bodyKey) return;
+      bodyKey = key;
+      $("#bdTitle").textContent = `Body: crew ${H.crew[k].id}, mission day ${today()}`;
+      for (const p of BODY_PARTS) {
+        const b = $(`[data-part="${p.key}"]`), st = partStatus(k, p);
+        b.setAttribute("aria-pressed", String(p.key === S.bodyPart));
+        b.querySelector(".pl").innerHTML = st.tier ? chip(st.tier) : `<span class="lvl lvl-none">Not measured</span>`;
+      }
+      const p = BODY_PARTS.find((x) => x.key === S.bodyPart), st = partStatus(k, p);
+      const hz = p.hazards.map((h) => HAZARDS.find((x) => x.key === h).name).join(", ");
+      const rows = st.found.map(({ ind, a }) => `<li>${chip(a.tier)} <b>${esc(ind.label)}</b> ${esc(ind.format(a.value))} ${esc(ind.unit)}: ${esc(a.text)}${a.actions[0] ? ` <span class="src">${esc(a.actions[0])}</span>` : ""}</li>`).join("")
+        + st.extra.map((x) => `<li>${chip(x.tier)} ${esc(x.text)}</li>`).join("");
+      const links = [...new Set([...(p.indicators.length ? ["checkin"] : []), ...(p.also ? [p.also] : [])])];
+      $("#bdDetail").innerHTML = `<div class="part-card"><h3>${esc(p.name)}</h3>
+        <p><b>What it does.</b> ${esc(p.does)}</p><p><b>In space.</b> ${esc(p.space)}</p><p><b>Hazards.</b> ${esc(hz)}</p>
+        ${rows ? `<ul class="part-list">${rows}</ul>` : `<p class="src">${esc(p.unmeasured || "Nothing measured for this part yet.")}</p>`}
+        <div class="chips">${links.map((t) => `<button class="chip" data-go="${t}">${esc(TABS.find(([key]) => key === t)[1])}</button>`).join("")}</div></div>`;
+    },
+  };
+
+  PANELS.maps = {
+    mount(root) {
+      root.innerHTML = `<h2>Maps</h2><p class="lede">Three maps of where health risks come from: the orbit, the station, and the systems that keep the air breathable.</p>
+        <div class="part-card"><h3>Orbit and radiation</h3><p>The ISS ground track from real orbital elements (SGP4, CelesTrak), with Earth's night side and the radiation dose rate measured along the way. The dose spikes over South America, in the South Atlantic Anomaly.</p>
+        <div class="legend"><span>Dose rate</span><i style="background:linear-gradient(90deg,#5a9ef2,#80d1b8,#f0c259,#f06b5c)"></i><span>2 to 300+ µGy/h</span></div>
+        <p class="src">White line: last 45 minutes. Dashed: next three orbits. Yellow dot: the point where the Sun is overhead.</p></div>
+        <div class="part-card"><h3>Station modules</h3><p>Measured daily dose in six modules. Where crew spend time and sleep changes their dose.</p></div>
+        <div class="part-card"><h3>Life support</h3><p>The loop that removes CO2 and recycles water into oxygen, with today's real cabin readings.</p></div>
+        <p class="src">Radiation: NASA OSDR RadLab. Cabin air: NASA OSDR Environmental Data App. Orbit: CelesTrak elements propagated in the browser.</p>`;
+    },
+    update() {},
+  };
 
   PANELS.medical = {
     mount(root) {
@@ -779,7 +861,7 @@ async function boot() {
     if (/^[0-9]$/.test(e.key) && ti < TABS.length) { showTab(TABS[ti][0]); return; }
     if (e.key === " " && !t.closest("button")) { e.preventDefault(); if (today() < H.days - 1) S.playing = !S.playing; refresh(); return; }
     if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && !S.playing) {
-      S.met = Math.max(0, Math.min(H.days - 1, Math.floor(S.met) + (e.key === "ArrowRight" ? 1 : -1)));
+      S.met = Math.max(0, Math.min(H.days - 1 + 0.99, S.met + (e.key === "ArrowRight" ? 1 : -1)));
       refresh();
     }
   });
@@ -788,12 +870,14 @@ async function boot() {
   const tl = $("#timeline");
   tl.innerHTML = `<div class="crew"><span>Crew</span>${[0, 1, 2, 3].map((k) => `<button type="button" data-crew="${k}" aria-label="Crew ${"ABCD"[k]}">${"ABCD"[k]}</button>`).join("")}</div>
     <button type="button" class="play" id="tlPlay">Play</button>
-    ${seg("tlSpeed", [["0.25", "¼ day/s"], ["1", "1 day/s"], ["4", "4 days/s"], ["10", "10 days/s"]], S.speed)}
+    ${seg("tlSpeed", [["0.0417", "1 h/s"], ["0.25", "¼ day/s"], ["1", "1 day/s"], ["4", "4 days/s"], ["10", "10 days/s"]], S.speed)}
     <div class="track" id="tlTrack"><div class="done"></div><div class="exp" hidden></div><div class="head"></div></div>
+    <button type="button" class="next" id="tlNext"></button>
     <div class="label" id="tlLabel"></div>`;
   tl.addEventListener("click", (e) => {
     const c = e.target.closest("[data-crew]");
     if (c) return selectCrew(+c.dataset.crew);
+    if (e.target.closest("#tlNext")) { showTab("checkin"); return; }
     if (e.target.closest("#tlPlay")) { if (today() < H.days - 1) S.playing = !S.playing; refresh(); return; }
     const sb = e.target.closest('[data-seg="tlSpeed"] button');
     if (sb) { S.speed = +sb.dataset.v; setPressed(tl, "tlSpeed", S.speed); }
@@ -808,11 +892,49 @@ async function boot() {
     const showExp = E.mission && (E.started || E.done) && E.startDay != null;
     ex.hidden = !showExp;
     if (showExp) { ex.style.left = frac(E.startDay); ex.style.width = `${Math.min(100, (E.days / (H.days - 1)) * 100).toFixed(2)}%`; }
-    $("#tlLabel").innerHTML = `Mission day <b>${today()}</b> of ${H.days - 1}`;
+    $("#tlLabel").innerHTML = `Mission day <b>${today()}</b> of ${H.days - 1}, <b>${clockText(hourNow())}</b>`;
+    const rs = routineState(S.crewSel), due = rs.filter((r) => r.state === "due"), next = rs.find((r) => r.state === "later");
+    $("#tlNext").innerHTML = due.length ? `<span class="lvl lvl-watch">${due.length} due</span> ${esc(due[0].what.split(",")[0])}` : next ? `Next ${clockText(next.hour)}: ${esc(next.what.split(",")[0])}` : `<span class="lvl lvl-ok">Routine done</span>`;
   }
+  // ---------------- daily routine ----------------
+  const hourNow = () => (S.met % 1) * 24;
+  function routineState(k) {
+    const i = idx(), h = hourNow();
+    return ROUTINE.map((r) => ({ ...r, state: CK.entered(k, i, r.key) ? "done" : h >= r.hour ? "due" : "later" }));
+  }
+  // A quiet reminder card when a measurement comes due while the mission plays at real
+  // routine speed (1 h/s or slower). No sound; it fades by itself.
+  const toastEl = document.createElement("div");
+  toastEl.className = "toast";
+  toastEl.hidden = true;
+  toastEl.setAttribute("role", "status");
+  $("#app").appendChild(toastEl);
+  toastEl.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-toast]");
+    if (!b) return;
+    toastEl.hidden = true;
+    if (b.dataset.toast === "log") { showTab("checkin"); const sec = $(`[data-ck="${b.dataset.key}"]`); sec && sec.scrollIntoView({ block: "start" }); }
+  });
+  const toastSeen = new Set();
+  let toastTimer = null;
+  function checkRoutine() {
+    if (!S.playing || S.speed > 0.05) return;
+    const i = idx();
+    for (const r of routineState(S.crewSel)) {
+      const key = `${S.crewSel}|${i}|${r.key}`;
+      if (r.state !== "due" || toastSeen.has(key)) continue;
+      toastSeen.add(key);
+      toastEl.innerHTML = `<b>${clockText(r.hour)}: ${esc(r.what)}</b><span>Crew ${H.crew[S.crewSel].id}</span><div class="actions"><button class="btn" data-toast="log" data-key="${r.key}">Log it</button><button class="btn quiet" data-toast="later">Later</button></div>`;
+      toastEl.hidden = false;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => (toastEl.hidden = true), 9000);
+      break;
+    }
+  }
+
   const statusEl = $("#status");
   function renderStatus() {
-    statusEl.innerHTML = `<span>${esc(S.destLabel)}</span><span>Crew <b>${"ABCD"[S.crewSel]}</b></span><span>Day <b>${today()}</b></span>`;
+    statusEl.innerHTML = `<span>${esc(S.destLabel)}</span><span>Crew <b>${"ABCD"[S.crewSel]}</b></span><span>Day <b>${today()}</b>, ${clockText(hourNow())}</span>`;
   }
 
   // ---------------- clock ----------------
@@ -827,12 +949,14 @@ async function boot() {
     const r = renderer.domElement.getBoundingClientRect();
     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     ray.setFromCamera(ndc, camera);
+    const part = ray.intersectObjects(body.pickables(), false)[0];
+    if (part) { S.bodyPart = part.object.name.slice(5); body.select(S.bodyPart); if (S.tab !== "body") showTab("body"); else { bodyKey = null; refresh(); } return; }
     const tok = ray.intersectObjects(board.tokenMeshes(), false)[0];
     if (tok) { board.poke(tok.object, ray.ray.direction.clone().applyQuaternion(board.group.quaternion.clone().invert())); return; }
-    const hit = ray.intersectObjects([evidence.group, clock.group, board.group, medical.group, galley.group, air.group, radiation.group], true)[0];
+    const hit = ray.intersectObjects([evidence.group, clock.group, board.group, medical.group, galley.group, air.group, radiation.group, body.group], true)[0];
     if (!hit) return;
     let o = hit.object;
-    while (o && !["evidence", "clock", "board", "medical", "galley", "air", "radiation"].includes(o.name)) o = o.parent;
+    while (o && !["evidence", "clock", "board", "medical", "galley", "air", "radiation", "body"].includes(o.name)) o = o.parent;
     if (!o) return;
     const tab = o.name === "evidence" || o.name === "board" ? "experiments" : o.name;
     if (tab !== S.tab) showTab(tab);
@@ -882,7 +1006,7 @@ async function boot() {
       lastDay++;
       if (E.started) advanceExperimentDay();
     }
-    S.simHours += (dt * (S.tab === "window" ? 90 : 20)) / 3600;
+    S.simHours += (dt * (S.tab === "window" || S.tab === "maps" ? 90 : 20)) / 3600;
     if (S.dest === "iss") {
       const st = issState(iss, new Date(issEpoch.getTime() + S.simHours * 3600e3));
       if (st) outside.orientEarth(st.lat, st.lon, st.sunEcf);
@@ -894,6 +1018,9 @@ async function boot() {
     air.update(dt, { co2: H.env.co2[i], co2_7d: H.env.co2_7d[i], temp: H.env.temp[i], rh: H.env.rh[i], peak1h: H.env.peak1h[i], date: H.env.date[i], mission: H.env.mission[i], day: d });
     galley.update(dt, { id: c.id, day: d, meal: c.meals[i] });
     radiation.update(dt, { today: radToday(), total: radTotal() });
+    body.update(dt, reduced);
+    maps.render({ simHours: S.simHours, day: d, env: { co2: H.env.co2[i], peak1h: H.env.peak1h[i], temp: H.env.temp[i], rh: H.env.rh[i], date: H.env.date[i] } });
+    checkRoutine();
     clock.render();
     evidence.update(dt, simT);
     board.update(dt);
@@ -920,7 +1047,7 @@ async function boot() {
   requestAnimationFrame(frame);
 
   // ---------------- development hooks ----------------
-  window.__sol = { S, E, H, showTab, goStep, selectCrew };
+  window.__sol = { S, E, H, showTab, goStep, selectCrew, body, camera };
   if (import.meta.env.DEV) {
     window.__solAdvance = (seconds, step = 1 / 60) => { for (let k = 0; k < seconds / step; k++) tick(step, false); return E.day; };
     const auto = new URLSearchParams(location.search).get("auto");
@@ -935,7 +1062,11 @@ async function boot() {
         medical: () => { S.met = 60; showTab("medical"); },
         air: () => { S.met = 60; refresh(); showTab("air"); },
         galley: () => { S.met = 60; showTab("galley"); },
-        checkin: () => { S.met = 60; refresh(); showTab("checkin"); },
+        checkin: () => { S.met = 60.3; refresh(); showTab("checkin"); },
+        body: () => { S.met = 60.3; S.bodyPart = "heart"; body.select("heart"); refresh(); showTab("body"); },
+        maps: () => { S.met = 60.3; showTab("maps"); },
+        mapstation: () => { showTab("maps"); document.querySelector('[data-seg="mapMode"] [data-v="station"]').click(); },
+        mapsystems: () => { S.met = 60.3; showTab("maps"); document.querySelector('[data-seg="mapMode"] [data-v="systems"]').click(); },
         bloodwork: () => { S.crewSel = 1; showTab("bloodwork"); },
         radiation: () => { S.met = 60; refresh(); showTab("radiation"); },
         clock: () => { S.dest = "mars"; S.destLabel = DESTINATIONS.mars.label; S.clockLux = 100; resetClock(); showTab("clock"); clock.advance(24 * 9); },

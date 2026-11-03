@@ -45,16 +45,16 @@ Added 2026-11-02 after the team pasted the official text (`research_notes/challe
 | Which measurements are possible in space; why an exam is needed; how hazards affect each indicator | Explainer on every check-in card | Have |
 | **When a result warrants attention from the crew or flight surgeons** | Three levels; a "for the flight surgeon" box collects anything at the top level | Have (cut-offs need clinician review) |
 | What actions prevent a critical condition | Experiments only | **Partial** |
-| Clickable human figure, body parts show function and status (suggested) | None | **Missing** (our teammate's 3D work fits here) |
+| Clickable human figure, body parts show function and status (suggested) | 3D figure with 8 clickable regions (added 2026-11-02) | Have (placeholder shapes; teammate model can replace) |
 | Different environments: spacecraft, station, rover, base | Station, Moon base, Mars (window and body clock) | Have |
-| Prompt measurements or actions as part of the routine | None | **Missing** |
+| Prompt measurements or actions as part of the routine | Timed daily routine, due list, quiet reminder cards | Have |
 | Gamification | Only the experiment flow | **Missing** |
 | Dynamic charts over time | Yes, every station | Have |
 | Color coding at a glance | Amber/green/blue states | Have (needs a legend and a second cue) |
 | Simple instructions, do not assume astronauts know how to assess themselves | How-to on every check-in card | Have |
 | NASA HRP resources and other agencies | NASA OSDR, NASA-STD-3001, DLR detector data; no HRP evidence pages cited yet | Partial |
 
-Revised challenge-fit score: was **6 of 10**; with check-in, guidance, levels and hazards built (2026-11-02), now about **8 of 10**. Still missing: clickable body figure, routine prompts, gamification beyond a streak. Note the brief is fine with colour coding and attention levels; it does not ask for alarms, so "calm tiers" (own normal / keep an eye on it / tell the flight surgeon) fits both the brief and our no-alarm rule.
+Revised challenge-fit score: was **6 of 10**; with check-in, guidance, levels and hazards built (2026-11-02), now about **8 of 10**. Body figure and routine prompts added the same day; still missing: gamification beyond a streak. Note the brief is fine with colour coding and attention levels; it does not ask for alarms, so "calm tiers" (own normal / keep an eye on it / tell the flight surgeon) fits both the brief and our no-alarm rule.
 
 ### What to build, in order
 
