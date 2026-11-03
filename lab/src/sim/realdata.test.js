@@ -14,6 +14,8 @@ describe("real mission data files", () => {
     expect(top[1]).toBeGreaterThan(-90);
     expect(top[1]).toBeLessThan(0);
     expect(r.saa.share).toBeGreaterThan(0.3);
+    expect(r.modules.length).toBeGreaterThanOrEqual(5);
+    for (const m of r.modules) expect(m.dose).toBeGreaterThan(100), expect(m.dose).toBeLessThan(1500);
   });
 
   it("Inspiration4 bloodwork: four crew, seven draws, values inside physical bounds", () => {

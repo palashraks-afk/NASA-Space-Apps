@@ -77,12 +77,28 @@ for t, r, lat, lon in rows:
         track.append([round((t - datetime.combine(day0, datetime.min.time())).total_seconds() / 3600, 4), round(lat, 2), round(lon, 2), round(r, 2)])
         last = t
 
+# Dose by module: the REM detectors log one daily-average rate per unit, in six US-segment
+# modules over the same days of Dec 2019 (lab/data-raw/radlab/modules_2019-12-*.csv), so the
+# modules can be compared on one instrument type.
+mods = {}
+for f in sorted(RAW.glob("modules_2019-12-*.csv")):
+    for r in csv.DictReader(open(f, encoding="utf-8")):
+        if r["instrument"] != "REM":
+            continue
+        try:
+            mods.setdefault(r["module"], []).append(float(r["absorbed_dose_rate"]) * 24)
+        except ValueError:
+            pass
+modules = sorted(({"module": m, "dose": round(sum(v) / len(v), 1), "days": len(v)} for m, v in mods.items()), key=lambda x: x["dose"])
+
 out = {
     "source": "NASA OSDR RadLab; DOSTEL-1 (DLR, DOSIS 3D) absorbed dose rate in silicon, ISS Columbus module, Jan to Apr 2022.",
     "unit_rate": "uGy/h", "unit_daily": "uGy/day",
-    "saa": saa,
+    "saa": saa, "modules": modules,
+    "modules_source": "NASA OSDR RadLab, REM detectors, daily average absorbed dose, Dec 2019.",
     "daily": days, "grid": grid, "track_date": day0.isoformat(), "track": track,
 }
 Path("public/data/radiation.json").write_text(json.dumps(out, separators=(",", ":")), encoding="utf-8")
 ds = [d["dose"] for d in days]
+print("modules", modules)
 print("days", len(days), "daily dose min/median/max", min(ds), sorted(ds)[len(ds) // 2], max(ds), "grid", len(grid), "track", len(track), day0, "saa", saa)
