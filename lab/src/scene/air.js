@@ -144,5 +144,9 @@ export function buildAir(mats) {
     geo.attributes.position.needsUpdate = true;
     geo.attributes.color.needsUpdate = true;
   }
+  // Live-data parts stay visible when a loaded model replaces the built-in props.
+  panel.userData.data = true;
+  pts.userData.data = true;
+  rotor.userData.data = true;
   return { group, update };
 }

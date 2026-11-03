@@ -108,5 +108,7 @@ export function buildGalley(mats) {
     if (info && (!last || info.day !== last.day || info.id !== last.id)) { last = info; draw(info); }
     warmLight.material.emissiveIntensity = 2 + Math.sin(performance.now() / 600) * 0.6;
   }
+  // Live-data parts stay visible when a loaded model replaces the built-in props.
+  screen.userData.data = true;
   return { group, update };
 }

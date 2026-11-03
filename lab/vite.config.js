@@ -24,6 +24,9 @@ const shotPlugin = {
 };
 
 export default defineConfig({
+  // Relative asset paths, so the build works from any folder (GitHub Pages, Netlify, a USB stick
+  // served by any static server).
+  base: "./",
   plugins: [shotPlugin],
   worker: { format: "es" },
 });

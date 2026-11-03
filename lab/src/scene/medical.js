@@ -111,5 +111,7 @@ export function buildMedical(mats) {
     acc += dt;
     if (acc > 1 / 15 || info !== last) { acc = 0; last = info; draw(info); }
   }
+  // Live-data parts stay visible when a loaded model replaces the built-in props.
+  screen.userData.data = true;
   return { group, update };
 }

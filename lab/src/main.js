@@ -12,6 +12,7 @@ import { buildAir } from "./scene/air.js";
 import { buildGalley } from "./scene/galley.js";
 import { buildRadiation } from "./scene/radiation.js";
 import { buildBody } from "./scene/body.js";
+import { loadModels } from "./scene/models.js";
 import { createMaps } from "./ui/maps.js";
 import { BODY_PARTS, ROUTINE, clockText } from "./sim/bodyParts.js";
 import { createCameraRig } from "./scene/cameraRig.js";
@@ -37,7 +38,7 @@ const setPressed = (root, name, cur) => root.querySelectorAll(`[data-seg="${name
 async function boot() {
   loadingText.textContent = "Loading crew data";
   await Promise.all([document.fonts.load('64px "Permanent Marker"'), document.fonts.load('600 16px "Archivo"'), document.fonts.load('800 16px "Archivo"')]);
-  const [realNoise, gp, foodsFile, RAD, BLOOD, CABIN] = await Promise.all(["/data/real_noise.json", "/data/iss_gp.json", "/data/foods.json", "/data/radiation.json", "/data/bloodwork.json", "/data/cabin.json"].map((u) => fetch(u).then((r) => r.json())));
+  const [realNoise, gp, foodsFile, RAD, BLOOD, CABIN] = await Promise.all(["data/real_noise.json", "data/iss_gp.json", "data/foods.json", "data/radiation.json", "data/bloodwork.json", "data/cabin.json"].map((u) => import.meta.env.BASE_URL + u).map((u) => fetch(u).then((r) => r.json())));
   const OUTCOMES = loadOutcomes(realNoise);
   const iss = makeISS(gp[0]);
   const issEpoch = new Date(gp[0].EPOCH + "Z");
@@ -59,7 +60,7 @@ async function boot() {
   const mats = makeMaterials();
   const loader = new THREE.TextureLoader();
   const loadTex = (u) => new Promise((res) => loader.load(u, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; res(t); }, undefined, () => res(null)));
-  const [earthDay, earthNight, moonT, marsT] = await Promise.all(["/textures/earth_day.jpg", "/textures/earth_night.jpg", "/textures/moon.jpg", "/textures/mars.jpg"].map(loadTex));
+  const [earthDay, earthNight, moonT, marsT] = await Promise.all(["textures/earth_day.jpg", "textures/earth_night.jpg", "textures/moon.jpg", "textures/mars.jpg"].map((u) => loadTex(import.meta.env.BASE_URL + u)));
 
   scene.add(buildModule(mats));
   const outside = buildOutside({ earthDay, earthNight, moon: moonT, mars: marsT });
@@ -74,6 +75,10 @@ async function boot() {
   const air = place(buildAir(mats), W - 0.06, 0.08, 3.7, -Math.PI / 2);
   const radiation = place(buildRadiation(mats, { earthDay, data: RAD }), W - 0.06, 0.06, 0.05, -Math.PI / 2);
   const body = place(buildBody(mats), -0.35, 0.0, -1.1, 0.5);
+
+  // Teammates' .glb models (lab/public/models/models.json); loads in the background.
+  loadModels({ base: import.meta.env.BASE_URL, scene, stations: { medical, air, galley, radiation, body, clock, evidence, board }, body })
+    .then((files) => { if (files.length) console.info(`Loaded models: ${files.join(", ")}`); });
 
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const views = {

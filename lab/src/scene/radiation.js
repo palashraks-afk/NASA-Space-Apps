@@ -157,5 +157,8 @@ export function buildRadiation(mats, { earthDay, data }) {
     led.material.color.copy(marker.material.color);
     if (Math.floor(hours * 60) !== lastDraw) { lastDraw = Math.floor(hours * 60); draw(rate); }
   }
+  // Live-data parts stay visible when a loaded model replaces the built-in props.
+  globe.userData.data = true;
+  screen.userData.data = true;
   return { group, update, rateAt: () => tr[k][3] };
 }

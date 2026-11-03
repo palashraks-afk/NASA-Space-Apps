@@ -32,7 +32,7 @@ export function buildBody(mats) {
     m.name = `part:${key}`;
     m.renderOrder = 2;
     figure.add(m);
-    parts[key] = parts[key] || { material: m.material, meshes: [] };
+    parts[key] = parts[key] || { material: m.material, materials: [m.material], meshes: [] };
     parts[key].meshes.push(m);
     return m;
   }
@@ -65,8 +65,7 @@ export function buildBody(mats) {
   function setStatus(map) {
     for (const [key, p] of Object.entries(parts)) {
       const c = COLORS[map[key] || "none"];
-      p.material.color.setHex(c);
-      p.material.emissive.setHex(c);
+      for (const mt of p.materials) { mt.color.setHex(c); if (mt.emissive) mt.emissive.setHex(c); }
     }
   }
   function select(key) { selected = key; }
@@ -75,11 +74,23 @@ export function buildBody(mats) {
     if (!reduced) figure.rotation.y = Math.sin(t * 0.35) * 0.5;
     for (const [key, p] of Object.entries(parts)) {
       const on = key === selected;
-      p.material.opacity = selected ? (on ? 0.95 : 0.55) : 0.75;
-      p.material.emissiveIntensity = on ? 1.0 + (reduced ? 0 : 0.25 * Math.sin(t * 4)) : 0.5;
+      for (const mt of p.materials) {
+        mt.opacity = selected ? (on ? 0.95 : 0.55) : 0.75;
+        if (mt.emissive) mt.emissiveIntensity = on ? 1.0 + (reduced ? 0 : 0.25 * Math.sin(t * 4)) : 0.5;
+      }
     }
     if (parts.heart && !reduced) parts.heart.meshes[0].scale.setScalar(1 + 0.08 * Math.max(0, Math.sin(t * 7)));
   }
-  const pickables = () => Object.values(parts).flatMap((p) => p.meshes);
-  return { group, update, setStatus, select, pickables };
+  const shown = (o) => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
+  const pickables = () => Object.values(parts).flatMap((p) => p.meshes).filter(shown);
+  // A loaded model's named mesh takes over a part (see models.js).
+  function adopt(key, mesh) {
+    if (!parts[key]) return;
+    if (!parts[key].adopted) { parts[key].adopted = true; parts[key].meshes = []; parts[key].materials = []; }
+    parts[key].meshes.push(mesh);
+    parts[key].materials.push(mesh.material);
+  }
+  // A loaded model without named parts: keep the built-in organs visible inside it.
+  function showOrgans() { figure.visible = true; shell.visible = false; neck.visible = false; }
+  return { group, update, setStatus, select, pickables, adopt, showOrgans };
 }
