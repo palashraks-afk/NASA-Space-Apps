@@ -727,7 +727,9 @@ async function boot() {
     fpsT += dt; fpsN++;
     if (fpsT > 3) {
       const fps = fpsN / fpsT;
-      if (fps < 32 && !lowered && R.gtao) { R.gtao.enabled = false; renderer.setPixelRatio(1); R.onResize(); lowered = true; }
+      // Slow machine: drop ambient occlusion only. Resizing the canvas here used to blank the whole
+      // screen for a frame, which showed up as a dark flicker right after long camera moves.
+      if (fps < 32 && !lowered && R.gtao) { R.gtao.enabled = false; lowered = true; }
       window.__solFps = fps;
       fpsT = 0; fpsN = 0;
     }

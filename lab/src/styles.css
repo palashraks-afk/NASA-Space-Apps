@@ -58,7 +58,7 @@ button, select, input { font: inherit; color: inherit; }
 .nav-dot:focus-visible { outline: none; }
 .nav-dot:focus-visible .core { outline: 2px solid #fff; outline-offset: 3px; }
 @keyframes navPulse { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(3); opacity: 0; } }
-.nav-arrow { position: absolute; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; padding: 10px 12px; border: 1px solid #2c3540; border-radius: 10px; background: rgba(11, 14, 18, 0.78); color: var(--text); cursor: pointer; font-weight: 600; backdrop-filter: blur(4px); }
+.nav-arrow { position: absolute; top: 50%; transform: translateY(-50%); display: flex; align-items: center; gap: 6px; padding: 10px 12px; border: 1px solid #2c3540; border-radius: 10px; background: rgba(11, 14, 18, 0.88); color: var(--text); cursor: pointer; font-weight: 600; } /* no backdrop-filter: blurring over the live canvas can flicker it */
 .nav-arrow:hover { background: rgba(27, 33, 41, 0.95); border-color: var(--accent); }
 .nav-arrow .chev { font-size: 1.9em; line-height: 0.8; color: var(--accent); }
 .nav-arrow .to { color: var(--muted); font-size: 0.9em; }
