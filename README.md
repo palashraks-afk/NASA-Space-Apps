@@ -4,7 +4,7 @@
 
 Every other entry we found watches astronauts and raises alerts. Sol Lab helps a crew member find out what actually works for *their own* body during a mission: design a small, fair experiment ("does cutting caffeine after noon help me fall asleep faster?"), run it in a 3D station module, and get an honest verdict, including "not settled". A whole crew can run the same experiment, and each person's answer gets sharper from what the crew shares.
 
-It is laid out as a crew health console: a 3D station module on the left, an inspector on the right, and a mission timeline along the bottom. Each station in the module is a working part of the tool.
+It is laid out as a crew health console: a 3D station module on the left, an inspector on the right, and a mission timeline along the bottom. Each station in the module is a working part of the tool. Keys 1 to 9 switch stations, Space plays the mission, and the overview exports a crew report.
 
 ![Console overview](docs/img/console-overview.png)
 
@@ -12,6 +12,8 @@ It is laid out as a crew health console: a 3D station module on the left, an ins
 |---|---|
 | ![Medical station](docs/img/medical.png) | ![Air station](docs/img/air.png) |
 | Medical: heart rate, HRV, core temperature and sleep for each crew member, against their own pre-flight range. Out-of-range values are marked, never alarmed. | Air: cabin CO2, 7-day average, headache risk (Law et al. 2014), temperature and humidity against NASA-STD-3001. The fan and airflow respond to CO2. |
+| ![Radiation station](docs/img/radiation.png) | ![Bloodwork](docs/img/bloodwork.png) |
+| Radiation: real ISS dose readings (NASA OSDR RadLab, DOSTEL-1, 2022) on a globe; the station marker flies a real day of track through the South Atlantic Anomaly. | Bloodwork: real blood tests of the four Inspiration4 astronauts (SpaceX, 2021; NASA OSDR), each compared with their own pre-flight draws. |
 | ![Galley station](docs/img/galley.png) | ![Crew mode mid-mission](docs/img/crew-running.png) |
 | Galley: each day's menu with USDA nutrient values, against NASA exploration targets for vitamin D, calcium and sodium. | Experiments: a randomized self-experiment run by the whole crew; each member's chance it works, with the crew and alone. |
 | ![Body clock on Mars](docs/img/body-clock.png) | ![Mars through the window](docs/img/window-mars.png) |
@@ -23,7 +25,7 @@ It is laid out as a crew health console: a 3D station module on the left, an ins
 cd lab
 npm install
 npm run dev      # http://localhost:5199
-npm test         # 24 tests: statistics engine, pooling, missions, orbit, crew health
+npm test         # 26 tests: statistics engine, pooling, missions, orbit, crew health, real data files
 npm run check    # syntax check of every file
 npm run build    # static, works offline (dist/)
 ```
@@ -50,4 +52,4 @@ npm run build    # static, works offline (dist/)
 
 ## Data and credits
 
-Open wearable and sleep-diary data (Baigutanova et al. 2025, CC BY), USDA FoodData Central nutrient values (public domain), CelesTrak ISS elements, NASA Visible Earth imagery, Solar System Scope textures (CC BY). Full list: [lab/public/CREDITS.md](lab/public/CREDITS.md). Built with Claude Code (AI) assistance, disclosed as the Space Apps rules require. Not a medical device.
+Open wearable and sleep-diary data (Baigutanova et al. 2025, CC BY), USDA FoodData Central nutrient values (public domain), NASA OSDR RadLab ISS radiation readings and Inspiration4 bloodwork, CelesTrak ISS elements, NASA Visible Earth imagery, Solar System Scope textures (CC BY). Full list: [lab/public/CREDITS.md](lab/public/CREDITS.md). Built with Claude Code (AI) assistance, disclosed as the Space Apps rules require. Not a medical device.

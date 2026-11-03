@@ -10,6 +10,7 @@ import { buildOutside } from "./scene/window.js";
 import { buildMedical } from "./scene/medical.js";
 import { buildAir } from "./scene/air.js";
 import { buildGalley } from "./scene/galley.js";
+import { buildRadiation } from "./scene/radiation.js";
 import { createCameraRig } from "./scene/cameraRig.js";
 import { loadOutcomes, INTERVENTIONS, DESTINATIONS } from "./sim/presets.js";
 import { recommendDesign, drawMysteryEffect, buildMission, analyseDay, truthLabel } from "./sim/mission.js";
@@ -17,7 +18,7 @@ import { makeISS, issState, countSunrises } from "./sim/orbit.js";
 import { buildCrewHealth, usualRange, AIR_LIMITS, PREFLIGHT } from "./sim/health.js";
 import { poolCrew, pooledVerdict } from "./engine/pooling.js";
 import { mulberry32, normal } from "./engine/rng.js";
-import { spark, lineWithRefs } from "./ui/charts.js";
+import { spark, lineWithRefs, draws, bars } from "./ui/charts.js";
 import { powerChart, dataChart, effectChart } from "./ui/numbers.js";
 import { buildPrereg, downloadJSON } from "./ui/prereg.js";
 
@@ -31,7 +32,7 @@ const setPressed = (root, name, cur) => root.querySelectorAll(`[data-seg="${name
 async function boot() {
   loadingText.textContent = "Loading crew data";
   await Promise.all([document.fonts.load('64px "Permanent Marker"'), document.fonts.load('600 16px "Archivo"'), document.fonts.load('800 16px "Archivo"')]);
-  const [realNoise, gp, foodsFile] = await Promise.all(["/data/real_noise.json", "/data/iss_gp.json", "/data/foods.json"].map((u) => fetch(u).then((r) => r.json())));
+  const [realNoise, gp, foodsFile, RAD, BLOOD] = await Promise.all(["/data/real_noise.json", "/data/iss_gp.json", "/data/foods.json", "/data/radiation.json", "/data/bloodwork.json"].map((u) => fetch(u).then((r) => r.json())));
   const OUTCOMES = loadOutcomes(realNoise);
   const iss = makeISS(gp[0]);
   const issEpoch = new Date(gp[0].EPOCH + "Z");
@@ -66,6 +67,7 @@ async function boot() {
   const medical = place(buildMedical(mats), -W + 0.06, 0.05, -2.45, Math.PI / 2);
   const galley = place(buildGalley(mats), -W + 0.06, 0.05, 2.8, Math.PI / 2);
   const air = place(buildAir(mats), W - 0.06, 0.08, 3.7, -Math.PI / 2);
+  const radiation = place(buildRadiation(mats, { earthDay, data: RAD }), W - 0.06, 0.06, 0.05, -Math.PI / 2);
 
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const views = {
@@ -77,6 +79,7 @@ async function boot() {
     medical: { pos: V(0.3, 0.0, -2.45), look: V(-1.1, -0.06, -2.45) },
     galley: { pos: V(0.3, 0.0, 2.8), look: V(-1.1, -0.06, 2.8) },
     air: { pos: V(-0.3, 0.04, 3.7), look: V(1.1, 0.02, 3.7) },
+    radiation: { pos: V(-0.5, 0.08, 0.05), look: V(W, -0.02, 0.05) },
   };
   const rig = createCameraRig(camera, renderer.domElement, views);
   rig.setReduced(reduced);
@@ -130,13 +133,42 @@ async function boot() {
   }
   const kpi = (label, value, unit, note, flag) => `<div class="kpi ${flag ? "flag" : ""}"><div class="label">${label}</div><div class="value">${value}<small>${unit}</small></div><div class="note">${note}</div></div>`;
 
+  // ---------------- radiation and bloodwork helpers ----------------
+  // Real ISS readings cover about 100 days; mission day d replays measured day d (wrapping).
+  const radDaily = RAD.daily.map((x) => x.dose);
+  const radDates = RAD.daily.map((x) => x.date);
+  const radDay = (d = today()) => d % radDaily.length;
+  const radSeries = Array.from({ length: H.days }, (_, d) => radDaily[d % radDaily.length]);
+  const radCum = radSeries.reduce((a, v) => (a.push((a.length ? a[a.length - 1] : 0) + v), a), []);
+  const radToday = () => radSeries[today()];
+  const radTotal = () => radCum[today()];
+  const radMean = radDaily.reduce((a, b) => a + b, 0) / radDaily.length;
+  const bloodFor = (k) => BLOOD.crew[k % BLOOD.crew.length];
+  function bloodState(k, a) {
+    const vals = bloodFor(k).values[a.key];
+    const pre = vals.slice(0, 3).filter((v) => v != null);
+    const ret = vals[3];
+    if (!pre.length || ret == null) return { vals, pre, ret, text: "Missing draw", cls: "", flagged: [] };
+    const mean = pre.reduce((x, y) => x + y, 0) / pre.length;
+    const pct = ((ret - mean) / mean) * 100;
+    const outRef = (v) => v != null && a.ref && ((a.ref[0] != null && v < a.ref[0]) || (a.ref[1] != null && v > a.ref[1]));
+    const beyond = a.rcv != null && Math.abs(pct) > a.rcv;
+    const flagged = vals.map((v, i) => (i >= 3 && outRef(v) ? i : -1)).filter((i) => i >= 0);
+    if (beyond) flagged.push(3);
+    let text = `Day after landing: ${pct >= 0 ? "up" : "down"} ${Math.abs(pct).toFixed(0)}% from own pre-flight average`;
+    if (a.rcv != null) text += beyond ? `, more than normal variation (${a.rcv}%)` : `, within normal variation (${a.rcv}%)`;
+    if (outRef(ret)) text += "; outside the lab range";
+    return { vals, pre, ret, pct, mean, text, cls: beyond || outRef(ret) ? "out" : "", flagged };
+  }
+  const bloodFlags = (k) => BLOOD.panels.flatMap((p) => p.analytes).filter((a) => bloodState(k, a).cls === "out");
+
   // ---------------- tabs ----------------
-  const TABS = [["overview", "Overview"], ["medical", "Medical"], ["air", "Air"], ["galley", "Galley"], ["clock", "Body clock"], ["experiments", "Experiments"], ["window", "Window"]];
+  const TABS = [["overview", "Overview"], ["medical", "Vitals"], ["bloodwork", "Bloodwork"], ["air", "Air"], ["radiation", "Radiation"], ["galley", "Galley"], ["clock", "Body clock"], ["experiments", "Experiments"], ["window", "Window"]];
   const tabsEl = $("#tabs");
   tabsEl.innerHTML = TABS.map(([k, l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k === S.tab}">${l}</button>`).join("");
   tabsEl.addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) showTab(b.dataset.tab); });
   let inspectorEl = $("#inspector");
-  const viewFor = (tab) => (tab === "experiments" ? (E.step <= 2 ? "board" : "evidence") : tab);
+  const viewFor = (tab) => (tab === "experiments" ? (E.step <= 2 ? "board" : "evidence") : tab === "bloodwork" ? "medical" : tab);
   let panel = null;
   function showTab(tab) {
     S.tab = tab;
@@ -160,8 +192,10 @@ async function boot() {
         <table class="grid" id="ovCrew"><thead><tr><th>Crew</th><th>Slept</th><th>Heart rate</th><th>Core temp</th><th>Outside range</th></tr></thead><tbody></tbody></table>
         <h3>Cabin</h3><div class="kpis" id="ovCabin"></div>
         <h3>Experiment</h3><p id="ovExp"></p>
+        <div class="actions"><button class="btn quiet" data-act="report">Download crew report</button><span class="src">Keys: 1 to 9 switch stations, Space plays, arrows step a day</span></div>
         <p class="src">Sleep: real diaries from an open dataset (each crew member is one participant). Heart measures and temperature simulated from published spreads. Cabin air simulated within NASA-STD-3001 ranges.</p>`;
       root.querySelector("#ovCrew").addEventListener("click", (e) => { const r = e.target.closest("[data-crew]"); if (r) selectCrew(+r.dataset.crew); });
+      root.querySelector('[data-act="report"]').addEventListener("click", downloadReport);
     },
     update() {
       const i = idx();
@@ -171,7 +205,9 @@ async function boot() {
       }).join("");
       const env = H.env;
       $("#ovCabin").innerHTML = kpi("CO2 today", env.co2[i].toFixed(1), "mmHg", env.co2[i] > AIR_LIMITS.co2_1h_mmHg ? "Above the 3 mmHg nominal limit" : "Within the nominal limit", env.co2[i] > AIR_LIMITS.co2_1h_mmHg)
-        + kpi("Headache risk", (env.headache[i] * 100).toFixed(1), "%", "From the 7-day CO2 average (Law et al. 2014)", env.headache[i] > 0.01);
+        + kpi("Headache risk", (env.headache[i] * 100).toFixed(1), "%", "From the 7-day CO2 average (Law et al. 2014)", env.headache[i] > 0.01)
+        + kpi("Radiation today", Math.round(radToday()), "µGy", "Measured on the ISS (NASA RadLab)", false)
+        + kpi("Mission dose", (radTotal() / 1000).toFixed(1), "mGy", `Absorbed, ${today() + 1} days`, false);
       $("#ovExp").textContent = !E.mission ? "No experiment set up. Open Experiments to design one." : E.started ? `Day ${E.day} of ${E.days}: "${intervention().label}" on ${outcome().label.toLowerCase()}${E.crew ? ", whole crew" : ""}.` : E.done ? "Finished. See Experiments for the result." : E.locked ? "Plan locked; ready to start." : "Plan being set up.";
     },
   };
@@ -238,6 +274,54 @@ async function boot() {
       const counts = new Map();
       for (const t of m.items) counts.set(t, (counts.get(t) || 0) + 1);
       $("#galMenu").innerHTML = `<ul class="menu">${[...counts].map(([t, k]) => `<li>${esc(t)}${k > 1 ? ` <span class="src">${k} servings</span>` : ""}</li>`).join("")}</ul>`;
+    },
+  };
+
+  PANELS.bloodwork = {
+    mount(root) {
+      root.innerHTML = `<h2 id="bwTitle"></h2><p class="lede">Real blood tests from a real crew: the four Inspiration4 astronauts (SpaceX, 2021, three days in orbit), drawn three times before launch and four times after landing. Each value is compared with that astronaut's own pre-flight draws and with the lab range.</p>
+        <div class="kpis" id="bwK"></div>
+        <div id="bwPanels">${BLOOD.panels.map((p) => `<h3>${esc(p.title)}</h3>${p.analytes.map((a) => `<div class="metric" data-b="${a.key}"><span class="name">${esc(a.label)}</span><span class="val"></span><span class="state"></span><div class="chart"></div></div>`).join("")}`).join("")}</div>
+        <p class="src">${esc(BLOOD.source)} Crew A to D in this console show participants C001 to C004. Green band: lab reference range. Blue band: this person's three pre-flight draws. Normal variation for blood counts: reference change values from Coskun et al. 2018 (EuBIVAS); none are applied to the metabolic panel. One crew's short mission, not a norm. Not a medical device.</p>`;
+    },
+    update() {
+      const k = S.crewSel, b = bloodFor(k);
+      $("#bwTitle").textContent = `Bloodwork: crew ${"ABCD"[k]} (Inspiration4 ${b.id})`;
+      const flags = bloodFlags(k);
+      const total = BLOOD.panels.reduce((n, p) => n + p.analytes.length, 0);
+      $("#bwK").innerHTML = kpi("Draws", BLOOD.timepoints.length, "", "3 before launch, 4 after landing", false)
+        + kpi("Changed at landing", flags.length, `of ${total}`, flags.length ? flags.map((a) => a.label).join(", ") : "Nothing beyond normal variation or lab range", flags.length > 0);
+      const labels = BLOOD.timepoints.map((t) => t.replace("L-", "−").replace("R+", "+"));
+      for (const p of BLOOD.panels) for (const a of p.analytes) {
+        const row = $(`[data-b="${a.key}"]`), st = bloodState(k, a);
+        row.querySelector(".val").innerHTML = st.ret == null ? "–" : `${st.ret} <small>${esc(a.unit)}</small>`;
+        const s = row.querySelector(".state");
+        s.textContent = st.text;
+        s.className = `state ${st.cls}`;
+        row.querySelector(".chart").innerHTML = draws(st.vals, labels, { ref: a.ref, own: st.pre.length ? [Math.min(...st.pre), Math.max(...st.pre)] : null, flag: st.flagged });
+      }
+    },
+  };
+
+  PANELS.radiation = {
+    mount(root) {
+      const median = [...radDaily].sort((a, b) => a - b)[radDaily.length >> 1];
+      root.innerHTML = `<h2>Radiation</h2><p class="lede">Measured radiation inside the ISS, from a detector in the Columbus module. Each mission day replays a real measured day. The globe shows where in orbit the dose comes from.</p>
+        <div class="kpis" id="radK"></div>
+        <h3 id="radH">Daily dose</h3><div class="charts" id="radChart"></div>
+        <h3>Where it comes from</h3>
+        <p>Over these ${radDaily.length} days the station spent about ${Math.round(RAD.saa.minutes_per_day)} minutes a day in the South Atlantic Anomaly, where Earth's inner radiation belt dips low over South America, and collected ${Math.round(RAD.saa.share * 100)}% of its dose there. The rest is mostly galactic cosmic rays and outer-belt particles at high latitudes. The marker on the globe flies the real track of ${esc(RAD.track_date)}.</p>
+        <div class="legend"><span>Dose rate</span><i style="background:linear-gradient(90deg,#5a9ef2,#80d1b8,#f0c259,#f06b5c)"></i><span>2 to 300+ µGy/h</span></div>
+        <p class="src">${esc(RAD.source)} Daily dose: time-weighted average rate on days with at least 20 hours of readings (${radDaily.length} days, ${esc(radDates[0])} to ${esc(radDates[radDates.length - 1])}); median ${Math.round(median)} µGy a day, in line with DLR's published 250 to 290 µGy a day for this detector. This is absorbed dose in a silicon detector. NASA's career limit (600 mSv) is set in effective dose, a different quantity that accounts for radiation type and the body's own shielding, so the two are not compared here.</p>`;
+    },
+    update() {
+      const d = today(), rate = radiation.rateAt();
+      $("#radH").textContent = `Daily dose, last 60 days (today replays ${radDates[radDay(d)]})`;
+      $("#radK").innerHTML = kpi("Today", Math.round(radToday()), "µGy", `Average day: ${Math.round(radMean)} µGy`, false)
+        + kpi("Mission so far", (radTotal() / 1000).toFixed(1), "mGy", `${d + 1} days, absorbed`, false)
+        + kpi("Rate now", rate.toFixed(1), "µGy/h", rate > 20 ? "Inside a high-dose region" : "Quiet part of the orbit", rate > 20)
+        + kpi("180-day mission", ((radMean * 180) / 1000).toFixed(0), "mGy", "At the measured average rate", false);
+      $("#radChart").innerHTML = bars(radSeries, { upTo: d, window: 60, unit: "µGy" });
     },
   };
 
@@ -559,6 +643,44 @@ async function boot() {
     refresh();
   }
 
+  // ---------------- crew report ----------------
+  function downloadReport() {
+    const i = idx(), d = today(), e = H.env;
+    const rows = H.crew.map((c, k) => `<tr><td>${c.id}</td>${METRICS.map((m) => { const st = metricState(k, m); return `<td class="${st.cls}">${st.v.toFixed(m.d)} ${m.unit}</td>`; }).join("")}</tr>`).join("");
+    const nutr = H.crew.map((c) => {
+      const last = c.meals.slice(Math.max(0, i - 13), i + 1), avg = (key) => Math.round(last.reduce((a, x) => a + x[key], 0) / last.length);
+      return `<tr><td>${c.id}</td><td>${avg("kcal")} kcal</td><td>${avg("protein_g")} g</td><td>${avg("vitamin_d_IU")} IU</td><td>${avg("calcium_mg")} mg</td><td>${avg("sodium_mg")} mg</td></tr>`;
+    }).join("");
+    const blood = H.crew.map((c, k) => `<tr><td>${c.id}</td><td>${esc(bloodFor(k).id)}</td><td>${bloodFlags(k).map((a) => esc(a.label)).join(", ") || "none"}</td></tr>`).join("");
+    const html = `<!doctype html><html lang="en"><meta charset="utf-8"><title>Sol Lab crew report, mission day ${d}</title>
+<style>body{font:14px/1.45 system-ui,sans-serif;max-width:900px;margin:32px auto;padding:0 16px;color:#111}h1{font-size:22px}h2{font-size:16px;margin-top:28px}table{border-collapse:collapse;width:100%}td,th{border-bottom:1px solid #ddd;padding:6px;text-align:left}.out{color:#a05a00;font-weight:600}.expected{color:#1d5fa8}.src{color:#666;font-size:12px}</style>
+<h1>Crew health report, mission day ${d}</h1><p class="src">Generated by Sol Lab on ${new Date().toISOString().slice(0, 10)}. Simulated mission built on real data; sources below. Not a medical device.</p>
+<h2>Vitals and sleep today</h2><table><tr><th>Crew</th>${METRICS.map((m) => `<th>${m.name}</th>`).join("")}</tr>${rows}</table>
+<p class="src">Amber: outside that person's own pre-flight range. Blue: an expected in-flight change.</p>
+<h2>Cabin air</h2><table><tr><th>CO2</th><th>7-day CO2</th><th>Headache risk</th><th>Temperature</th><th>Humidity</th><th>Scrubber</th></tr><tr><td>${e.co2[i].toFixed(1)} mmHg</td><td>${e.co2_7d[i].toFixed(2)} mmHg</td><td>${(e.headache[i] * 100).toFixed(1)}%</td><td>${e.temp[i].toFixed(1)} °C</td><td>${e.rh[i].toFixed(0)}%</td><td>${e.scrubberReduced[i] ? "reduced" : "nominal"}</td></tr></table>
+<h2>Radiation</h2><p>Today ${Math.round(radToday())} µGy; mission total ${(radTotal() / 1000).toFixed(1)} mGy absorbed (real ISS DOSTEL-1 readings; today replays ${esc(radDates[radDay(d)])}).</p>
+<h2>Nutrition, last 14 days (average per day)</h2><table><tr><th>Crew</th><th>Energy</th><th>Protein</th><th>Vitamin D (target 1000)</th><th>Calcium (target 1000 to 1200)</th><th>Sodium (1500 to 2300)</th></tr>${nutr}</table>
+<h2>Bloodwork at landing (real Inspiration4 crew data)</h2><table><tr><th>Crew</th><th>Participant</th><th>Changed beyond normal variation or lab range</th></tr>${blood}</table>
+<h2>Sources</h2><p class="src">Sleep: Baigutanova et al. 2025 (CC BY). Radiation: ${esc(RAD.source)} Bloodwork: ${esc(BLOOD.source)} Nutrients: USDA FoodData Central SR Legacy. Limits and targets: NASA-STD-3001, NASA JSC-67378, Law et al. 2014.</p></html>`;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([html], { type: "text/html" }));
+    a.download = `crew-report-day-${d}.html`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  // ---------------- keyboard ----------------
+  addEventListener("keydown", (e) => {
+    if (e.target.closest("input, select, textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
+    const n = Number(e.key);
+    if (n >= 1 && n <= TABS.length) { showTab(TABS[n - 1][0]); return; }
+    if (e.key === " " && !e.target.closest("button")) { e.preventDefault(); if (today() < H.days - 1) S.playing = !S.playing; refresh(); return; }
+    if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && !S.playing) {
+      S.met = Math.max(0, Math.min(H.days - 1, Math.floor(S.met) + (e.key === "ArrowRight" ? 1 : -1)));
+      refresh();
+    }
+  });
+
   // ---------------- timeline and status ----------------
   const tl = $("#timeline");
   tl.innerHTML = `<div class="crew"><span>Crew</span>${[0, 1, 2, 3].map((k) => `<button type="button" data-crew="${k}" aria-label="Crew ${"ABCD"[k]}">${"ABCD"[k]}</button>`).join("")}</div>
@@ -604,10 +726,10 @@ async function boot() {
     ray.setFromCamera(ndc, camera);
     const tok = ray.intersectObjects(board.tokenMeshes(), false)[0];
     if (tok) { board.poke(tok.object, ray.ray.direction.clone().applyQuaternion(board.group.quaternion.clone().invert())); return; }
-    const hit = ray.intersectObjects([evidence.group, clock.group, board.group, medical.group, galley.group, air.group], true)[0];
+    const hit = ray.intersectObjects([evidence.group, clock.group, board.group, medical.group, galley.group, air.group, radiation.group], true)[0];
     if (!hit) return;
     let o = hit.object;
-    while (o && !["evidence", "clock", "board", "medical", "galley", "air"].includes(o.name)) o = o.parent;
+    while (o && !["evidence", "clock", "board", "medical", "galley", "air", "radiation"].includes(o.name)) o = o.parent;
     if (!o) return;
     const tab = o.name === "evidence" || o.name === "board" ? "experiments" : o.name;
     if (tab !== S.tab) showTab(tab);
@@ -668,6 +790,7 @@ async function boot() {
       hrNote: st(0) === "out" ? "outside usual range" : "", rmssdNote: st(1) === "out" ? "outside usual range" : "", tempNote: st(2) === "expected" ? "expected in flight" : "", sleepNote: st(3) === "out" ? "outside usual range" : "" });
     air.update(dt, { co2: H.env.co2[i], co2_7d: H.env.co2_7d[i], temp: H.env.temp[i], rh: H.env.rh[i], scrubberReduced: H.env.scrubberReduced[i], day: d });
     galley.update(dt, { id: c.id, day: d, meal: c.meals[i] });
+    radiation.update(dt, { today: radToday(), total: radTotal() });
     clock.render();
     evidence.update(dt, simT);
     board.update(dt);
@@ -709,6 +832,8 @@ async function boot() {
         medical: () => { S.met = 60; showTab("medical"); },
         air: () => { S.met = 60; refresh(); showTab("air"); },
         galley: () => { S.met = 60; showTab("galley"); },
+        bloodwork: () => { S.crewSel = 1; showTab("bloodwork"); },
+        radiation: () => { S.met = 60; refresh(); showTab("radiation"); },
         clock: () => { S.dest = "mars"; S.destLabel = DESTINATIONS.mars.label; S.clockLux = 100; resetClock(); showTab("clock"); clock.advance(24 * 9); },
         window: () => showTab("window"),
         mars: () => { S.dest = "mars"; S.destLabel = DESTINATIONS.mars.label; outside.show("mars"); showTab("window"); },

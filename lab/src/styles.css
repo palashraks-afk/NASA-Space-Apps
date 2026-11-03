@@ -115,6 +115,9 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 .chip[aria-pressed="true"] { border-color: var(--accent); }
 .menu { columns: 2; column-gap: 18px; margin: 4px 0 12px; padding: 0; list-style: none; color: var(--text); }
 .menu li { padding: 3px 0; break-inside: avoid; border-bottom: 1px solid var(--line); }
+.legend { display: flex; align-items: center; gap: 8px; font-size: 0.84em; color: var(--muted); margin: 4px 0 10px; }
+.legend i { flex: 1; height: 8px; border-radius: 4px; }
+.metric .chart svg { height: auto; }
 .verdict { font-size: 1.25em; font-weight: 800; }
 details summary { cursor: pointer; font-weight: 600; margin: 8px 0; }
 .charts svg { width: 100%; height: auto; display: block; margin: 6px 0 10px; }
