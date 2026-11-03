@@ -54,7 +54,7 @@ export function buildBody(mats) {
   add("immune", cap(0.024, 0.22), -0.16, 0.12, 0, 0, 0.18);     // arms carry the blood draws
   add("immune", cap(0.024, 0.22), 0.16, 0.12, 0, 0, -0.18);
   // translucent torso shell so the organs read as inside a body
-  const shell = new THREE.Mesh(cap(0.11, 0.2), new THREE.MeshStandardMaterial({ color: 0x9cc4ff, emissive: 0x6fa8f5, emissiveIntensity: 0.15, transparent: true, opacity: 0.12, depthWrite: false }));
+  const shell = new THREE.Mesh(cap(0.11, 0.2), new THREE.MeshStandardMaterial({ color: 0x9cc4ff, emissive: 0x6fa8f5, emissiveIntensity: 0.3, transparent: true, opacity: 0.22, depthWrite: false }));
   shell.position.y = 0.12;
   figure.add(shell);
   const neck = new THREE.Mesh(cap(0.025, 0.04), shell.material);
@@ -75,8 +75,8 @@ export function buildBody(mats) {
     if (!reduced) figure.rotation.y = Math.sin(t * 0.35) * 0.5;
     for (const [key, p] of Object.entries(parts)) {
       const on = key === selected;
-      p.material.opacity = selected ? (on ? 0.9 : 0.3) : 0.55;
-      p.material.emissiveIntensity = on ? 0.9 + (reduced ? 0 : 0.25 * Math.sin(t * 4)) : 0.35;
+      p.material.opacity = selected ? (on ? 0.95 : 0.55) : 0.75;
+      p.material.emissiveIntensity = on ? 1.0 + (reduced ? 0 : 0.25 * Math.sin(t * 4)) : 0.5;
     }
     if (parts.heart && !reduced) parts.heart.meshes[0].scale.setScalar(1 + 0.08 * Math.max(0, Math.sin(t * 7)));
   }
