@@ -25,6 +25,12 @@ It is laid out as a crew health console: a 3D station module on the left, an ins
 | ![Body clock on Mars](docs/img/body-clock.png) | ![Mars through the window](docs/img/window-mars.png) |
 | Body clock: a published circadian model running for four crew. | Destination: real ISS orbit (SGP4, CelesTrak), Moon or Mars. |
 
+## Guided tour
+
+The app opens with a 10-step tour on first visit (or add `?tour=1` to the address, or press **Tour** in the top bar). Mission patches on the overview reward check-ins, exploring and finished experiments; nothing is ever taken away.
+
+![Guided tour](docs/img/tour.png)
+
 ## Run it
 
 ```bash
@@ -33,7 +39,7 @@ npm install
 npm run dev      # http://localhost:5199
 npm test         # 34 tests: statistics engine, pooling, missions, orbit, crew health, guidance, real data files
 npm run check    # syntax check of every file
-npm run build    # static, works offline (dist/)
+npm run build    # static, works offline from any folder (dist/)
 ```
 
 ## What is new, and how we checked
@@ -55,6 +61,18 @@ npm run build    # static, works offline (dist/)
 - `analysis/`: all study outputs and simulations
 - `research_notes/`: judging research, competitor field, idea screening, evidence
 - `archive/`: earlier concepts (CALLSIGN, ECHO), kept for the record
+
+## Publish it (GitHub Pages)
+
+`.github/workflows/pages.yml` checks, tests and builds every push, and deploys `main` to GitHub Pages. One-time setup by the repo owner: make the repository public (Space Apps requires open source anyway; Pages on a private repo needs a paid plan), then Settings > Pages > Source: **GitHub Actions**. The site appears at `https://palashraks-afk.github.io/NASA-Space-Apps/`.
+
+## 3D models
+
+Teammates can drop `.glb` files into `lab/public/models/` and list them in `models.json` to replace any station's built-in shapes or the body figure. See [docs/MODELS.md](docs/MODELS.md).
+
+## Licence
+
+Code: Apache 2.0 ([LICENSE](LICENSE)). Data and textures keep their own licences, listed in [lab/public/CREDITS.md](lab/public/CREDITS.md).
 
 ## Data and credits
 

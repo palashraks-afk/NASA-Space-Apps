@@ -13,6 +13,8 @@ import { buildGalley } from "./scene/galley.js";
 import { buildRadiation } from "./scene/radiation.js";
 import { buildBody } from "./scene/body.js";
 import { loadModels } from "./scene/models.js";
+import { createPatches, PATCHES } from "./sim/patches.js";
+import { createTour } from "./ui/tour.js";
 import { createMaps } from "./ui/maps.js";
 import { BODY_PARTS, ROUTINE, clockText } from "./sim/bodyParts.js";
 import { createCameraRig } from "./scene/cameraRig.js";
@@ -94,7 +96,20 @@ async function boot() {
     body: { pos: V(0.1, 0.1, 0.3), look: V(-0.35, -0.04, -1.1) },
   };
   const rig = createCameraRig(camera, renderer.domElement, views);
-  const maps = createMaps({ host: $("#app"), rad: RAD, iss, epoch: issEpoch, earthImg: earthDay && earthDay.image, onTab: (t) => showTab(t) });
+  const patchToast = document.createElement("div");
+  patchToast.className = "toast patch-toast";
+  patchToast.hidden = true;
+  patchToast.setAttribute("role", "status");
+  $("#app").appendChild(patchToast);
+  let patchTimer = null;
+  const patches = createPatches((p) => {
+    patchToast.innerHTML = `<span>Mission patch earned</span><b>${esc(p.name)}</b><span>${esc(p.how)}</span>`;
+    patchToast.hidden = false;
+    clearTimeout(patchTimer);
+    patchTimer = setTimeout(() => (patchToast.hidden = true), 5000);
+    if (S.tab === "overview") refresh();
+  });
+  const maps = createMaps({ host: $("#app"), rad: RAD, iss, epoch: issEpoch, earthImg: earthDay && earthDay.image, onTab: (t) => showTab(t), onMode: (m) => patches.see("maps", m, ["earth", "station", "systems"], "navigator") });
   rig.setReduced(reduced);
 
   // ---------------- state ----------------
@@ -198,7 +213,7 @@ async function boot() {
   const chip = (tier) => `<span class="lvl lvl-${tier}">${LEVELS[tier].label}</span>`;
 
   // ---------------- tabs ----------------
-  const TABS = [["overview", "Overview"], ["checkin", "Check-in"], ["body", "Body"], ["medical", "Vitals"], ["bloodwork", "Bloodwork"], ["air", "Air"], ["radiation", "Radiation"], ["galley", "Galley"], ["clock", "Body clock"], ["experiments", "Experiments"], ["window", "Window"], ["maps", "Maps"]];
+  const TABS = [["overview", "Overview"], ["checkin", "Check-in"], ["body", "Body"], ["medical", "Vitals"], ["bloodwork", "Bloodwork"], ["air", "Air"], ["radiation", "Radiation"], ["galley", "Galley"], ["clock", "Clock"], ["experiments", "Experiments"], ["window", "Window"], ["maps", "Maps"]];
   const tabsEl = $("#tabs");
   tabsEl.innerHTML = TABS.map(([k, l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k === S.tab}">${l}</button>`).join("");
   tabsEl.addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) showTab(b.dataset.tab); });
@@ -214,6 +229,7 @@ async function boot() {
     inspectorEl = fresh;
     panel.mount(fresh);
     maps.show(tab === "maps");
+    patches.see("tabs", tab, TABS.map(([k]) => k), "explorer");
     refresh();
     rig.go(viewFor(tab));
   }
@@ -227,13 +243,15 @@ async function boot() {
       root.innerHTML = `<h2>Crew overview</h2><p class="lede">Each measure is compared with that person's own pre-flight range, not a population norm. Amber marks a measure outside that range; nothing alarms.</p>
         <table class="grid" id="ovCrew"><thead><tr><th>Crew</th><th>Slept</th><th>HR</th><th>Temp</th><th>Vitals</th><th>Check-in</th></tr></thead><tbody></tbody></table>
         <h3>Cabin</h3><div class="kpis" id="ovCabin"></div>
+        <h3 id="ovPatchTitle">Mission patches</h3><div class="patches" id="ovPatches"></div>
         <h3>The five hazards of spaceflight</h3><div class="hazards">${HAZARDS.map((h) => `<div class="hazard"><b>${esc(h.name)}</b><p>${esc(h.what)}</p><div class="chips">${[...new Set(h.tracks.map((t) => t.split(":")[0]))].map((t) => `<button class="chip" data-go="${t}">${esc((TABS.find(([key]) => key === t) || [t, t])[1])}</button>`).join("")}</div></div>`).join("")}</div>
         <p class="src">Hazards as defined by NASA's Human Research Program. Each links to the stations that track it.</p>
         <h3>Experiment</h3><p id="ovExp"></p>
-        <div class="actions"><button class="btn quiet" data-act="report">Download crew report</button><span class="src">Keys: 1 to 0 switch stations, Space plays, arrows step a day</span></div>
+        <div class="actions"><button class="btn" data-act="tour">Take the tour</button><button class="btn quiet" data-act="report">Download crew report</button><span class="src">Keys: 1 to 0 switch stations, Space plays, arrows step a day</span></div>
         <p class="src">Sleep: real diaries from an open dataset (each crew member is one participant). Heart measures and temperature simulated from published spreads. Cabin air: real ISS telemetry (NASA OSDR).</p>`;
       root.querySelector("#ovCrew").addEventListener("click", (e) => { const r = e.target.closest("[data-crew]"); if (r) selectCrew(+r.dataset.crew); });
       root.querySelector('[data-act="report"]').addEventListener("click", downloadReport);
+      root.querySelector('[data-act="tour"]').addEventListener("click", startTour);
       root.addEventListener("click", (e) => { const g = e.target.closest("[data-go]"); if (g) showTab(g.dataset.go); });
     },
     update() {
@@ -242,6 +260,9 @@ async function boot() {
         const nOut = METRICS.filter((m) => metricState(k, m).cls === "out").length;
         return `<tr data-crew="${k}" class="${k === S.crewSel ? "sel" : ""}"><td><b>${c.id}</b></td><td>${c.sleepDuration[i].toFixed(1)} h</td><td>${c.hr[i].toFixed(0)} bpm</td><td>${c.temp[i].toFixed(1)} °C</td><td><span class="dot ${nOut ? "out" : "ok"}"></span>${nOut ? `${nOut} out` : "in range"}</td><td>${(() => { const f = dayFindings(k); const sg = f.filter((x) => x.a.tier === "surgeon").length; return sg ? `<span class="lvl lvl-surgeon">${sg} for surgeon</span>` : f.length ? `<span class="lvl lvl-watch">${f.length} to watch</span>` : `<span class="lvl lvl-ok">All in range</span>`; })()}</td></tr>`;
       }).join("");
+      const ph = PATCHES.map((p) => `<div class="patch ${patches.has(p.id) ? "on" : ""}" title="${esc(p.how)}"><b>${esc(p.name)}</b><span>${esc(p.how)}</span></div>`).join("");
+      const pe = $("#ovPatches");
+      if (pe.dataset.h !== ph) { pe.innerHTML = ph; pe.dataset.h = ph; $("#ovPatchTitle").textContent = `Mission patches: ${patches.count()} of ${PATCHES.length}`; }
       const env = H.env;
       $("#ovCabin").innerHTML = kpi("CO2 today", env.co2[i].toFixed(1), "mmHg", env.co2[i] > AIR_LIMITS.co2_1h_mmHg ? "Above the 3 mmHg nominal limit" : "Within the nominal limit", env.co2[i] > AIR_LIMITS.co2_1h_mmHg)
         + kpi("Headache risk", (env.headache[i] * 100).toFixed(1), "%", "From the 7-day CO2 average (Law et al. 2014)", env.headache[i] > 0.01)
@@ -292,6 +313,10 @@ async function boot() {
         form.querySelector(".ck-err").textContent = err || "";
         if (err) return;
         CK.set(S.crewSel, idx(), ind.key, value);
+        patches.award("first_log");
+        if (loggedToday(S.crewSel) === INDICATORS.length) patches.award("full_day");
+        if (streak(S.crewSel) >= 3) patches.award("streak3");
+        if (streak(S.crewSel) >= 7) patches.award("streak7");
         form.reset();
         form.querySelectorAll("[data-scale]").forEach((x) => x.setAttribute("aria-pressed", "false"));
         ckKey = null; bodyKey = null;
@@ -373,6 +398,7 @@ async function boot() {
         b.querySelector(".pl").innerHTML = st.tier ? chip(st.tier) : `<span class="lvl lvl-none">Not measured</span>`;
       }
       const p = BODY_PARTS.find((x) => x.key === S.bodyPart), st = partStatus(k, p);
+      patches.see("body", p.key, BODY_PARTS.map((x) => x.key), "body");
       const hz = p.hazards.map((h) => HAZARDS.find((x) => x.key === h).name).join(", ");
       const rows = st.found.map(({ ind, a }) => `<li>${chip(a.tier)} <b>${esc(ind.label)}</b> ${esc(ind.format(a.value))} ${esc(ind.unit)}: ${esc(a.text)}${a.actions[0] ? ` <span class="src">${esc(a.actions[0])}</span>` : ""}</li>`).join("")
         + st.extra.map((x) => `<li>${chip(x.tier)} ${esc(x.text)}</li>`).join("");
@@ -770,6 +796,8 @@ async function boot() {
   function finishExperiment() {
     E.started = false;
     E.done = true;
+    patches.award("experiment");
+    if (E.crewMode) patches.award("crew_science");
     if (S.tab !== "experiments") showTab("experiments");
     goStep(4);
   }
@@ -853,6 +881,7 @@ async function boot() {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([html], { type: "text/html" }));
     a.download = `crew-report-day-${d}.html`;
+    patches.award("report");
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
@@ -981,6 +1010,11 @@ async function boot() {
     }
   }
 
+  // ---------------- guided tour ----------------
+  const tour = createTour({ host: $("#app"), show: (st) => { S.playing = false; if (st.body) { S.bodyPart = st.body; body.select(st.body); } showTab(st.tab); } });
+  function startTour() { tour.start(() => { patches.award("briefed"); try { localStorage.setItem("sollab.toured", "1"); } catch { /* fine */ } }); }
+  $("#tourBtn").addEventListener("click", startTour);
+
   // ---------------- start ----------------
   evidence.setRange({ delta: E.delta, sd: outcome().sd });
   evidence.setPosterior(priorAsPosterior(buildMission({ seed: 1, days: E.days, outcome: outcome(), design: design(), trueEffect: 0 }).prior), { snap: true });
@@ -991,6 +1025,13 @@ async function boot() {
   renderTimeline();
   renderStatus();
   setTimeout(() => $("#loading").classList.add("gone"), 200);
+  // First visit (or ?tour=1): open the guided tour once the scene is up.
+  {
+    const q = new URLSearchParams(location.search);
+    let toured = false;
+    try { toured = localStorage.getItem("sollab.toured") === "1"; } catch { /* treat as new */ }
+    if (q.get("tour") === "1" || (!toured && !q.has("auto"))) setTimeout(startTour, 900);
+  }
 
   // ---------------- loop ----------------
   let lastDay = today(), simT = 0, prevTs = null, fpsT = 0, fpsN = 0, lowered = false, uiT = 0;
@@ -1071,6 +1112,7 @@ async function boot() {
         body: () => { S.met = 60.3; S.bodyPart = "heart"; body.select("heart"); refresh(); showTab("body"); },
         maps: () => { S.met = 60.3; showTab("maps"); },
         mapstation: () => { showTab("maps"); document.querySelector('[data-seg="mapMode"] [data-v="station"]').click(); },
+        tour: () => startTour(),
         mapsystems: () => { S.met = 60.3; showTab("maps"); document.querySelector('[data-seg="mapMode"] [data-v="systems"]').click(); },
         bloodwork: () => { S.crewSel = 1; showTab("bloodwork"); },
         radiation: () => { S.met = 60; refresh(); showTab("radiation"); },

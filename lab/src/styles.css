@@ -40,7 +40,7 @@ button, select, input { font: inherit; color: inherit; }
 .brand b { font-weight: 800; font-size: 1.15em; letter-spacing: -0.01em; }
 .brand span { color: var(--muted); font-size: 0.92em; }
 .tabs { display: flex; gap: 2px; flex: 1; overflow-x: auto; }
-.tab { border: 0; background: transparent; color: var(--muted); padding: 8px 12px; border-radius: 8px; cursor: pointer; white-space: nowrap; font-weight: 600; }
+.tab { border: 0; background: transparent; color: var(--muted); padding: 8px 9px; border-radius: 8px; cursor: pointer; white-space: nowrap; font-weight: 600; }
 .tab:hover { color: var(--text); background: #161b22; }
 .tab[aria-selected="true"] { color: var(--text); background: var(--panel-2); box-shadow: inset 0 -2px 0 var(--accent); }
 .status { display: flex; gap: 14px; align-items: baseline; white-space: nowrap; color: var(--muted); }
@@ -105,6 +105,7 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 .btn:hover { filter: brightness(1.08); }
 .btn:disabled { background: #2a323c; color: var(--faint); cursor: not-allowed; filter: none; }
 .btn.quiet { background: transparent; color: var(--text); box-shadow: inset 0 0 0 1px #3a4552; }
+.btn.quiet:disabled { opacity: 0.35; background: transparent; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
 .steps { display: flex; gap: 4px; margin: 10px 0 4px; }
 .steps button { flex: 1; border: 0; background: #11161c; color: var(--faint); padding: 7px 4px; border-radius: 7px; font-size: 0.82em; font-weight: 600; cursor: pointer; }
@@ -147,9 +148,9 @@ details summary { cursor: pointer; font-weight: 600; margin: 8px 0; }
 .loading p { color: var(--muted); margin: 0; }
 .loading.gone { opacity: 0; pointer-events: none; }
 
+@media (max-width: 1600px) { .brand span { display: none; } }
 @media (max-width: 1180px) {
   :root { --inspector: 380px; }
-  .brand span { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .bars .fill, .loading { transition: none; }
@@ -245,3 +246,22 @@ details summary { cursor: pointer; font-weight: 600; margin: 8px 0; }
 @keyframes flow { to { stroke-dashoffset: -12; } }
 @media (prefers-reduced-motion: reduce) { .flow { animation: none; } }
 @media (max-width: 1180px) { .station-map, .systems-map { grid-template-columns: 1fr; } }
+
+/* Tour */
+.tour-btn { border: 1px solid #3a4552; background: transparent; color: var(--text); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-weight: 600; white-space: nowrap; }
+.tour-btn:hover { background: #161b22; }
+.tour { position: absolute; left: 20px; bottom: calc(var(--bottom) + 20px); width: min(440px, calc(100% - var(--inspector) - 40px)); background: #151a20; border: 1px solid #3a4552; border-left: 3px solid var(--accent); border-radius: 12px; padding: 14px 16px; z-index: 6; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45); }
+.tour h3 { margin: 2px 0 6px; font-size: 1.15em; }
+.tour p { margin: 0 0 10px; color: var(--muted); line-height: 1.5; }
+.tour-step { font-size: 0.8em; color: var(--accent); font-weight: 600; }
+
+/* Mission patches */
+.patches { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; }
+.patch { border: 1px dashed #2c3540; border-radius: 10px; padding: 7px 9px; display: grid; gap: 2px; }
+.patch b { font-size: 0.86em; color: var(--faint); }
+.patch span { font-size: 0.74em; color: var(--faint); line-height: 1.3; }
+.patch.on { border-style: solid; border-color: rgba(111, 168, 245, 0.55); background: #13233a; }
+.patch.on b { color: var(--text); }
+.patch.on span { color: var(--muted); }
+.patch-toast { left: 20px; right: auto; top: calc(var(--top) + 16px); bottom: auto; width: 260px; border-left: 3px solid var(--accent); }
+.patch-toast b { font-size: 1.05em; }

@@ -17,7 +17,7 @@ function rateColor(rate) {
   return [0, 1, 2].map((j) => Math.round(a[j] + (b[j] - a[j]) * f)).concat(t);
 }
 
-export function createMaps({ host, rad, iss, epoch, earthImg, onTab }) {
+export function createMaps({ host, rad, iss, epoch, earthImg, onTab, onMode = () => {} }) {
   const el = document.createElement("div");
   el.className = "mapview";
   el.hidden = true;
@@ -44,6 +44,7 @@ export function createMaps({ host, rad, iss, epoch, earthImg, onTab }) {
       el.querySelectorAll("[data-pane]").forEach((p) => (p.hidden = p.dataset.pane !== mode));
       el.querySelector(".map-layers").hidden = mode !== "earth";
       last = null;
+      onMode(mode);
     }
     const go = e.target.closest("[data-go]");
     if (go) onTab(go.dataset.go);
@@ -207,5 +208,5 @@ export function createMaps({ host, rad, iss, epoch, earthImg, onTab }) {
     else if (mode === "station") el.querySelector('[data-pane="station"]').innerHTML = drawStation(rad.modules);
     else el.querySelector('[data-pane="systems"]').innerHTML = drawSystems(state.env);
   }
-  return { el, render, show(on) { el.hidden = !on; last = null; } };
+  return { el, render, show(on) { el.hidden = !on; last = null; if (on) onMode(mode); } };
 }

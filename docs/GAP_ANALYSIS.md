@@ -48,13 +48,13 @@ Added 2026-11-02 after the team pasted the official text (`research_notes/challe
 | Clickable human figure, body parts show function and status (suggested) | 3D figure with 8 clickable regions (added 2026-11-02) | Have (placeholder shapes; teammate model can replace) |
 | Different environments: spacecraft, station, rover, base | Station, Moon base, Mars (window and body clock) | Have |
 | Prompt measurements or actions as part of the routine | Timed daily routine, due list, quiet reminder cards | Have |
-| Gamification | Only the experiment flow | **Missing** |
+| Gamification | Eleven mission patches plus the check-in streak; nothing punishes a missed day | Have |
 | Dynamic charts over time | Yes, every station | Have |
 | Color coding at a glance | Amber/green/blue states | Have (needs a legend and a second cue) |
 | Simple instructions, do not assume astronauts know how to assess themselves | How-to on every check-in card | Have |
 | NASA HRP resources and other agencies | NASA OSDR, NASA-STD-3001, DLR detector data; no HRP evidence pages cited yet | Partial |
 
-Revised challenge-fit score: was **6 of 10**; with check-in, guidance, levels and hazards built (2026-11-02), now about **8 of 10**. Body figure and routine prompts added the same day; still missing: gamification beyond a streak. Note the brief is fine with colour coding and attention levels; it does not ask for alarms, so "calm tiers" (own normal / keep an eye on it / tell the flight surgeon) fits both the brief and our no-alarm rule.
+Revised challenge-fit score: was **6 of 10**; with check-in, guidance, levels and hazards built (2026-11-02), now about **8 of 10**. Body figure, routine prompts and mission patches (gamification) added the same day. Note the brief is fine with colour coding and attention levels; it does not ask for alarms, so "calm tiers" (own normal / keep an eye on it / tell the flight surgeon) fits both the brief and our no-alarm rule.
 
 ### What to build, in order
 
@@ -85,7 +85,7 @@ Severity: **H** could cost a placing, **M** costs points, **L** polish.
 1. **H** No single sentence links monitoring and experiments; the first screen does not say what the tool is for.
 2. **H** No demo video exists.
 3. **H** `docs/PITCH.md` predates the console, radiation, bloodwork and real cabin air.
-4. **H** No guided demo mode: a judge opening the app sees a busy overview and does not know where to click.
+4. **H** ~~No guided demo mode~~ Done 2026-11-02: 10-step tour, opens on first visit.
 5. **M** The verdict "not settled" (the honest common outcome) is an anticlimax in a demo; the demo script needs a case that settles.
 6. **M** No impact numbers: how many crew-days, what decisions change, what a flight surgeon gains.
 7. **M** No Earth-benefit story (people on night shifts, Antarctic stations, patients tracking their own normal).
@@ -97,7 +97,7 @@ Severity: **H** could cost a placing, **M** costs points, **L** polish.
 
 ### Challenge fit and rules (13 to 22)
 13. **H** Challenge text now saved (`research_notes/challenge.md`) and checked above; the Resources tab (dataset list) is still not captured.
-14. **H** No LICENSE file; the rules require open source (Apache 2.0 by default).
+14. **H** ~~No LICENSE file~~ Done 2026-11-02: Apache 2.0.
 15. **H** Space Apps terms not re-read this year (AI disclosure wording, submission fields).
 16. **M** Challenge datasets may include specific NASA resources we do not use; each unused one is a possible point lost.
 17. **M** The self-experiment lab may look off-topic to a judge scoring "monitoring software".
@@ -162,7 +162,7 @@ Severity: **H** could cost a placing, **M** costs points, **L** polish.
 70. **L** No settings page (units, theme, motion).
 
 ### Interface and experience (71 to 82)
-71. **H** No onboarding: first-time users do not know tabs, keys or what the 3D stations are.
+71. **H** ~~No onboarding~~ Done: guided tour.
 72. **H** Desktop-only layout: inspector and timeline do not adapt below about 1000 px; phones and tablets break.
 73. **M** Nine tabs is a lot; group them (People: vitals, bloodwork, clock; Ship: air, radiation, galley; Science: experiments).
 74. **M** Inspector panels are long scrolls; no summary-first layout.
@@ -176,7 +176,7 @@ Severity: **H** could cost a placing, **M** costs points, **L** polish.
 82. **L** Some copy is long; lede paragraphs run four lines.
 
 ### 3D and visuals (83 to 90)
-83. **H** Station props are simple primitives; teammate's models not yet integrated.
+83. **H** Station props are simple primitives; a drop-in model loader is ready (docs/MODELS.md), waiting on the teammate's files.
 84. **M** No crew avatars; the module feels empty.
 85. **M** Overview camera shows the evidence chamber more than the new stations.
 86. **M** The radiation globe's halo reads as a grey ring; the base and arm look unfinished.
@@ -186,8 +186,8 @@ Severity: **H** could cost a placing, **M** costs points, **L** polish.
 90. **L** Screens on stations are low-contrast at a distance.
 
 ### Engineering and quality (91 to 97)
-91. **H** No deployed build and no hosting.
-92. **H** No continuous integration; tests run only by hand.
+91. **H** Deploy workflow ready (GitHub Pages); needs the repo made public and Pages switched on by the owner.
+92. **H** ~~No continuous integration~~ Done 2026-11-02: GitHub Actions runs check, tests and build.
 93. **M** `lab/src/main.js` is about 800 lines; panels, report and timeline should be separate modules.
 94. **M** No end-to-end browser tests (tab switching, report download, keyboard) in the suite.
 95. **M** No error state if a data file fails to load (the whole app stops).
