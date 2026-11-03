@@ -17,6 +17,8 @@ import { recommendDesign, drawMysteryEffect, buildMission, analyseDay, truthLabe
 import { makeISS, issState, countSunrises } from "./sim/orbit.js";
 import { buildCrewHealth, usualRange, AIR_LIMITS, PREFLIGHT } from "./sim/health.js";
 import { poolCrew, pooledVerdict } from "./engine/pooling.js";
+import { INDICATORS, INDICATOR, LEVELS, HAZARDS, validate, ownRange } from "./sim/guidance.js";
+import { buildCheckins } from "./sim/checkin.js";
 import { mulberry32, normal } from "./engine/rng.js";
 import { spark, lineWithRefs, draws, bars } from "./ui/charts.js";
 import { powerChart, dataChart, effectChart } from "./ui/numbers.js";
@@ -162,13 +164,35 @@ async function boot() {
   }
   const bloodFlags = (k) => BLOOD.panels.flatMap((p) => p.analytes).filter((a) => bloodState(k, a).cls === "out");
 
+  // ---------------- check-in ----------------
+  const CK = buildCheckins(H);
+  const SRC_LABEL = { you: "you entered", model: "from the wearable model", simulated: "simulated" };
+  // Assessment for crew k, day index i, indicator ind.
+  function assessDay(k, i, ind) {
+    const g = CK.get(k, i, ind.key);
+    if (!g) return null;
+    const f = ind.fields[0].id;
+    const prior = CK.series(k, ind.key, f, i - 30, i - 1);
+    const own = ind.key === "hr" || ind.key === "temp" ? ownRange(prior) : null;
+    const hist = [CK.get(k, i - 2, ind.key), CK.get(k, i - 1, ind.key)].map((h) => (h ? h.value : null));
+    return { ...ind.assess(g.value, own, hist), value: g.value, source: g.source };
+  }
+  const dayFindings = (k, i = idx()) => INDICATORS.map((ind) => ({ ind, a: assessDay(k, i, ind) })).filter((x) => x.a && x.a.tier !== "ok");
+  const loggedToday = (k, i = idx()) => INDICATORS.filter((ind) => CK.entered(k, i, ind.key)).length;
+  function streak(k, i = idx()) {
+    let s = 0;
+    for (let d = i; d >= 0 && INDICATORS.every((ind) => CK.entered(k, d, ind.key)); d--) s++;
+    return s;
+  }
+  const chip = (tier) => `<span class="lvl lvl-${tier}">${LEVELS[tier].label}</span>`;
+
   // ---------------- tabs ----------------
-  const TABS = [["overview", "Overview"], ["medical", "Vitals"], ["bloodwork", "Bloodwork"], ["air", "Air"], ["radiation", "Radiation"], ["galley", "Galley"], ["clock", "Body clock"], ["experiments", "Experiments"], ["window", "Window"]];
+  const TABS = [["overview", "Overview"], ["checkin", "Check-in"], ["medical", "Vitals"], ["bloodwork", "Bloodwork"], ["air", "Air"], ["radiation", "Radiation"], ["galley", "Galley"], ["clock", "Body clock"], ["experiments", "Experiments"], ["window", "Window"]];
   const tabsEl = $("#tabs");
   tabsEl.innerHTML = TABS.map(([k, l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k === S.tab}">${l}</button>`).join("");
   tabsEl.addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) showTab(b.dataset.tab); });
   let inspectorEl = $("#inspector");
-  const viewFor = (tab) => (tab === "experiments" ? (E.step <= 2 ? "board" : "evidence") : tab === "bloodwork" ? "medical" : tab);
+  const viewFor = (tab) => (tab === "experiments" ? (E.step <= 2 ? "board" : "evidence") : tab === "bloodwork" || tab === "checkin" ? "medical" : tab);
   let panel = null;
   function showTab(tab) {
     S.tab = tab;
@@ -189,19 +213,22 @@ async function boot() {
   PANELS.overview = {
     mount(root) {
       root.innerHTML = `<h2>Crew overview</h2><p class="lede">Each measure is compared with that person's own pre-flight range, not a population norm. Amber marks a measure outside that range; nothing alarms.</p>
-        <table class="grid" id="ovCrew"><thead><tr><th>Crew</th><th>Slept</th><th>Heart rate</th><th>Core temp</th><th>Outside range</th></tr></thead><tbody></tbody></table>
+        <table class="grid" id="ovCrew"><thead><tr><th>Crew</th><th>Slept</th><th>HR</th><th>Temp</th><th>Vitals</th><th>Check-in</th></tr></thead><tbody></tbody></table>
         <h3>Cabin</h3><div class="kpis" id="ovCabin"></div>
+        <h3>The five hazards of spaceflight</h3><div class="hazards">${HAZARDS.map((h) => `<div class="hazard"><b>${esc(h.name)}</b><p>${esc(h.what)}</p><div class="chips">${[...new Set(h.tracks.map((t) => t.split(":")[0]))].map((t) => `<button class="chip" data-go="${t}">${esc((TABS.find(([key]) => key === t) || [t, t])[1])}</button>`).join("")}</div></div>`).join("")}</div>
+        <p class="src">Hazards as defined by NASA's Human Research Program. Each links to the stations that track it.</p>
         <h3>Experiment</h3><p id="ovExp"></p>
-        <div class="actions"><button class="btn quiet" data-act="report">Download crew report</button><span class="src">Keys: 1 to 9 switch stations, Space plays, arrows step a day</span></div>
+        <div class="actions"><button class="btn quiet" data-act="report">Download crew report</button><span class="src">Keys: 1 to 0 switch stations, Space plays, arrows step a day</span></div>
         <p class="src">Sleep: real diaries from an open dataset (each crew member is one participant). Heart measures and temperature simulated from published spreads. Cabin air: real ISS telemetry (NASA OSDR).</p>`;
       root.querySelector("#ovCrew").addEventListener("click", (e) => { const r = e.target.closest("[data-crew]"); if (r) selectCrew(+r.dataset.crew); });
       root.querySelector('[data-act="report"]').addEventListener("click", downloadReport);
+      root.addEventListener("click", (e) => { const g = e.target.closest("[data-go]"); if (g) showTab(g.dataset.go); });
     },
     update() {
       const i = idx();
       $("#ovCrew tbody").innerHTML = H.crew.map((c, k) => {
         const nOut = METRICS.filter((m) => metricState(k, m).cls === "out").length;
-        return `<tr data-crew="${k}" class="${k === S.crewSel ? "sel" : ""}"><td><b>${c.id}</b></td><td>${c.sleepDuration[i].toFixed(1)} h</td><td>${c.hr[i].toFixed(0)} bpm</td><td>${c.temp[i].toFixed(1)} °C</td><td><span class="dot ${nOut ? "out" : "ok"}"></span>${nOut} of ${METRICS.length}</td></tr>`;
+        return `<tr data-crew="${k}" class="${k === S.crewSel ? "sel" : ""}"><td><b>${c.id}</b></td><td>${c.sleepDuration[i].toFixed(1)} h</td><td>${c.hr[i].toFixed(0)} bpm</td><td>${c.temp[i].toFixed(1)} °C</td><td><span class="dot ${nOut ? "out" : "ok"}"></span>${nOut ? `${nOut} out` : "in range"}</td><td>${(() => { const f = dayFindings(k); const sg = f.filter((x) => x.a.tier === "surgeon").length; return sg ? `<span class="lvl lvl-surgeon">${sg} for surgeon</span>` : f.length ? `<span class="lvl lvl-watch">${f.length} to watch</span>` : `<span class="lvl lvl-ok">All in range</span>`; })()}</td></tr>`;
       }).join("");
       const env = H.env;
       $("#ovCabin").innerHTML = kpi("CO2 today", env.co2[i].toFixed(1), "mmHg", env.co2[i] > AIR_LIMITS.co2_1h_mmHg ? "Above the 3 mmHg nominal limit" : "Within the nominal limit", env.co2[i] > AIR_LIMITS.co2_1h_mmHg)
@@ -211,6 +238,77 @@ async function boot() {
       $("#ovExp").textContent = !E.mission ? "No experiment set up. Open Experiments to design one." : E.started ? `Day ${E.day} of ${E.days}: "${intervention().label}" on ${outcome().label.toLowerCase()}${E.crew ? ", whole crew" : ""}.` : E.done ? "Finished. See Experiments for the result." : E.locked ? "Plan locked; ready to start." : "Plan being set up.";
     },
   };
+
+  PANELS.checkin = {
+    mount(root) {
+      ckKey = null;
+      root.innerHTML = `<h2 id="ckTitle"></h2><p class="lede">Log today's measurements. Each one is checked against health guidelines and, where there is enough history, against your own normal, then given one of three levels with what to do next.</p>
+        <div class="levels">${Object.keys(LEVELS).map((t) => chip(t)).join("")}</div>
+        <div class="kpis" id="ckK"></div>
+        <div id="ckSurgeon"></div>
+        <div id="ckList">${INDICATORS.map((ind) => `<section class="ck" data-ck="${ind.key}">
+          <div class="ck-head"><span class="name">${esc(ind.label)}</span><span class="ck-lvl"></span></div>
+          <div class="ck-now"></div>
+          <form class="ck-form" data-ind="${ind.key}" novalidate>
+            ${ind.fields.map((f) => f.scale
+              ? `<div class="seg ck-scale" role="group" aria-label="${esc(f.label)}">${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-scale="${n}" aria-pressed="false">${n}</button>`).join("")}</div><input type="hidden" name="${f.id}">`
+              : `<label class="ck-field"><span>${esc(f.label)}</span><input type="number" name="${f.id}" min="${f.min}" max="${f.max}" step="${f.step}" inputmode="decimal"></label>`).join("")}
+            <button class="btn" type="submit">Log</button>
+            <span class="ck-err" role="alert"></span>
+          </form>
+          <div class="ck-assess"></div>
+          <div class="chart"></div>
+          <details><summary>How to measure, and why it matters in space</summary>
+            <p><b>How to measure.</b> ${esc(ind.howTo)}</p><p><b>Why spaceflight changes it.</b> ${esc(ind.whySpace)}</p><p><b>When it matters.</b> ${esc(ind.when)}</p><p class="src">${esc(ind.source)}</p></details>
+        </section>`).join("")}</div>
+        <p class="src">Values you log are stored in this browser only. Days you have not logged are filled from the crew health model (heart rate, temperature, sleep) or simulated (blood pressure, blood sugar, mood, exercise), and labelled. Guidance follows the sources on each card; where a source gives no escalation point, the team chose one, and it needs review by a clinician. Not a medical device.</p>`;
+      root.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-scale]");
+        if (!b) return;
+        const form = b.closest("form");
+        form.querySelectorAll("[data-scale]").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+        form.querySelector("input[type=hidden]").value = b.dataset.scale;
+      });
+      root.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const form = e.target, ind = INDICATOR[form.dataset.ind];
+        const value = Object.fromEntries(ind.fields.map((f) => [f.id, form.elements[f.id].value === "" ? null : Number(form.elements[f.id].value)]));
+        const err = validate(ind, value);
+        form.querySelector(".ck-err").textContent = err || "";
+        if (err) return;
+        CK.set(S.crewSel, idx(), ind.key, value);
+        form.reset();
+        form.querySelectorAll("[data-scale]").forEach((x) => x.setAttribute("aria-pressed", "false"));
+        ckKey = null;
+        refresh();
+        const sec = form.closest(".ck");
+        sec.classList.add("just-logged");
+        setTimeout(() => sec.classList.remove("just-logged"), 900);
+      });
+    },
+    update() {
+      const k = S.crewSel, i = idx(), key = `${k}|${i}`;
+      if (key === ckKey) return;
+      ckKey = key;
+      $("#ckTitle").textContent = `Daily check-in: crew ${H.crew[k].id}, mission day ${today()}`;
+      const finds = dayFindings(k, i), surgeon = finds.filter((f) => f.a.tier === "surgeon");
+      $("#ckK").innerHTML = kpi("Logged by you today", loggedToday(k, i), `of ${INDICATORS.length}`, loggedToday(k, i) === INDICATORS.length ? "Check-in complete" : "Log the rest to complete today", false)
+        + kpi("Check-in streak", streak(k, i), "days", "Days in a row with every measurement logged", false);
+      $("#ckSurgeon").innerHTML = surgeon.length
+        ? `<div class="callout"><b>For the flight surgeon</b><ul>${surgeon.map((f) => `<li>${esc(f.ind.label)}: ${esc(f.ind.format(f.a.value))} ${esc(f.ind.unit)}. ${esc(f.a.text)}</li>`).join("")}</ul><p>Bring these to the next medical conference, or sooner where the card says "now".</p></div>`
+        : finds.length ? `<p class="note-ok">Nothing for the flight surgeon today. ${finds.length} to keep an eye on.</p>` : `<p class="note-ok">Everything within range today.</p>`;
+      for (const ind of INDICATORS) {
+        const sec = $(`[data-ck="${ind.key}"]`), a = assessDay(k, i, ind);
+        sec.dataset.tier = a ? a.tier : "";
+        sec.querySelector(".ck-lvl").innerHTML = a ? chip(a.tier) : "";
+        sec.querySelector(".ck-now").innerHTML = a ? `<b>${esc(ind.format(a.value))}</b> <small>${esc(ind.unit)}</small> <span class="tag tag-${a.source}">${SRC_LABEL[a.source]}</span>` : "Not logged";
+        sec.querySelector(".ck-assess").innerHTML = a ? `<p>${esc(a.text)}</p>${a.actions.length ? `<ul class="actions-list">${a.actions.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}` : "";
+        const f = ind.fields[0].id;
+        sec.querySelector(".chart").innerHTML = spark(CK.series(k, ind.key, f, 0, i), { upTo: i, window: 30, preflight: PREFLIGHT });
+      }
+    },
+  };
+  let ckKey = null;
 
   PANELS.medical = {
     mount(root) {
@@ -660,6 +758,7 @@ async function boot() {
 <h2>Vitals and sleep today</h2><table><tr><th>Crew</th>${METRICS.map((m) => `<th>${m.name}</th>`).join("")}</tr>${rows}</table>
 <p class="src">Amber: outside that person's own pre-flight range. Blue: an expected in-flight change.</p>
 <h2>Cabin air</h2><table><tr><th>CO2</th><th>7-day CO2</th><th>Headache risk</th><th>Temperature</th><th>Humidity</th><th>Peak 1-hour CO2</th></tr><tr><td>${e.co2[i].toFixed(1)} mmHg</td><td>${e.co2_7d[i].toFixed(2)} mmHg</td><td>${(e.headache[i] * 100).toFixed(1)}%</td><td>${e.temp[i].toFixed(1)} °C</td><td>${e.rh[i].toFixed(0)}%</td><td>${e.peak1h[i].toFixed(1)} mmHg</td></tr></table>
+<h2>Check-in today</h2><table><tr><th>Crew</th>${INDICATORS.map((ind) => `<th>${ind.label}</th>`).join("")}</tr>${H.crew.map((c, k) => `<tr><td>${c.id}</td>${INDICATORS.map((ind) => { const a = assessDay(k, i, ind); return a ? `<td class="${a.tier === "ok" ? "" : "out"}">${esc(ind.format(a.value))} ${ind.unit}<br><small>${LEVELS[a.tier].label}${a.source === "you" ? "" : `, ${SRC_LABEL[a.source]}`}</small></td>` : "<td>–</td>"; }).join("")}</tr>`).join("")}</table>
 <h2>Radiation</h2><p>Today ${Math.round(radToday())} µGy; mission total ${(radTotal() / 1000).toFixed(1)} mGy absorbed (real ISS DOSTEL-1 readings; today replays ${esc(radDates[radDay(d)])}).</p>
 <h2>Nutrition, last 14 days (average per day)</h2><table><tr><th>Crew</th><th>Energy</th><th>Protein</th><th>Vitamin D (target 1000)</th><th>Calcium (target 1000 to 1200)</th><th>Sodium (1500 to 2300)</th></tr>${nutr}</table>
 <h2>Bloodwork at landing (real Inspiration4 crew data)</h2><table><tr><th>Crew</th><th>Participant</th><th>Changed beyond normal variation or lab range</th></tr>${blood}</table>
@@ -676,7 +775,8 @@ async function boot() {
     const t = e.target instanceof Element ? e.target : document.body;
     if (t.closest("input, select, textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
     const n = Number(e.key);
-    if (n >= 1 && n <= TABS.length) { showTab(TABS[n - 1][0]); return; }
+    const ti = e.key === "0" ? 9 : n - 1;
+    if (/^[0-9]$/.test(e.key) && ti < TABS.length) { showTab(TABS[ti][0]); return; }
     if (e.key === " " && !t.closest("button")) { e.preventDefault(); if (today() < H.days - 1) S.playing = !S.playing; refresh(); return; }
     if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && !S.playing) {
       S.met = Math.max(0, Math.min(H.days - 1, Math.floor(S.met) + (e.key === "ArrowRight" ? 1 : -1)));
@@ -835,6 +935,7 @@ async function boot() {
         medical: () => { S.met = 60; showTab("medical"); },
         air: () => { S.met = 60; refresh(); showTab("air"); },
         galley: () => { S.met = 60; showTab("galley"); },
+        checkin: () => { S.met = 60; refresh(); showTab("checkin"); },
         bloodwork: () => { S.crewSel = 1; showTab("bloodwork"); },
         radiation: () => { S.met = 60; refresh(); showTab("radiation"); },
         clock: () => { S.dest = "mars"; S.destLabel = DESTINATIONS.mars.label; S.clockLux = 100; resetClock(); showTab("clock"); clock.advance(24 * 9); },

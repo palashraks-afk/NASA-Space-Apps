@@ -35,15 +35,15 @@ Added 2026-11-02 after the team pasted the official text (`research_notes/challe
 
 | The brief asks for | Sol Lab today | Status |
 |---|---|---|
-| Software that **gathers** health indicators | Shows indicators from datasets; the astronaut cannot enter a single measurement | **Missing (critical)** |
+| Software that **gathers** health indicators | Check-in tab: 7 indicators logged by keyboard and clicks (added 2026-11-02) | Have |
 | Astronauts **evaluate** their own health | Each value compared with own pre-flight range, plain-language state | Have |
-| Astronauts **act** on it; **guidance on treatments and health improvements** | Self-experiments test a change; no guidance text for any finding | **Partial** |
+| Astronauts **act** on it; **guidance on treatments and health improvements** | Actions for every non-normal level, plus self-experiments | Have |
 | Visual tool, animations, interactivity | 3D module, stations, charts | Have |
-| Example indicators: **blood pressure**, heart rate, **blood sugar**, body temperature, sleep hours, **mood** | Heart rate, temperature, sleep: yes. Glucose only in landing bloodwork. Blood pressure and mood: none | **Partial** |
-| Five hazards: radiation, isolation, distance, gravity, closed environment | Radiation (real), closed environment (real air), distance (body clock, destinations). Isolation and gravity (bone, muscle) absent | **Partial** |
+| Example indicators: **blood pressure**, heart rate, **blood sugar**, body temperature, sleep hours, **mood** | All six, plus exercise | Have |
+| Five hazards: radiation, isolation, distance, gravity, closed environment | All five on the overview, each linked to its stations; isolation via mood and sleep, gravity via exercise | Have |
 | Immune, bone, cardiovascular, nutrition, behavioral | Immune and cardiovascular via bloodwork, nutrition via galley. Bone and behavioral absent | **Partial** |
-| Which measurements are possible in space; why an exam is needed; how hazards affect each indicator | Source notes only; no per-indicator explainer | **Missing** |
-| **When a result warrants attention from the crew or flight surgeons** | We flag "outside own range" in amber; no tiered guidance on when to involve the ground | **Missing (critical)** |
+| Which measurements are possible in space; why an exam is needed; how hazards affect each indicator | Explainer on every check-in card | Have |
+| **When a result warrants attention from the crew or flight surgeons** | Three levels; a "for the flight surgeon" box collects anything at the top level | Have (cut-offs need clinician review) |
 | What actions prevent a critical condition | Experiments only | **Partial** |
 | Clickable human figure, body parts show function and status (suggested) | None | **Missing** (our teammate's 3D work fits here) |
 | Different environments: spacecraft, station, rover, base | Station, Moon base, Mars (window and body clock) | Have |
@@ -51,10 +51,10 @@ Added 2026-11-02 after the team pasted the official text (`research_notes/challe
 | Gamification | Only the experiment flow | **Missing** |
 | Dynamic charts over time | Yes, every station | Have |
 | Color coding at a glance | Amber/green/blue states | Have (needs a legend and a second cue) |
-| Simple instructions, do not assume astronauts know how to assess themselves | None | **Missing** |
+| Simple instructions, do not assume astronauts know how to assess themselves | How-to on every check-in card | Have |
 | NASA HRP resources and other agencies | NASA OSDR, NASA-STD-3001, DLR detector data; no HRP evidence pages cited yet | Partial |
 
-Revised challenge-fit score: **6 of 10** until measurement entry, guidance and the flight-surgeon question are built. Note the brief is fine with colour coding and attention levels; it does not ask for alarms, so "calm tiers" (own normal / keep an eye on it / tell the flight surgeon) fits both the brief and our no-alarm rule.
+Revised challenge-fit score: was **6 of 10**; with check-in, guidance, levels and hazards built (2026-11-02), now about **8 of 10**. Still missing: clickable body figure, routine prompts, gamification beyond a streak. Note the brief is fine with colour coding and attention levels; it does not ask for alarms, so "calm tiers" (own normal / keep an eye on it / tell the flight surgeon) fits both the brief and our no-alarm rule.
 
 ### What to build, in order
 
