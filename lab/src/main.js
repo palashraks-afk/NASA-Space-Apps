@@ -2,7 +2,7 @@ import "./styles.css";
 import * as THREE from "three";
 import { createRenderer } from "./scene/renderer.js";
 import { makeMaterials } from "./scene/materials.js";
-import { buildModule, W } from "./scene/module.js";
+import { buildModule, W, ZMAX } from "./scene/module.js";
 import { buildEvidence, priorAsPosterior } from "./scene/evidence.js";
 import { buildClock } from "./scene/clock.js";
 import { buildBoard } from "./scene/board.js";
@@ -51,6 +51,10 @@ async function boot() {
   const quality = new URLSearchParams(location.search).get("q") === "low" ? "low" : "high";
   const R = createRenderer(stage, { quality });
   const { scene, camera, composer, renderer } = R;
+  // From outside the hatch end the closed hatch would block the view down the module, so a global
+  // clip plane slices the hatch end away while the camera is out there (no clipping otherwise).
+  const hatchCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 1e4);
+  renderer.clippingPlanes = [hatchCut];
   const mats = makeMaterials();
   const loader = new THREE.TextureLoader();
   const loadTex = (u) => new Promise((res) => loader.load(u, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; res(t); }, undefined, () => res(null)));
@@ -70,7 +74,8 @@ async function boot() {
 
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const views = {
-    overview: { pos: V(0, 0.28, 4.6), look: V(0, -0.05, -2) },
+    // Parked just outside the hatch end so both walls, galley to air, fit in frame; see `hatchCut` in tick().
+    overview: { pos: V(0, 0.3, 7.2), look: V(0, -0.05, -2) },
     window: { pos: V(0, -0.05, -3.05), look: V(0, -0.42, -6) },
     board: { pos: V(0.9, -0.04, 0.55), look: V(-1.1, -0.2, 0.55) },
     evidence: { pos: V(-0.9, 0.02, -1.9), look: V(W - 0.44, -0.18, -1.9) },
@@ -81,6 +86,15 @@ async function boot() {
   };
   const rig = createCameraRig(camera, renderer.domElement, views);
   rig.setReduced(reduced);
+  // Park the overview camera just far enough back that the outermost modules (galley and air, near
+  // the hatch end, on the side walls) sit inside the frame at the stage's current shape.
+  const fitOverview = () => {
+    const halfW = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
+    views.overview.pos.z = THREE.MathUtils.clamp(3.7 + (W + 0.05) / (0.8 * halfW), 5.4, 8.5);
+    if (rig.current === "overview") rig.go("overview", { duration: 0 });
+  };
+  fitOverview();
+  window.addEventListener("resize", () => { R.onResize(); fitOverview(); });
 
   // ---------------- state ----------------
   const S = { tab: "overview", met: 0, playing: false, speed: 1, crewSel: 0, dest: "iss", destLabel: DESTINATIONS.iss.label, simHours: dayStartHours, clockLux: 300, brightWake: false };
@@ -139,7 +153,7 @@ async function boot() {
   let inspectorEl = $("#inspector");
   const viewFor = (tab) => (tab === "experiments" ? (E.step <= 2 ? "board" : "evidence") : tab);
   let panel = null;
-  function showTab(tab) {
+  function showTab(tab, view) {
     S.tab = tab;
     tabsEl.querySelectorAll("[data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
     panel = PANELS[tab];
@@ -148,7 +162,15 @@ async function boot() {
     inspectorEl = fresh;
     panel.mount(fresh);
     refresh();
-    rig.go(viewFor(tab));
+    rig.go(view || viewFor(tab));
+  }
+  // Every camera view belongs to a tab; the experiments tab has two (board and evidence chamber).
+  const tabOfView = (view) => (view === "board" || view === "evidence" ? "experiments" : view);
+  function goView(view) {
+    if (view === rig.current) return;
+    const tab = tabOfView(view);
+    if (tab === S.tab) rig.go(view); // same panel, just move the camera
+    else showTab(tab, view);
   }
   function refresh() { if (panel) panel.update(); renderTimeline(); renderStatus(); }
 
@@ -609,23 +631,23 @@ async function boot() {
     if (!hit) return;
     let o = hit.object;
     while (o && !["evidence", "clock", "board", "medical", "galley", "air"].includes(o.name)) o = o.parent;
-    if (!o) return;
-    const tab = o.name === "evidence" || o.name === "board" ? "experiments" : o.name;
-    if (tab !== S.tab) showTab(tab);
+    if (o) goView(o.name);
   });
 
   // ---------------- navigation: station dots, edge arrows, keys ----------------
   const nav = createNav({
-    root: $("#nav"), camera, tabs: TABS, home: "overview",
-    getCurrent: () => S.tab, goTo: (tab) => { if (tab !== S.tab) showTab(tab); },
-    anchors: {
-      medical: V(-W + 0.22, 0.16, -2.45),
-      air: V(W - 0.22, 0.2, 3.7),
-      galley: V(-W + 0.22, 0.16, 2.8),
-      clock: V(W - 0.22, 0.2, 1.95),
-      experiments: [V(-W + 0.22, 0.22, 0.55), V(W - 0.55, 0.2, -1.9)],
-      window: V(0, -0.15, -4.8),
-    },
+    root: $("#nav"), camera, home: "overview", getCurrent: () => rig.current, goTo: goView,
+    // Left to right as they appear from the overview camera; `view` is the camera view each one goes to.
+    stops: [
+      { view: "galley", label: "Galley", anchor: V(-W + 0.22, 0.16, 2.8) },
+      { view: "board", label: "Experiments · board", anchor: V(-W + 0.22, 0.22, 0.55) },
+      { view: "medical", label: "Medical", anchor: V(-W + 0.22, 0.16, -2.45) },
+      { view: "window", label: "Window", anchor: V(0, -0.15, -4.8) },
+      { view: "evidence", label: "Experiments · evidence", anchor: V(W - 0.55, 0.2, -1.9) },
+      { view: "clock", label: "Body clock", anchor: V(W - 0.22, 0.2, 1.95) },
+      { view: "air", label: "Air", anchor: V(W - 0.22, 0.2, 3.7) },
+      { view: "overview", label: "Overview" },
+    ],
   });
 
   // ---------------- celebration ----------------
@@ -697,6 +719,7 @@ async function boot() {
     uiT += dt;
     if (uiT > 0.25) { uiT = 0; refresh(); }
     rig.update();
+    hatchCut.constant = camera.position.z > ZMAX - 0.1 ? ZMAX - 0.1 : 1e4;
     nav.update();
     if (draw) composer.render(dt);
     fpsT += dt; fpsN++;
