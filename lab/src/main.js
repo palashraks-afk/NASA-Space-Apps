@@ -32,7 +32,7 @@ const setPressed = (root, name, cur) => root.querySelectorAll(`[data-seg="${name
 async function boot() {
   loadingText.textContent = "Loading crew data";
   await Promise.all([document.fonts.load('64px "Permanent Marker"'), document.fonts.load('600 16px "Archivo"'), document.fonts.load('800 16px "Archivo"')]);
-  const [realNoise, gp, foodsFile, RAD, BLOOD] = await Promise.all(["/data/real_noise.json", "/data/iss_gp.json", "/data/foods.json", "/data/radiation.json", "/data/bloodwork.json"].map((u) => fetch(u).then((r) => r.json())));
+  const [realNoise, gp, foodsFile, RAD, BLOOD, CABIN] = await Promise.all(["/data/real_noise.json", "/data/iss_gp.json", "/data/foods.json", "/data/radiation.json", "/data/bloodwork.json", "/data/cabin.json"].map((u) => fetch(u).then((r) => r.json())));
   const OUTCOMES = loadOutcomes(realNoise);
   const iss = makeISS(gp[0]);
   const issEpoch = new Date(gp[0].EPOCH + "Z");
@@ -44,7 +44,7 @@ async function boot() {
     const up = { x: Math.cos(st.lat) * Math.cos(st.lon), y: Math.cos(st.lat) * Math.sin(st.lon), z: Math.sin(st.lat) };
     if (up.x * st.sunEcf.x + up.y * st.sunEcf.y + up.z * st.sunEcf.z > 0.55) { dayStartHours = m / 60; break; }
   }
-  const H = buildCrewHealth({ realNoise, foods: foodsFile.foods, days: 180 });
+  const H = buildCrewHealth({ realNoise, foods: foodsFile.foods, days: 180, cabin: CABIN.daily });
 
   loadingText.textContent = "Pressurizing the module";
   const stage = $("#stage");
@@ -193,7 +193,7 @@ async function boot() {
         <h3>Cabin</h3><div class="kpis" id="ovCabin"></div>
         <h3>Experiment</h3><p id="ovExp"></p>
         <div class="actions"><button class="btn quiet" data-act="report">Download crew report</button><span class="src">Keys: 1 to 9 switch stations, Space plays, arrows step a day</span></div>
-        <p class="src">Sleep: real diaries from an open dataset (each crew member is one participant). Heart measures and temperature simulated from published spreads. Cabin air simulated within NASA-STD-3001 ranges.</p>`;
+        <p class="src">Sleep: real diaries from an open dataset (each crew member is one participant). Heart measures and temperature simulated from published spreads. Cabin air: real ISS telemetry (NASA OSDR).</p>`;
       root.querySelector("#ovCrew").addEventListener("click", (e) => { const r = e.target.closest("[data-crew]"); if (r) selectCrew(+r.dataset.crew); });
       root.querySelector('[data-act="report"]').addEventListener("click", downloadReport);
     },
@@ -234,16 +234,16 @@ async function boot() {
 
   PANELS.air = {
     mount(root) {
-      root.innerHTML = `<h2>Cabin air</h2><p class="lede">Carbon dioxide builds up in a closed cabin and is removed by the scrubber. Higher levels raise the chance of headaches and can slow thinking.</p>
+      root.innerHTML = `<h2>Cabin air</h2><p class="lede">Real ISS cabin air, replayed one measured day per mission day. Carbon dioxide builds up in a closed cabin and is removed by the scrubbers; higher levels raise the chance of headaches and can slow thinking.</p>
         <div class="kpis" id="airK"></div><h3>Carbon dioxide, last 90 days</h3><div class="charts" id="airChart"></div>
-        <p class="src">NASA nominal 1-hour CO2 limit 3 mmHg since 2022 (per a 2026 npj Microgravity review). Law et al. 2014: on the ISS, each +1 mmHg CO2 doubled the odds of a reported headache; a 7-day average under 2.5 mmHg kept risk under 1%. Temperature 18 to 27 °C and humidity 25 to 75% from NASA-STD-3001 Vol. 2. Cabin values here are simulated, including occasional days of reduced scrubber capacity.</p>`;
+        <p class="src">NASA nominal 1-hour CO2 limit 3 mmHg since 2022 (per a 2026 npj Microgravity review). Law et al. 2014: on the ISS, each +1 mmHg CO2 doubled the odds of a reported headache; a 7-day average under 2.5 mmHg kept risk under 1%. Temperature 18 to 27 °C and humidity 25 to 75% from NASA-STD-3001 Vol. 2. Cabin values: ${esc(CABIN.source)} CO2 converted from ppm at sea-level cabin pressure. ${CABIN.dropped.flat} flat-lined sensor days and ${CABIN.dropped.overlap} duplicate days from overlapping missions were removed.</p>`;
     },
     update() {
       const i = idx(), e = H.env;
       $("#airK").innerHTML = kpi("CO2 now", e.co2[i].toFixed(1), "mmHg", e.co2[i] > 3 ? "Above the 3 mmHg nominal limit" : "Within the nominal limit", e.co2[i] > 3)
         + kpi("7-day average", e.co2_7d[i].toFixed(2), "mmHg", e.co2_7d[i] > 2.5 ? "Above the 2.5 mmHg headache guidance" : "Under the 2.5 mmHg guidance", e.co2_7d[i] > 2.5)
         + kpi("Headache risk", (e.headache[i] * 100).toFixed(1), "%", "Per crew member, from the 7-day average", e.headache[i] > 0.01)
-        + kpi("Scrubber", e.scrubberReduced[i] ? "Reduced" : "Nominal", "", e.scrubberReduced[i] ? "Running below full capacity" : "Full capacity", e.scrubberReduced[i])
+        + kpi("Peak 1-hour CO2", e.peak1h[i].toFixed(1), "mmHg", e.peak1h[i] > 3 ? "Above the 3 mmHg limit for part of the day" : "Under the 3 mmHg limit all day", e.peak1h[i] > 3)
         + kpi("Temperature", e.temp[i].toFixed(1), "°C", "Range 18 to 27 °C", false)
         + kpi("Humidity", e.rh[i].toFixed(0), "%", "Range 25 to 75%", false);
       $("#airChart").innerHTML = lineWithRefs(e.co2, { upTo: i, window: 90, unit: "mmHg", refs: [{ y: 3, label: "3.0 nominal limit", color: "#ef6a5c" }, { y: 2.5, label: "2.5 headache guidance (7-day)", color: "#e0b25a" }], minY: 1.5 });
@@ -657,7 +657,7 @@ async function boot() {
 <h1>Crew health report, mission day ${d}</h1><p class="src">Generated by Sol Lab on ${new Date().toISOString().slice(0, 10)}. Simulated mission built on real data; sources below. Not a medical device.</p>
 <h2>Vitals and sleep today</h2><table><tr><th>Crew</th>${METRICS.map((m) => `<th>${m.name}</th>`).join("")}</tr>${rows}</table>
 <p class="src">Amber: outside that person's own pre-flight range. Blue: an expected in-flight change.</p>
-<h2>Cabin air</h2><table><tr><th>CO2</th><th>7-day CO2</th><th>Headache risk</th><th>Temperature</th><th>Humidity</th><th>Scrubber</th></tr><tr><td>${e.co2[i].toFixed(1)} mmHg</td><td>${e.co2_7d[i].toFixed(2)} mmHg</td><td>${(e.headache[i] * 100).toFixed(1)}%</td><td>${e.temp[i].toFixed(1)} °C</td><td>${e.rh[i].toFixed(0)}%</td><td>${e.scrubberReduced[i] ? "reduced" : "nominal"}</td></tr></table>
+<h2>Cabin air</h2><table><tr><th>CO2</th><th>7-day CO2</th><th>Headache risk</th><th>Temperature</th><th>Humidity</th><th>Peak 1-hour CO2</th></tr><tr><td>${e.co2[i].toFixed(1)} mmHg</td><td>${e.co2_7d[i].toFixed(2)} mmHg</td><td>${(e.headache[i] * 100).toFixed(1)}%</td><td>${e.temp[i].toFixed(1)} °C</td><td>${e.rh[i].toFixed(0)}%</td><td>${e.peak1h[i].toFixed(1)} mmHg</td></tr></table>
 <h2>Radiation</h2><p>Today ${Math.round(radToday())} µGy; mission total ${(radTotal() / 1000).toFixed(1)} mGy absorbed (real ISS DOSTEL-1 readings; today replays ${esc(radDates[radDay(d)])}).</p>
 <h2>Nutrition, last 14 days (average per day)</h2><table><tr><th>Crew</th><th>Energy</th><th>Protein</th><th>Vitamin D (target 1000)</th><th>Calcium (target 1000 to 1200)</th><th>Sodium (1500 to 2300)</th></tr>${nutr}</table>
 <h2>Bloodwork at landing (real Inspiration4 crew data)</h2><table><tr><th>Crew</th><th>Participant</th><th>Changed beyond normal variation or lab range</th></tr>${blood}</table>
@@ -789,7 +789,7 @@ async function boot() {
     const st = (k) => metricState(S.crewSel, METRICS[k]).cls;
     medical.update(dt, { id: c.id, day: d, hr: c.hr[i], rmssd: c.rmssd[i], temp: c.temp[i], sleep: c.sleepDuration[i], latency: c.sleepLatency[i], eff: c.sleepEfficiency[i],
       hrNote: st(0) === "out" ? "outside usual range" : "", rmssdNote: st(1) === "out" ? "outside usual range" : "", tempNote: st(2) === "expected" ? "expected in flight" : "", sleepNote: st(3) === "out" ? "outside usual range" : "" });
-    air.update(dt, { co2: H.env.co2[i], co2_7d: H.env.co2_7d[i], temp: H.env.temp[i], rh: H.env.rh[i], scrubberReduced: H.env.scrubberReduced[i], day: d });
+    air.update(dt, { co2: H.env.co2[i], co2_7d: H.env.co2_7d[i], temp: H.env.temp[i], rh: H.env.rh[i], peak1h: H.env.peak1h[i], date: H.env.date[i], mission: H.env.mission[i], day: d });
     galley.update(dt, { id: c.id, day: d, meal: c.meals[i] });
     radiation.update(dt, { today: radToday(), total: radTotal() });
     clock.render();

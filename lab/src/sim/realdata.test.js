@@ -25,4 +25,18 @@ describe("real mission data files", () => {
       expect(c.values.sodium.filter((v) => v != null).every((v) => v > 120 && v < 160)).toBe(true);
     }
   });
+
+  it("ISS cabin air: daily CO2 in the range reported for the station, no flat-lined days", () => {
+    const c = load("cabin.json");
+    expect(c.daily.length).toBeGreaterThan(300);
+    const co2 = c.daily.map((d) => d.co2).sort((a, b) => a - b);
+    const median = co2[co2.length >> 1];
+    expect(median).toBeGreaterThan(1.5);
+    expect(median).toBeLessThan(3.5);
+    for (const d of c.daily) {
+      expect(d.peak1h).toBeGreaterThanOrEqual(d.co2 * 0.9);
+      if (d.temp != null) expect(d.temp).toBeGreaterThan(15), expect(d.temp).toBeLessThan(30);
+    }
+    expect(new Set(c.daily.map((d) => d.date)).size).toBe(c.daily.length);
+  });
 });
