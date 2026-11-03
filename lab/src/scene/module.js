@@ -189,7 +189,9 @@ export function buildModule(mats) {
   ];
   corners.forEach((c, idx) => {
     for (let z = ZMIN + 0.7; z < ZMAX - 0.5; z += 1.2) {
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.012, 0.85), idx < 2 ? mats.led : mats.ledCool);
+      // Nearly continuous (1.2 spacing, 1.14 long) and not hair-thin: short thin dashes strobed and
+      // shimmered as the camera travelled past them.
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.022, 1.14), idx < 2 ? mats.led : mats.ledCool);
       bar.position.set(c.x * 1.02, c.y * 1.02, z);
       bar.rotation.z = c.rz;
       g.add(bar);
