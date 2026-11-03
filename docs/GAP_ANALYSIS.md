@@ -17,7 +17,7 @@ Written 2026-11-02, 12 days before the event. Honest by design: every item here 
 | Impact | 7 | 7 | Our impact story is split between monitoring and self-experiments |
 | Creativity | 8 | 5 | Ahead |
 | Novelty | 7.5 | 4 | Ahead, but AstroBone overlaps on 3D and labelling |
-| Challenge fit | 7 | 9 | VITA is exactly "monitoring software"; our experiments read as adjacent |
+| Challenge fit | 6 | 8 | Against the official text: we lack measurement entry, treatment guidance and the flight-surgeon question; VITA lacks guidance and self-assessment too but gathers vitals |
 | Scientific rigor | 9 | 5 | Ahead (pre-registered studies, cited limits) |
 | Depth of real data | 8.5 | 3 | Ahead now (ISS air, ISS radiation, Inspiration4 blood, real sleep diaries, USDA) |
 | Feasibility | 7 | 8 | VITA is built like a deployable product |
@@ -25,9 +25,49 @@ Written 2026-11-02, 12 days before the event. Honest by design: every item here 
 | Interactive and visual appeal | 8 | 7 | Ahead in 3D, behind in finish and responsiveness |
 | Technical depth | 8 | 8 | Different kinds: our statistics vs their systems engineering |
 | Uniqueness | 8 | 4 | Ahead |
-| **Mean** | **7.8** | **6.0** | |
+| **Mean** | **7.7** | **5.9** | |
 
 Where we lose: challenge fit, feasibility, and engineering finish. Where we win: rigor, data, novelty.
+
+## Fit against the official challenge text
+
+Added 2026-11-02 after the team pasted the official text (`research_notes/challenge.md`). This changes the priorities: the brief asks for things we have not built at all.
+
+| The brief asks for | Sol Lab today | Status |
+|---|---|---|
+| Software that **gathers** health indicators | Shows indicators from datasets; the astronaut cannot enter a single measurement | **Missing (critical)** |
+| Astronauts **evaluate** their own health | Each value compared with own pre-flight range, plain-language state | Have |
+| Astronauts **act** on it; **guidance on treatments and health improvements** | Self-experiments test a change; no guidance text for any finding | **Partial** |
+| Visual tool, animations, interactivity | 3D module, stations, charts | Have |
+| Example indicators: **blood pressure**, heart rate, **blood sugar**, body temperature, sleep hours, **mood** | Heart rate, temperature, sleep: yes. Glucose only in landing bloodwork. Blood pressure and mood: none | **Partial** |
+| Five hazards: radiation, isolation, distance, gravity, closed environment | Radiation (real), closed environment (real air), distance (body clock, destinations). Isolation and gravity (bone, muscle) absent | **Partial** |
+| Immune, bone, cardiovascular, nutrition, behavioral | Immune and cardiovascular via bloodwork, nutrition via galley. Bone and behavioral absent | **Partial** |
+| Which measurements are possible in space; why an exam is needed; how hazards affect each indicator | Source notes only; no per-indicator explainer | **Missing** |
+| **When a result warrants attention from the crew or flight surgeons** | We flag "outside own range" in amber; no tiered guidance on when to involve the ground | **Missing (critical)** |
+| What actions prevent a critical condition | Experiments only | **Partial** |
+| Clickable human figure, body parts show function and status (suggested) | None | **Missing** (our teammate's 3D work fits here) |
+| Different environments: spacecraft, station, rover, base | Station, Moon base, Mars (window and body clock) | Have |
+| Prompt measurements or actions as part of the routine | None | **Missing** |
+| Gamification | Only the experiment flow | **Missing** |
+| Dynamic charts over time | Yes, every station | Have |
+| Color coding at a glance | Amber/green/blue states | Have (needs a legend and a second cue) |
+| Simple instructions, do not assume astronauts know how to assess themselves | None | **Missing** |
+| NASA HRP resources and other agencies | NASA OSDR, NASA-STD-3001, DLR detector data; no HRP evidence pages cited yet | Partial |
+
+Revised challenge-fit score: **6 of 10** until measurement entry, guidance and the flight-surgeon question are built. Note the brief is fine with colour coding and attention levels; it does not ask for alarms, so "calm tiers" (own normal / keep an eye on it / tell the flight surgeon) fits both the brief and our no-alarm rule.
+
+### What to build, in order
+
+1. **Daily check-in** (gathers indicators): astronaut enters blood pressure, resting heart rate, blood sugar, temperature, sleep, and mood by keyboard and clicks, with how-to instructions for each measurement. Entries land in the same charts as the dataset values.
+2. **Assessment with guidance**: for each indicator, three calm tiers (within your normal / watch / talk to the flight surgeon), each tier with plain actions ("hydrate and recheck in 2 hours", "log symptoms"), sourced from NASA-STD-3001 and HRP evidence. No sounds, no flashing.
+3. **Clickable body figure**: organs and systems (heart, bones, brain, eyes, immune, muscles) linking each to its indicators, the hazard that affects it, and its status. Our teammate's 3D models go here.
+4. **Hazard map**: the five HRP hazards, each linked to the indicators and stations that track it.
+5. **Routine prompts**: a mission-day checklist (morning vitals, mood, exercise log), tied to the timeline, ticked off as entries arrive.
+6. **Gamification without pressure**: streaks for completed check-ins and finished experiments; nothing punishes a skipped day.
+7. **Explainers**: one card per indicator: what it measures, how to take it in space, why spaceflight changes it, when it matters.
+8. **Bone and behavioral health**: exercise log and mood scale, the two hazards we do not cover.
+
+These replace items 1, 4, 13, 17, 55 and 56 below as the top priorities.
 
 ## The five gaps that matter most
 
@@ -56,7 +96,7 @@ Severity: **H** could cost a placing, **M** costs points, **L** polish.
 12. **L** No team page (who did what, the biomed background behind it).
 
 ### Challenge fit and rules (13 to 22)
-13. **H** Official 2026 challenge text and its dataset list are not in the repo; fit has never been checked against the exact wording.
+13. **H** Challenge text now saved (`research_notes/challenge.md`) and checked above; the Resources tab (dataset list) is still not captured.
 14. **H** No LICENSE file; the rules require open source (Apache 2.0 by default).
 15. **H** Space Apps terms not re-read this year (AI disclosure wording, submission fields).
 16. **M** Challenge datasets may include specific NASA resources we do not use; each unused one is a possible point lost.
