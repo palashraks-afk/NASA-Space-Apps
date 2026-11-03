@@ -671,10 +671,11 @@ async function boot() {
 
   // ---------------- keyboard ----------------
   addEventListener("keydown", (e) => {
-    if (e.target.closest("input, select, textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
+    const t = e.target instanceof Element ? e.target : document.body;
+    if (t.closest("input, select, textarea") || e.ctrlKey || e.metaKey || e.altKey) return;
     const n = Number(e.key);
     if (n >= 1 && n <= TABS.length) { showTab(TABS[n - 1][0]); return; }
-    if (e.key === " " && !e.target.closest("button")) { e.preventDefault(); if (today() < H.days - 1) S.playing = !S.playing; refresh(); return; }
+    if (e.key === " " && !t.closest("button")) { e.preventDefault(); if (today() < H.days - 1) S.playing = !S.playing; refresh(); return; }
     if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && !S.playing) {
       S.met = Math.max(0, Math.min(H.days - 1, Math.floor(S.met) + (e.key === "ArrowRight" ? 1 : -1)));
       refresh();
