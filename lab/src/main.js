@@ -696,7 +696,9 @@ async function boot() {
       lastDay++;
       if (E.started) advanceExperimentDay();
     }
-    S.simHours += (dt * (S.tab === "window" ? 90 : 20)) / 3600;
+    // Same pace everywhere. The window view used to run 4.5x faster, so the station swung through
+    // Earth's shadow about once a minute and the whole window kept cutting to dark and back.
+    S.simHours += (dt * 20) / 3600;
     if (S.dest === "iss") {
       const st = issState(iss, new Date(issEpoch.getTime() + S.simHours * 3600e3));
       if (st) outside.orientEarth(st.lat, st.lon, st.sunEcf);
