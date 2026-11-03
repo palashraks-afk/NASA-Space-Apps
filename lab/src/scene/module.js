@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mulberry32 } from "../engine/rng.js";
-import { hazardStripes, tapeMesh } from "./textures.js";
+import { hazardStripes, placardTexture, tapeMesh } from "./textures.js";
 
 // Station module interior, built procedurally. Coordinates in metres: the module runs
 // along z from -5 (window end) to +5 (hatch end); walls at x = +/-W, deck/overhead at y = +/-H.
@@ -43,11 +43,48 @@ export function buildModule(mats) {
     return panelGeoCache.get(k);
   };
   const knobGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.025, 12);
+
+  // Fine hardware (panel reveals, fasteners, rails, status LEDs) is instanced: hundreds of small
+  // parts for a handful of draw calls. Placement uses its own seeded stream so the existing
+  // locker, bag and vent layout above does not move.
+  const r2 = mulberry32(1042);
+  const unitBox = new THREE.BoxGeometry(1, 1, 1);
+  const screwGeo = new THREE.CylinderGeometry(0.0065, 0.0065, 0.006, 10).rotateX(Math.PI / 2);
+  const inst = (geo, mat, max, shadow = false) => {
+    const m = new THREE.InstancedMesh(geo, mat, max);
+    m.count = 0;
+    m.castShadow = shadow;
+    m.receiveShadow = true;
+    g.add(m);
+    return m;
+  };
+  const reveals = inst(unitBox, mats.reveal, 800);
+  const screws = inst(screwGeo, mats.screw, 4000);
+  const rails = inst(unitBox, mats.rail, 600, true);
+  const ledsGreen = inst(new THREE.SphereGeometry(0.0045, 8, 6), mats.ledGreen, 400);
+  const ledsAmber = inst(new THREE.SphereGeometry(0.0045, 8, 6), mats.ledAmber, 200);
+  const local = new THREE.Matrix4(), world = new THREE.Matrix4();
+  const qI = new THREE.Quaternion(), vP = new THREE.Vector3(), vS = new THREE.Vector3();
+  // Place one instance given in a rack's local frame (rack.matrix must be current).
+  const put = (mesh, rack, x, y, z, sx = 1, sy = 1, sz = 1) => {
+    local.compose(vP.set(x, y, z), qI, vS.set(sx, sy, sz));
+    world.multiplyMatrices(rack.matrix, local);
+    mesh.setMatrixAt(mesh.count++, world);
+  };
+  const putWorld = (mesh, x, y, z, sx = 1, sy = 1, sz = 1) => {
+    local.compose(vP.set(x, y, z), qI, vS.set(sx, sy, sz));
+    mesh.setMatrixAt(mesh.count++, local);
+  };
+
+  const idPrefix = { port: "LAB1P", starboard: "LAB1S", deck: "LAB1D", overhead: "LAB1O" };
   for (const f of faces) {
+    let rackNo = 0;
     for (let z = ZMIN + 0.55; z < ZMAX - 0.4; z += 1.0) {
       const rack = new THREE.Group();
       rack.position.set(...f.pos(z));
       rack.rotation.set(...f.rot);
+      rack.updateMatrix();
+      rackNo++;
       const back = new THREE.Mesh(panelGeo(0.96, f.span, 0.04, 0.012), mats.aluPanel);
       back.receiveShadow = true;
       rack.add(back);
@@ -66,6 +103,16 @@ export function buildModule(mats) {
         knob.rotation.x = Math.PI / 2;
         knob.position.set(locker.position.x + lw / 2 - 0.05, locker.position.y, 0.06);
         rack.add(knob);
+        // Dark reveal behind the door so each panel reads as a separate door with a gap, four
+        // corner fasteners, and sometimes a status LED.
+        const lhh = lh - 0.04;
+        put(reveals, rack, locker.position.x, locker.position.y, 0.026, lw + 0.014, lhh + 0.014, 0.02);
+        for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+          put(screws, rack, locker.position.x + sx * (lw / 2 - 0.026), locker.position.y + sy * (lhh / 2 - 0.026), 0.0505);
+        }
+        if (r2() < 0.3) {
+          put(r2() < 0.2 ? ledsAmber : ledsGreen, rack, locker.position.x - lw / 2 + 0.045, locker.position.y + lhh / 2 - 0.035, 0.051);
+        }
         if (r() < 0.18) {
           const label = tapeMesh(["Spare filters", "Hygiene kit", "Cable stow", "Sample bags", "Ear plugs", "Wipes", "Spare lenses", "Batteries"][Math.floor(r() * 8)], { w: 0.2, h: 0.05, fontSize: 56, seed: Math.floor(r() * 1e6) });
           label.position.set(locker.position.x - 0.08, locker.position.y + lh / 2 - 0.08, 0.052);
@@ -119,6 +166,15 @@ export function buildModule(mats) {
         rail.position.set(0, -f.span / 2 + 0.12, 0.05);
         rack.add(rail);
       }
+      // Rack frame: extruded rails on all four sides with bolted joints, and an ID placard on the top rail.
+      for (const sx of [-1, 1]) {
+        put(rails, rack, sx * 0.475, 0, 0.034, 0.022, f.span, 0.028);
+        for (const k of [-0.38, 0, 0.38]) put(screws, rack, sx * 0.475, k * f.span, 0.051);
+      }
+      for (const sy of [-1, 1]) put(rails, rack, 0, sy * (f.span / 2 - 0.022), 0.034, 0.93, 0.036, 0.028);
+      const placard = new THREE.Mesh(new THREE.PlaneGeometry(0.12, 0.03), new THREE.MeshStandardMaterial({ map: placardTexture(`${idPrefix[f.name]}${rackNo}`), roughness: 0.6 }));
+      placard.position.set(-0.3, f.span / 2 - 0.022, 0.0485);
+      rack.add(placard);
       g.add(rack);
     }
   }
@@ -133,7 +189,9 @@ export function buildModule(mats) {
   ];
   corners.forEach((c, idx) => {
     for (let z = ZMIN + 0.7; z < ZMAX - 0.5; z += 1.2) {
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.012, 0.85), idx < 2 ? mats.led : mats.ledCool);
+      // Nearly continuous (1.2 spacing, 1.14 long) and not hair-thin: short thin dashes strobed and
+      // shimmered as the camera travelled past them.
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.022, 1.14), idx < 2 ? mats.led : mats.ledCool);
       bar.position.set(c.x * 1.02, c.y * 1.02, z);
       bar.rotation.z = c.rz;
       g.add(bar);
@@ -164,12 +222,41 @@ export function buildModule(mats) {
   key(0.45, 0.95, 0.9, -1.1, -0.1, 0.55);
   key(-0.2, 0.9, -1.9, 1.1, 0, -1.9);
 
-  // Cables along two corners for density.
+  // Cables along two corners for density, each with a thinner blue cable alongside and cable ties.
+  const ties = inst(new THREE.TorusGeometry(0.0135, 0.0025, 6, 14), mats.graphite, 160);
   for (const side of [-1, 1]) {
-    const curve = new THREE.CatmullRomCurve3(Array.from({ length: 9 }, (_, i) => new THREE.Vector3(side * (W - 0.05), -H + 0.07 + Math.sin(i * 1.3) * 0.02, ZMIN + 0.4 + i * 1.15)));
+    const pts3 = (dx, dy, ph) => Array.from({ length: 9 }, (_, i) => new THREE.Vector3(side * (W - 0.05) + dx, -H + 0.07 + dy + Math.sin(i * 1.3 + ph) * 0.02, ZMIN + 0.4 + i * 1.15));
+    const curve = new THREE.CatmullRomCurve3(pts3(0, 0, 0));
     const cable = new THREE.Mesh(new THREE.TubeGeometry(curve, 80, 0.011, 8), mats.graphiteMatte);
     cable.castShadow = true;
     g.add(cable);
+    const thin = new THREE.CatmullRomCurve3(pts3(-side * 0.022, 0.012, 0.6));
+    g.add(new THREE.Mesh(new THREE.TubeGeometry(thin, 80, 0.006, 8), mats.ink));
+    for (let t = 0.04; t < 0.97; t += 0.035) {
+      const p = curve.getPoint(t);
+      putWorld(ties, p.x, p.y, p.z);
+    }
+  }
+
+  // Ventilation ducts along the overhead: corrugated fabric hose with clamps, as on the real station.
+  const ductLen = ZMAX - ZMIN - 0.8;
+  const ribGeo = new THREE.TorusGeometry(0.056, 0.006, 8, 28);
+  for (const side of [-1, 1]) {
+    const dx = side * 0.7, dy = 0.74;
+    const hose = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, ductLen, 24, 1, true).rotateX(Math.PI / 2), mats.duct);
+    hose.material.side = THREE.DoubleSide;
+    hose.position.set(dx, dy, 0);
+    g.add(hose);
+    const ribs = inst(ribGeo, mats.duct, 340);
+    for (let z = ZMIN + 0.4; z < ZMAX - 0.4; z += 0.03) putWorld(ribs, dx, dy, z);
+    for (let z = ZMIN + 1; z < ZMAX - 0.5; z += 1.6) {
+      const clamp = new THREE.Mesh(new THREE.TorusGeometry(0.062, 0.009, 8, 32), mats.rail);
+      clamp.position.set(dx, dy, z);
+      g.add(clamp);
+      const stem = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.2, 0.03), mats.rail);
+      stem.position.set(dx, dy + 0.16, z);
+      g.add(stem);
+    }
   }
 
   // Window end wall with a circular opening.
@@ -187,6 +274,12 @@ export function buildModule(mats) {
   const frame = new THREE.Mesh(new THREE.TorusGeometry(0.64, 0.045, 24, 96), mats.graphite);
   frame.position.set(0, 0.02, ZMIN + 0.03);
   g.add(frame);
+  const seal = new THREE.Mesh(new THREE.TorusGeometry(0.6, 0.014, 10, 96), mats.rubber);
+  seal.position.set(0, 0.02, ZMIN + 0.04);
+  g.add(seal);
+  const chamfer = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.012, 8, 96), mats.rail);
+  chamfer.position.set(0, 0.02, ZMIN + 0.018);
+  g.add(chamfer);
   const bolts = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.02, 10), mats.alu, 24);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion().setFromEuler(new THREE.Euler(Math.PI / 2, 0, 0));
   for (let i = 0; i < 24; i++) {
@@ -211,6 +304,18 @@ export function buildModule(mats) {
   const rim = new THREE.Mesh(new THREE.TorusGeometry(0.66, 0.03, 12, 96), new THREE.MeshStandardMaterial({ map: hazardStripes(), roughness: 0.6 }));
   rim.position.set(0, 0, ZMAX - 0.05);
   g.add(rim);
+  // Ring of retaining bolts on the hatch face, and a small round viewport.
+  for (let i = 0; i < 16; i++) {
+    const a = (i / 16) * Math.PI * 2;
+    putWorld(screws, Math.cos(a) * 0.54, Math.sin(a) * 0.54, ZMAX - 0.058, 1.6, 1.6, 1.4);
+  }
+  const portFrame = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.015, 12, 48), mats.graphite);
+  portFrame.position.set(-0.2, -0.14, ZMAX - 0.062);
+  g.add(portFrame);
+  const portGlass = new THREE.Mesh(new THREE.CircleGeometry(0.1, 32), new THREE.MeshStandardMaterial({ color: 0x0b1118, roughness: 0.1, metalness: 0.3 }));
+  portGlass.position.set(-0.2, -0.14, ZMAX - 0.058);
+  portGlass.rotation.y = Math.PI;
+  g.add(portGlass);
   const handle = handrail(0.36, mats.graphite);
   handle.rotation.z = Math.PI / 2;
   handle.rotation.y = Math.PI;

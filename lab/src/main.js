@@ -2,7 +2,7 @@ import "./styles.css";
 import * as THREE from "three";
 import { createRenderer } from "./scene/renderer.js";
 import { makeMaterials } from "./scene/materials.js";
-import { buildModule, W } from "./scene/module.js";
+import { buildModule, W, ZMAX } from "./scene/module.js";
 import { buildEvidence, priorAsPosterior } from "./scene/evidence.js";
 import { buildClock } from "./scene/clock.js";
 import { buildBoard } from "./scene/board.js";
@@ -29,6 +29,7 @@ import { mulberry32, normal } from "./engine/rng.js";
 import { spark, lineWithRefs, draws, bars } from "./ui/charts.js";
 import { powerChart, dataChart, effectChart } from "./ui/numbers.js";
 import { buildPrereg, downloadJSON } from "./ui/prereg.js";
+import { createNav } from "./ui/nav.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -59,6 +60,12 @@ async function boot() {
   const quality = new URLSearchParams(location.search).get("q") === "low" ? "low" : "high";
   const R = createRenderer(stage, { quality });
   const { scene, camera, composer, renderer } = R;
+  // From outside the hatch end the closed hatch would block the view down the module, so a global
+  // clip plane slices the hatch end away while the camera is out there (no clipping otherwise).
+  // The cut sits 0.2 behind the hatch wall so its handle bar and posts (0.1 to 0.2 deep) go with it.
+  const HATCH_CUT = ZMAX - 0.2;
+  const hatchCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 1e4);
+  renderer.clippingPlanes = [hatchCut];
   const mats = makeMaterials();
   const loader = new THREE.TextureLoader();
   const loadTex = (u) => new Promise((res) => loader.load(u, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; res(t); }, undefined, () => res(null)));
@@ -84,7 +91,8 @@ async function boot() {
 
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const views = {
-    overview: { pos: V(0, 0.28, 4.6), look: V(0, -0.05, -2) },
+    // Parked just outside the hatch end so both walls, galley to air, fit in frame; see `hatchCut` in tick().
+    overview: { pos: V(0, 0.3, 7.2), look: V(0, -0.05, -2) },
     window: { pos: V(0, -0.05, -3.05), look: V(0, -0.42, -6) },
     board: { pos: V(0.9, -0.04, 0.55), look: V(-1.1, -0.2, 0.55) },
     evidence: { pos: V(-0.9, 0.02, -1.9), look: V(W - 0.44, -0.18, -1.9) },
@@ -111,6 +119,15 @@ async function boot() {
   });
   const maps = createMaps({ host: $("#app"), rad: RAD, iss, epoch: issEpoch, earthImg: earthDay && earthDay.image, onTab: (t) => showTab(t), onMode: (m) => patches.see("maps", m, ["earth", "station", "systems"], "navigator") });
   rig.setReduced(reduced);
+  // Park the overview camera just far enough back that the outermost modules (galley and air, near
+  // the hatch end, on the side walls) sit inside the frame at the stage's current shape.
+  const fitOverview = () => {
+    const halfW = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
+    views.overview.pos.z = THREE.MathUtils.clamp(3.7 + (W + 0.05) / (0.8 * halfW), 5.4, 8.5);
+    if (rig.current === "overview") rig.go("overview", { duration: 0 });
+  };
+  fitOverview();
+  window.addEventListener("resize", () => { R.onResize(); fitOverview(); });
 
   // ---------------- state ----------------
   const S = { tab: "overview", met: 0.3, bodyPart: "heart", mapsOn: false, playing: false, speed: 1, crewSel: 0, dest: "iss", destLabel: DESTINATIONS.iss.label, simHours: dayStartHours, clockLux: 300, brightWake: false };
@@ -220,7 +237,7 @@ async function boot() {
   let inspectorEl = $("#inspector");
   const viewFor = (tab) => (tab === "experiments" ? (E.step <= 2 ? "board" : "evidence") : tab === "bloodwork" || tab === "checkin" ? "medical" : tab === "maps" ? "overview" : tab);
   let panel = null;
-  function showTab(tab) {
+  function showTab(tab, view) {
     S.tab = tab;
     tabsEl.querySelectorAll("[data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
     panel = PANELS[tab];
@@ -231,7 +248,17 @@ async function boot() {
     maps.show(tab === "maps");
     patches.see("tabs", tab, TABS.map(([k]) => k), "explorer");
     refresh();
-    rig.go(viewFor(tab));
+    rig.go(view || viewFor(tab));
+  }
+  // Every camera view belongs to a tab; the experiments tab has two (board and evidence chamber).
+  const tabOfView = (view) => (view === "board" || view === "evidence" ? "experiments" : view);
+  function goView(view) {
+    const tab = tabOfView(view);
+    // Some tabs share a camera view (Check-in and Bloodwork use Vitals', Maps uses the overview),
+    // so "already here" needs both the view and the tab to match.
+    if (view === rig.current && tab === S.tab) return;
+    if (tab === S.tab) rig.go(view); // same panel, just move the camera
+    else showTab(tab, view);
   }
   function refresh() { if (panel) panel.update(); renderTimeline(); renderStatus(); body.setStatus(bodyStatusMap(S.crewSel)); }
 
@@ -894,7 +921,8 @@ async function boot() {
     const ti = e.key === "0" ? 9 : n - 1;
     if (/^[0-9]$/.test(e.key) && ti < TABS.length) { showTab(TABS[ti][0]); return; }
     if (e.key === " " && !t.closest("button")) { e.preventDefault(); if (today() < H.days - 1) S.playing = !S.playing; refresh(); return; }
-    if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && !S.playing) {
+    // Plain Left/Right move between stations (ui/nav.js); Shift+Left/Right step the mission day.
+    if ((e.key === "ArrowRight" || e.key === "ArrowLeft") && e.shiftKey && !S.playing) {
       S.met = Math.max(0, Math.min(H.days - 1 + 0.99, S.met + (e.key === "ArrowRight" ? 1 : -1)));
       refresh();
     }
@@ -991,9 +1019,26 @@ async function boot() {
     if (!hit) return;
     let o = hit.object;
     while (o && !["evidence", "clock", "board", "medical", "galley", "air", "radiation", "body"].includes(o.name)) o = o.parent;
-    if (!o) return;
-    const tab = o.name === "evidence" || o.name === "board" ? "experiments" : o.name;
-    if (tab !== S.tab) showTab(tab);
+    if (o) goView(o.name);
+  });
+
+  // ---------------- navigation: station dots, edge arrows, keys ----------------
+  const nav = createNav({
+    root: $("#nav"), camera, home: "overview", getCurrent: () => rig.current, goTo: goView,
+    blocked: () => tour.active(), // the guided tour owns Escape and the arrows while it is open
+    // Left to right as they appear from the overview camera; `view` is the camera view each one goes to.
+    stops: [
+      { view: "galley", label: "Galley", anchor: V(-W + 0.22, 0.16, 2.8) },
+      { view: "board", label: "Experiments · board", anchor: V(-W + 0.22, 0.22, 0.55) },
+      { view: "medical", label: "Vitals", anchor: V(-W + 0.22, 0.16, -2.45) },
+      { view: "body", label: "Body", anchor: V(-0.35, 0.3, -1.1) },
+      { view: "window", label: "Window", anchor: V(0, -0.15, -4.8) },
+      { view: "evidence", label: "Experiments · evidence", anchor: V(W - 0.55, 0.2, -1.9) },
+      { view: "radiation", label: "Radiation", anchor: V(W - 0.22, 0.2, 0.05) },
+      { view: "clock", label: "Body clock", anchor: V(W - 0.22, 0.2, 1.95) },
+      { view: "air", label: "Air", anchor: V(W - 0.22, 0.2, 3.7) },
+      { view: "overview", label: "Overview" },
+    ],
   });
 
   // ---------------- celebration ----------------
@@ -1052,7 +1097,10 @@ async function boot() {
       lastDay++;
       if (E.started) advanceExperimentDay();
     }
-    S.simHours += (dt * (S.tab === "window" || S.tab === "maps" ? 90 : 20)) / 3600;
+    // One pace for the orbit clock; only the orbit map runs it fast. The window view used to run 4.5x
+    // faster too, so the station swung through Earth's shadow about once a minute and the whole
+    // window kept cutting to dark and back.
+    S.simHours += (dt * (S.tab === "maps" ? 90 : 20)) / 3600;
     if (S.dest === "iss") {
       const st = issState(iss, new Date(issEpoch.getTime() + S.simHours * 3600e3));
       if (st) outside.orientEarth(st.lat, st.lon, st.sunEcf);
@@ -1081,11 +1129,15 @@ async function boot() {
     uiT += dt;
     if (uiT > 0.25) { uiT = 0; refresh(); }
     rig.update();
+    hatchCut.constant = camera.position.z > HATCH_CUT + 0.05 ? HATCH_CUT : 1e4;
+    nav.update();
     if (draw) composer.render(dt);
     fpsT += dt; fpsN++;
     if (fpsT > 3) {
       const fps = fpsN / fpsT;
-      if (fps < 32 && !lowered && R.gtao) { R.gtao.enabled = false; renderer.setPixelRatio(1); R.onResize(); lowered = true; }
+      // Slow machine: drop ambient occlusion only. Resizing the canvas here used to blank the whole
+      // screen for a frame, which showed up as a dark flicker right after long camera moves.
+      if (fps < 32 && !lowered && R.gtao) { R.gtao.enabled = false; lowered = true; }
       window.__solFps = fps;
       fpsT = 0; fpsN = 0;
     }
@@ -1093,7 +1145,7 @@ async function boot() {
   requestAnimationFrame(frame);
 
   // ---------------- development hooks ----------------
-  window.__sol = { S, E, H, showTab, goStep, selectCrew, body, camera };
+  window.__sol = { S, E, H, showTab, goStep, selectCrew, body, camera, goView, R, rig, scene, hatchCut };
   if (import.meta.env.DEV) {
     window.__solAdvance = (seconds, step = 1 / 60) => { for (let k = 0; k < seconds / step; k++) tick(step, false); return E.day; };
     const auto = new URLSearchParams(location.search).get("auto");

@@ -39,16 +39,16 @@ export function buildClock(mats) {
   }
   [["midnight", 0], ["6 h", 6], ["noon", 12], ["18 h", 18]].forEach(([txt, h], i) => {
     const a = Math.PI / 2 - (h / 24) * Math.PI * 2;
-    const tp = tapeMesh(txt, { w: 0.12, h: 0.036, width: 384, height: 112, fontSize: 70, seed: 500 + i });
-    tp.position.set(Math.cos(a) * (RD - 0.115), Math.sin(a) * (RD - 0.115), 0.022);
+    const tp = tapeMesh(txt, { w: 0.2, h: 0.058, width: 384, height: 112, fontSize: 70, seed: 500 + i });
+    tp.position.set(Math.cos(a) * (RD - 0.105), Math.sin(a) * (RD - 0.105), 0.022);
     group.add(tp);
   });
-  const nameTape = tapeMesh("Body clock", { w: 0.24, h: 0.06, fontSize: 72, seed: 520 });
-  nameTape.position.set(0, RD + 0.1, 0.02);
+  const nameTape = tapeMesh("Body clock", { w: 0.42, h: 0.105, fontSize: 72, seed: 520 });
+  nameTape.position.set(0, RD + 0.13, 0.02);
   group.add(nameTape);
 
   // Lights-on arc, rebuilt when the schedule changes.
-  const arcMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffd9a0, emissiveIntensity: 2.2, roughness: 0.4 });
+  const arcMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffd9a0, emissiveIntensity: 0.9, roughness: 0.4 });
   let arc = null;
   function setArc(onFrac, offFrac) {
     if (arc) { group.remove(arc); arc.geometry.dispose(); }
@@ -82,16 +82,16 @@ export function buildClock(mats) {
 
   const beadGeo = new THREE.SphereGeometry(0.022, 24, 16);
   const beads = CREW_COLORS.map((c, i) => {
-    const m = new THREE.Mesh(beadGeo, new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 1.4, roughness: 0.3 }));
+    const m = new THREE.Mesh(beadGeo, new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.55, roughness: 0.3 }));
     m.position.z = 0.04;
     group.add(m);
-    const tag = tapeMesh("ABCD"[i], { w: 0.03, h: 0.026, width: 128, height: 112, fontSize: 80, seed: 540 + i });
+    const tag = tapeMesh("ABCD"[i], { w: 0.036, h: 0.032, width: 128, height: 112, fontSize: 80, seed: 540 + i });
     tag.position.z = 0.041;
     group.add(tag);
     m.userData.tag = tag;
     return m;
   });
-  const portraitBead = new THREE.Mesh(new THREE.SphereGeometry(0.012, 16, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 2 }));
+  const portraitBead = new THREE.Mesh(new THREE.SphereGeometry(0.012, 16, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.9 }));
   portraitBead.position.z = 0.03;
   group.add(portraitBead);
 
@@ -176,9 +176,9 @@ export function buildClock(mats) {
     sim.members.forEach((m, i) => {
       const frac = ((m.cycles % 1) + 1) % 1;
       const a = Math.PI / 2 - frac * Math.PI * 2;
-      const rr = RD - 0.13 - i * 0.045;
+      const rr = RD - 0.19 - i * 0.045;
       beads[i].position.set(Math.cos(a) * rr, Math.sin(a) * rr, 0.04);
-      beads[i].userData.tag.position.set(Math.cos(a) * (rr - 0.035), Math.sin(a) * (rr - 0.035), 0.041);
+      beads[i].userData.tag.position.set(Math.cos(a) * rr, Math.sin(a) * rr, 0.075); // on the bead, in front of its neighbours
       beads[i].scale.setScalar(i === sim.selected ? 1.35 : 1);
     });
     const sel = sim.members[sim.selected];
