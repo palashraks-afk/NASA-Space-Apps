@@ -42,6 +42,140 @@ export function brushedRoughness(seed = 1) {
   return asDataTex(c, [2, 2]);
 }
 
+// Height canvas -> tangent-space normal map (Sobel, wrapping at the edges so it tiles).
+function heightToNormal(src, strength) {
+  const w = src.width, h = src.height;
+  const px = src.getContext("2d").getImageData(0, 0, w, h).data;
+  const hv = (x, y) => px[(((y + h) % h) * w + ((x + w) % w)) * 4] / 255;
+  const [c, g] = canvas(w, h);
+  const out = g.createImageData(w, h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const dx = hv(x + 1, y - 1) + 2 * hv(x + 1, y) + hv(x + 1, y + 1) - hv(x - 1, y - 1) - 2 * hv(x - 1, y) - hv(x - 1, y + 1);
+    const dy = hv(x - 1, y + 1) + 2 * hv(x, y + 1) + hv(x + 1, y + 1) - hv(x - 1, y - 1) - 2 * hv(x, y - 1) - hv(x + 1, y - 1);
+    let nx = -dx * strength, ny = dy * strength, nz = 1;
+    const l = Math.hypot(nx, ny, nz);
+    nx /= l; ny /= l; nz /= l;
+    const i = (y * w + x) * 4;
+    out.data[i] = (nx * 0.5 + 0.5) * 255;
+    out.data[i + 1] = (ny * 0.5 + 0.5) * 255;
+    out.data[i + 2] = (nz * 0.5 + 0.5) * 255;
+    out.data[i + 3] = 255;
+  }
+  g.putImageData(out, 0, 0);
+  return c;
+}
+
+// Surface relief for anodized aluminium panels: brushed grain, fine pitting and a few
+// hairline scratches. Returns a normal map.
+export function aluNormal(seed = 21) {
+  const [c, g] = canvas(512, 512);
+  const r = mulberry32(seed);
+  g.fillStyle = "rgb(128,128,128)";
+  g.fillRect(0, 0, 512, 512);
+  for (let i = 0; i < 3200; i++) {
+    const y = r() * 512, v = 90 + r() * 90;
+    g.strokeStyle = `rgba(${v},${v},${v},0.3)`;
+    g.lineWidth = 0.4 + r() * 1.1;
+    g.beginPath();
+    const x0 = r() * 512;
+    g.moveTo(x0, y);
+    g.lineTo(x0 + 30 + r() * 140, y + (r() - 0.5) * 1.5);
+    g.stroke();
+  }
+  for (let i = 0; i < 1400; i++) {
+    const v = 100 + r() * 60;
+    g.fillStyle = `rgba(${v},${v},${v},0.35)`;
+    g.fillRect(r() * 512, r() * 512, 1 + r() * 1.5, 1 + r() * 1.5);
+  }
+  for (let i = 0; i < 26; i++) {
+    const x = r() * 512, y = r() * 512, a = r() * Math.PI, len = 30 + r() * 120;
+    g.strokeStyle = `rgba(${r() < 0.5 ? 235 : 40},${r() < 0.5 ? 235 : 40},${r() < 0.5 ? 235 : 40},0.55)`;
+    g.lineWidth = 0.7;
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
+    g.stroke();
+  }
+  return asDataTex(heightToNormal(c, 1.6), [2, 2]);
+}
+
+// Wear and grime as a near-white colour map multiplied into the panel colour: darker,
+// slightly warm dirt along the panel edges, soft smudges, and short scuffs. Not repeated,
+// so the edge dirt lands on each panel's actual edges.
+export function aluWear(seed = 22) {
+  const [c, g] = canvas(512, 512);
+  const r = mulberry32(seed);
+  g.fillStyle = "#ffffff";
+  g.fillRect(0, 0, 512, 512);
+  const edge = (x0, y0, x1, y1) => {
+    const grd = g.createLinearGradient(x0, y0, x1, y1);
+    grd.addColorStop(0, "rgba(140,132,118,0.26)");
+    grd.addColorStop(1, "rgba(140,132,118,0)");
+    return grd;
+  };
+  g.fillStyle = edge(0, 0, 26, 0); g.fillRect(0, 0, 26, 512);
+  g.fillStyle = edge(512, 0, 486, 0); g.fillRect(486, 0, 26, 512);
+  g.fillStyle = edge(0, 0, 0, 26); g.fillRect(0, 0, 512, 26);
+  g.fillStyle = edge(0, 512, 0, 486); g.fillRect(0, 486, 512, 26);
+  for (let i = 0; i < 38; i++) {
+    const x = r() * 512, y = r() * 512, s = 20 + r() * 70;
+    const grd = g.createRadialGradient(x, y, 0, x, y, s);
+    const a = 0.015 + r() * 0.035;
+    grd.addColorStop(0, `rgba(120,112,98,${a})`);
+    grd.addColorStop(1, "rgba(120,112,98,0)");
+    g.fillStyle = grd;
+    g.fillRect(x - s, y - s, s * 2, s * 2);
+  }
+  for (let i = 0; i < 70; i++) {
+    const x = r() * 512, y = r() * 512, a = r() * Math.PI, len = 6 + r() * 26;
+    const v = r() < 0.7 ? 90 : 255;
+    g.strokeStyle = `rgba(${v},${v},${v - 6},${0.05 + r() * 0.09})`;
+    g.lineWidth = 0.8 + r() * 1.6;
+    g.beginPath();
+    g.moveTo(x, y);
+    g.lineTo(x + Math.cos(a) * len, y + Math.sin(a) * len);
+    g.stroke();
+  }
+  return asColorTex(c, [1, 1]);
+}
+
+// Printed rack identification plate: white label, black sans text, a small barcode and a
+// caution triangle. Cached by text so repeated ids share one texture.
+const placardCache = new Map();
+export function placardTexture(text) {
+  if (placardCache.has(text)) return placardCache.get(text);
+  const [c, g] = canvas(256, 64);
+  g.fillStyle = "#e9ebea";
+  g.fillRect(0, 0, 256, 64);
+  g.strokeStyle = "#1b1d20";
+  g.lineWidth = 2;
+  g.strokeRect(2, 2, 252, 60);
+  g.fillStyle = "#1b1d20";
+  g.font = "700 26px Archivo, sans-serif";
+  g.textBaseline = "middle";
+  g.fillText(text, 12, 22);
+  const r = mulberry32([...text].reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0);
+  let x = 12;
+  while (x < 168) {
+    const w = 1 + Math.floor(r() * 3);
+    g.fillRect(x, 40, w, 16);
+    x += w + 1 + Math.floor(r() * 3);
+  }
+  g.fillStyle = "#e6b422";
+  g.beginPath();
+  g.moveTo(222, 14); g.lineTo(246, 54); g.lineTo(198, 54);
+  g.closePath(); g.fill();
+  g.stroke();
+  g.fillStyle = "#1b1d20";
+  g.fillRect(220, 28, 4, 14);
+  g.fillRect(220, 46, 4, 4);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  placardCache.set(text, t);
+  return t;
+}
+
 // Beta cloth / Nomex weave for cargo bags and wall padding.
 export function weave(seed = 2, base = [236, 236, 230]) {
   const [c, g] = canvas(256, 256);

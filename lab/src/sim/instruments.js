@@ -16,7 +16,7 @@ export const INSTRUMENTS = [
       { name: "Cuff bladder", does: "Inflates around the upper arm to stop and release blood flow", shape: "torus", size: [0.09, 0.03], at: [-0.12, 0.02, 0], dir: [-1, 0.2, 0], color: "#6fa8f5" },
       { name: "Air hose", does: "Carries air between pump and cuff; transmits pressure pulses", shape: "tube", size: [0.12, 0.006], at: [-0.03, 0, 0], dir: [-0.3, -1, 0] },
       { name: "Pump", does: "Inflates the cuff", shape: "cyl", size: [0.025, 0.05], at: [0.06, 0.02, -0.02], dir: [0.4, 0.8, -1] },
-      { name: "Release valve", does: "Lets air out at a steady rate", shape: "cyl", size: [0.012, 0.03], at: [0.06, -0.03, -0.02], dir: [0.3, -1, -0.6] },
+      { name: "Release valve", does: "Lets air out at a steady rate", shape: "cyl", size: [0.012, 0.03], at: [0.0, -0.04, -0.03], dir: [-0.2, -1, -0.5] },
       { name: "Pressure sensor", does: "Measures cuff pressure and its pulse oscillations", shape: "box", size: [0.03, 0.02, 0.02], at: [0.1, 0, 0], dir: [1, 0.5, 0.4] },
       { name: "Processor and display", does: "Turns the oscillation pattern into readings; shows them", shape: "box", size: [0.1, 0.07, 0.02], at: [0.12, 0, 0.03], dir: [0.6, 0.2, 1], screen: true },
       { name: "Battery", does: "Power; flight units use certified cells", shape: "box", size: [0.05, 0.03, 0.015], at: [0.12, -0.02, -0.03], dir: [0.5, -0.6, -1] },
@@ -146,7 +146,7 @@ export function parseReadings(text, filename = "") {
         if (key === "sleep" && (unit === "min" || unit.includes("minute"))) v = v / 60;
         byDay[date] = byDay[date] || {};
         byDay[date][key] = byDay[date][key] || {};
-        byDay[date][key][field] = Math.round(v * 10) / 10;
+        byDay[date][key][field] = key === "glucose" || key === "bp" || key === "hr" ? Math.round(v) : Math.round(v * 10) / 10;
       }
     }
     for (const [date, keys] of Object.entries(byDay)) for (const [key, value] of Object.entries(keys)) rows.push({ date, key, value });

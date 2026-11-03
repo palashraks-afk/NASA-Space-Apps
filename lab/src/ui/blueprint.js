@@ -68,6 +68,7 @@ export function createBlueprint({ host, onSelect = () => {} }) {
     el.querySelector(".bp-name").textContent = inst.name;
     inst.parts.forEach((p, idx) => {
       const g = new THREE.Group();
+      const meshes = [];
       const n = p.count || 1;
       for (let c = 0; c < n; c++) {
         const geo = geometryFor(p);
@@ -79,6 +80,7 @@ export function createBlueprint({ host, onSelect = () => {} }) {
         if (p.rot) sub.rotation.set(...p.rot);
         if (n > 1) sub.position.set((c - (n - 1) / 2) * 0.03, 0, 0);
         mesh.userData.part = idx;
+        meshes.push(mesh);
         g.add(sub);
       }
       const base = new THREE.Vector3(...p.at);
@@ -93,7 +95,7 @@ export function createBlueprint({ host, onSelect = () => {} }) {
       label.position.set(0, 0.025, 0);
       g.add(label);
       root.add(g);
-      parts.push({ g, base, dir, label, meshes: g.children.map((s) => s.children[0]) });
+      parts.push({ g, base, dir, label, meshes });
     });
     // frame the assembly
     const box = new THREE.Box3().setFromObject(root);
@@ -105,14 +107,14 @@ export function createBlueprint({ host, onSelect = () => {} }) {
     animate(0.85);
   }
   function resetView() {
-    camera.position.set(0.32, 0.22, 0.42);
+    camera.position.set(0.4, 0.27, 0.52);
     controls.target.set(0, 0, 0);
     controls.update();
   }
   function setExplode(v) {
     explode = v;
     slider.value = String(v);
-    const k = 0.11 * v;
+    const k = 0.17 * v;
     for (const p of parts) p.g.position.copy(p.base).addScaledVector(p.dir, k);
     el.classList.toggle("exploded", v > 0.35);
   }

@@ -11,7 +11,7 @@ export const TOUR = [
   { tab: "radiation", title: "Radiation, measured", text: "123,695 real readings from a detector inside the ISS. The globe shows where the dose comes from: more than half of it in under an hour a day over South America, in the South Atlantic Anomaly." },
   { tab: "maps", title: "Maps", text: "The station's real orbit over day and night with the measured dose rate, a module-by-module dose map, and the life-support loop with today's cabin readings. Use the buttons above the map to switch." },
   { tab: "experiments", title: "Test what fixes it", text: "When a measure drifts, the crew can run a fair self-experiment: randomized days, a rule fixed in advance, and an honest answer, including \"not settled\". The method was checked on 49 real people's sleep diaries." },
-  { tab: "overview", title: "Your turn", text: "Press Play to run the mission, switch crew with A to D, and download a crew report from this page. Keys 1 to 0 jump between stations." },
+  { tab: "overview", title: "Your turn", text: "Press Play to run the mission, switch crew with A to D, and download a crew report from this page. Left and Right arrows move between stations; the Instruments tab shows the real hardware behind each reading." },
 ];
 
 export function createTour({ host, show }) {

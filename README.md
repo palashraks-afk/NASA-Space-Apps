@@ -16,6 +16,8 @@ It is laid out as a crew health console: a 3D station module on the left, an ins
 | Body: a clickable 3D figure; each part (brain, eyes, heart, lungs, gut, bones, muscles, immune system) is coloured by today's measurements and explains what it does and how spaceflight affects it. | Maps: the ISS ground track from real orbital elements over Earth's day and night, with the radiation dose measured along the orbit. |
 | ![Station module map](docs/img/map-station.png) | ![Life support map](docs/img/map-life-support.png) |
 | Station map: measured daily dose in six ISS modules (REM detectors, Dec 2019). | Life support: the CO2, water and oxygen loop, with the replayed day's real cabin readings. |
+| ![Instruments blueprint](docs/img/instruments.png) | |
+| Instruments: the real ISS hardware behind each reading (blood pressure unit, Bio-Monitor, DOSTEL, CDRA, T2 and more) as exploded blueprints, plus universal import of CSV or FHIR files from any device. Parts and sources: [docs/INSTRUMENTS.md](docs/INSTRUMENTS.md). | |
 | ![Medical station](docs/img/medical.png) | ![Air station](docs/img/air.png) |
 | Medical: heart rate, HRV, core temperature and sleep for each crew member, against their own pre-flight range. Out-of-range values are marked, never alarmed. | Air: cabin CO2, 7-day average, headache risk (Law et al. 2014), temperature and humidity against NASA-STD-3001. The fan and airflow respond to CO2. |
 | ![Radiation station](docs/img/radiation.png) | ![Bloodwork](docs/img/bloodwork.png) |
@@ -37,7 +39,7 @@ The app opens with a 10-step tour on first visit (or add `?tour=1` to the addres
 cd lab
 npm install
 npm run dev      # http://localhost:5199
-npm test         # 34 tests: statistics engine, pooling, missions, orbit, crew health, guidance, real data files
+npm test         # 38 tests: statistics engine, pooling, missions, orbit, crew health, guidance, real data files
 npm run check    # syntax check of every file
 npm run build    # static, works offline from any folder (dist/)
 ```
