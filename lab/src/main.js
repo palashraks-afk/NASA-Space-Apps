@@ -20,6 +20,7 @@ import { mulberry32, normal } from "./engine/rng.js";
 import { spark, lineWithRefs } from "./ui/charts.js";
 import { powerChart, dataChart, effectChart } from "./ui/numbers.js";
 import { buildPrereg, downloadJSON } from "./ui/prereg.js";
+import { createNav } from "./ui/nav.js";
 
 const $ = (s, r = document) => r.querySelector(s);
 const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -613,6 +614,20 @@ async function boot() {
     if (tab !== S.tab) showTab(tab);
   });
 
+  // ---------------- navigation: station dots, edge arrows, keys ----------------
+  const nav = createNav({
+    root: $("#nav"), camera, tabs: TABS, home: "overview",
+    getCurrent: () => S.tab, goTo: (tab) => { if (tab !== S.tab) showTab(tab); },
+    anchors: {
+      medical: V(-W + 0.22, 0.16, -2.45),
+      air: V(W - 0.22, 0.2, 3.7),
+      galley: V(-W + 0.22, 0.16, 2.8),
+      clock: V(W - 0.22, 0.2, 1.95),
+      experiments: [V(-W + 0.22, 0.22, 0.55), V(W - 0.55, 0.2, -1.9)],
+      window: V(0, -0.15, -4.8),
+    },
+  });
+
   // ---------------- celebration ----------------
   const confetti = [];
   function celebrate() {
@@ -682,6 +697,7 @@ async function boot() {
     uiT += dt;
     if (uiT > 0.25) { uiT = 0; refresh(); }
     rig.update();
+    nav.update();
     if (draw) composer.render(dt);
     fpsT += dt; fpsN++;
     if (fpsT > 3) {
