@@ -69,10 +69,12 @@ export function buildGalley(mats) {
 
   // Menu screen.
   const canvas = document.createElement("canvas");
-  canvas.width = 900; canvas.height = 520;
+  const RES = 2;
+  canvas.width = 900 * RES; canvas.height = 520 * RES;
   const ctx = canvas.getContext("2d");
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 16;
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.243), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
   screen.position.set(0.0, -0.47, 0.035);
   const frame = new THREE.Mesh(new RoundedBoxGeometry(0.45, 0.27, 0.02, 2, 0.01), mats.graphite);
@@ -81,27 +83,27 @@ export function buildGalley(mats) {
 
   let last = null;
   function draw(info) {
+    ctx.setTransform(RES, 0, 0, RES, 0, 0);
     ctx.fillStyle = "#0b131d"; ctx.fillRect(0, 0, 900, 520);
-    ctx.fillStyle = "#8fa3b8"; ctx.font = "600 26px Archivo, sans-serif";
-    ctx.fillText(`Crew ${info.id}, day ${info.day}: ${Math.round(info.meal.kcal)} kcal, ${Math.round(info.meal.protein_g)} g protein`, 26, 42);
-    const bar = (y, label, value, target, unit) => {
-      ctx.fillStyle = "#8fa3b8"; ctx.font = "600 24px Archivo, sans-serif"; ctx.fillText(label, 26, y);
-      const w = 520, frac = Math.min(1.3, value / target);
-      ctx.fillStyle = "#1b2a3b"; ctx.fillRect(230, y - 22, w, 26);
-      ctx.fillStyle = frac >= 1 ? "#7fd1b9" : "#f0c27a"; ctx.fillRect(230, y - 22, Math.min(w, (w * frac) / 1.3), 26);
-      ctx.fillStyle = "#e9edf2"; ctx.fillRect(230 + w / 1.3, y - 28, 3, 38);
-      ctx.fillStyle = "#e9edf2"; ctx.font = "700 24px Archivo, sans-serif"; ctx.fillText(`${Math.round(value)} ${unit}`, 765, y);
+    ctx.fillStyle = "#a9b8c8"; ctx.font = "700 34px Archivo, sans-serif";
+    ctx.fillText(`Crew ${info.id}    Day ${info.day}`, 30, 56);
+    ctx.fillStyle = "#e9edf2"; ctx.font = "800 64px Archivo, sans-serif";
+    ctx.fillText(`${Math.round(info.meal.kcal)}`, 30, 140);
+    let w = ctx.measureText(`${Math.round(info.meal.kcal)}`).width;
+    ctx.fillStyle = "#a9b8c8"; ctx.font = "700 30px Archivo, sans-serif"; ctx.fillText("kcal", 42 + w, 140);
+    ctx.fillStyle = "#e9edf2"; ctx.font = "800 64px Archivo, sans-serif"; ctx.fillText(`${Math.round(info.meal.protein_g)}`, 330, 140);
+    w = ctx.measureText(`${Math.round(info.meal.protein_g)}`).width;
+    ctx.fillStyle = "#a9b8c8"; ctx.font = "700 30px Archivo, sans-serif"; ctx.fillText("g protein", 342 + w, 140);
+    const bar = (y, label, value, target) => {
+      ctx.fillStyle = "#a9b8c8"; ctx.font = "700 30px Archivo, sans-serif"; ctx.fillText(label, 30, y);
+      const x0 = 260, bw = 600, frac = Math.min(1.3, value / target);
+      ctx.fillStyle = "#1b2a3b"; ctx.fillRect(x0, y - 30, bw, 36);
+      ctx.fillStyle = frac >= 1 ? "#7fd1b9" : "#f0c27a"; ctx.fillRect(x0, y - 30, (bw * frac) / 1.3, 36);
+      ctx.fillStyle = "#e9edf2"; ctx.fillRect(x0 + bw / 1.3, y - 38, 4, 52);
     };
-    bar(110, "Vitamin D", info.meal.vitamin_d_IU, 1000, "IU");
-    bar(170, "Calcium", info.meal.calcium_mg, 1000, "mg");
-    bar(230, "Sodium", info.meal.sodium_mg, 2300, "mg");
-    ctx.fillStyle = "#8fa3b8"; ctx.font = "600 22px Archivo, sans-serif";
-    const items = info.meal.items;
-    ctx.fillText(items.slice(0, 5).join(", "), 26, 300);
-    ctx.fillText(items.slice(5, 10).join(", "), 26, 336);
-    ctx.fillText(items.slice(10).join(", "), 26, 372);
-    ctx.fillStyle = "#5f7186"; ctx.font = "600 20px Archivo, sans-serif";
-    ctx.fillText("White line: NASA target (sodium: upper limit). USDA nutrient values; menu simulated.", 26, 480);
+    bar(250, "Vitamin D", info.meal.vitamin_d_IU, 1000);
+    bar(340, "Calcium", info.meal.calcium_mg, 1000);
+    bar(430, "Sodium", info.meal.sodium_mg, 2300);
     tex.needsUpdate = true;
   }
   function update(dt, info) {

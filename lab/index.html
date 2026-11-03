@@ -13,6 +13,7 @@
       <header class="topbar">
         <div class="brand"><b>Sol Lab</b><span>Crew health console</span></div>
         <button type="button" class="tour-btn" id="tourBtn">Tour</button>
+        <button type="button" class="tour-btn" id="aboutBtn">About</button>
         <nav class="tabs" id="tabs" role="tablist" aria-label="Stations"></nav>
         <div class="status" id="status"></div>
       </header>
@@ -20,6 +21,29 @@
       <aside class="inspector" id="inspector" aria-live="polite"></aside>
 
       <footer class="timeline" id="timeline"></footer>
+
+      <dialog class="about" id="aboutDlg" aria-labelledby="aboutTitle">
+        <form method="dialog"><button class="about-close" aria-label="Close">Close</button></form>
+        <h2 id="aboutTitle">About Sol Lab</h2>
+        <p>A health tool for astronauts. Each crew member logs a few measurements a day; the tool compares them with that person's own normal, says plainly whether anything needs attention and what to do, and helps test which changes actually help.</p>
+        <h3>Using it</h3>
+        <p>Tabs along the top open each station; click objects in the module to jump to them. Space plays the mission, 1 to 0 switch stations, arrows step a day, A to D switch crew. The <b>1 h/s</b> speed runs the daily routine with reminders. Each tab has an "About this view" section at the bottom with its sources.</p>
+        <h3>Real data</h3>
+        <ul>
+          <li>ISS radiation: 123,695 DOSTEL-1 readings (DLR), plus six-module REM data, NASA OSDR RadLab.</li>
+          <li>ISS cabin air: 358 days of CO2, temperature and humidity, NASA OSDR Environmental Data App.</li>
+          <li>Bloodwork: the four Inspiration4 astronauts (SpaceX, 2021), NASA OSDR OSD-569 and OSD-575.</li>
+          <li>Sleep: diaries of 49 people, Baigutanova et al. 2025 (CC BY).</li>
+          <li>Food: USDA FoodData Central. Orbit: CelesTrak elements with SGP4.</li>
+        </ul>
+        <p>Heart rate, blood pressure, blood sugar, mood and exercise for days nobody logged are simulated and labelled as such. Records from different people and years are combined into one mission.</p>
+        <h3>The five hazards</h3>
+        <p>NASA's Human Research Program groups spaceflight risks into five hazards: radiation, isolation and confinement, distance from Earth, altered gravity, and a hostile closed environment. Each is tracked by at least one station.</p>
+        <h3>Method</h3>
+        <p>Guidance levels follow published cut-offs (ACC/AHA, ADA, CDC, AHA, AASM); where none exists the team chose one and marked it for clinician review. The self-experiment engine was checked in pre-registered studies on real data (false calls 0.68%). Details: docs on GitHub.</p>
+        <h3>Notices</h3>
+        <p>Not a medical device. Code under Apache 2.0; data under their own licences. Built for NASA Space Apps 2026 with AI assistance (Claude Code), disclosed as the rules require.</p>
+      </dialog>
 
       <div class="loading" id="loading"><b>Sol Lab</b><p id="loadingText">Loading</p></div>
     </div>

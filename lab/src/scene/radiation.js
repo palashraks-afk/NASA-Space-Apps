@@ -113,10 +113,12 @@ export function buildRadiation(mats, { earthDay, data }) {
   group.add(boxTag);
 
   const scv = document.createElement("canvas");
-  scv.width = 640; scv.height = 300;
+  const RES = 2;
+  scv.width = 640 * RES; scv.height = 300 * RES;
   const sx = scv.getContext("2d");
   const stex = new THREE.CanvasTexture(scv);
   stex.colorSpace = THREE.SRGBColorSpace;
+  stex.anisotropy = 16;
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.14), new THREE.MeshBasicMaterial({ map: stex, toneMapped: false }));
   screen.position.set(0.3, 0.42, 0.035);
   const frame = new THREE.Mesh(new RoundedBoxGeometry(0.32, 0.16, 0.02, 2, 0.01), mats.graphite);
@@ -125,18 +127,17 @@ export function buildRadiation(mats, { earthDay, data }) {
 
   let hours = 0, k = 0, lastDraw = -1, info = null;
   function draw(rate) {
+    sx.setTransform(RES, 0, 0, RES, 0, 0);
     sx.fillStyle = "#0b131d"; sx.fillRect(0, 0, 640, 300);
-    sx.fillStyle = "#8fa3b8"; sx.font = "600 24px Archivo, sans-serif";
-    sx.fillText(`Dose rate now (track ${data.track_date})`, 24, 40);
+    sx.fillStyle = "#a9b8c8"; sx.font = "700 30px Archivo, sans-serif";
+    sx.fillText("Dose rate", 26, 48);
     rateColor(rate, c);
-    sx.fillStyle = `#${c.getHexString()}`; sx.font = "800 84px Archivo, sans-serif";
-    sx.fillText(rate.toFixed(1), 24, 140);
+    sx.fillStyle = `#${c.getHexString()}`; sx.font = "800 104px Archivo, sans-serif";
+    sx.fillText(rate.toFixed(1), 26, 160);
     const w = sx.measureText(rate.toFixed(1)).width;
-    sx.fillStyle = "#8fa3b8"; sx.font = "600 26px Archivo, sans-serif";
-    sx.fillText("µGy per hour", 24 + w + 16, 136);
-    if (info) sx.fillText(`Today ${Math.round(info.today)} µGy, mission ${(info.total / 1000).toFixed(1)} mGy`, 24, 200);
-    sx.fillStyle = "#5f7186"; sx.font = "600 20px Archivo, sans-serif";
-    sx.fillText("DOSTEL-1 readings, NASA OSDR RadLab", 24, 270);
+    sx.fillStyle = "#a9b8c8"; sx.font = "700 30px Archivo, sans-serif";
+    sx.fillText("µGy/h", 42 + w, 160);
+    if (info) sx.fillText(`Today ${Math.round(info.today)} µGy`, 26, 250);
     stex.needsUpdate = true;
   }
 

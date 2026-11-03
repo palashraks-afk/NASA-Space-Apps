@@ -13,14 +13,14 @@ const asColorTex = (c, repeat = [1, 1]) => {
   t.colorSpace = THREE.SRGBColorSpace;
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(...repeat);
-  t.anisotropy = 8;
+  t.anisotropy = 16;
   return t;
 };
 const asDataTex = (c, repeat = [1, 1]) => {
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(...repeat);
-  t.anisotropy = 8;
+  t.anisotropy = 16;
   return t;
 };
 
@@ -92,40 +92,32 @@ export function kaptonBump(seed = 4) {
   return asDataTex(c, [1, 1]);
 }
 
-// White tape with a hand-written marker label. Edges are torn, the tape is slightly
-// translucent at the ends, and the text sits a little off-straight, like a real label.
-export function tapeLabel(text, { width = 512, height = 128, fontSize = 64, seed = 5, ink = "#16181b", tape = "#f6f6f1", align = "center" } = {}) {
-  const [c, g] = canvas(width, height);
-  const r = mulberry32(seed);
+// Printed equipment label: dark text on an off-white plate with a thin border, drawn at
+// twice the nominal resolution so it stays sharp up close. (Hand-written tape read as messy
+// at small sizes.)
+export function tapeLabel(text, { width = 512, height = 128, fontSize = 64, seed = 5, ink = "#16181b", tape = "#f3f3ef", align = "center" } = {}) {
+  const S = 2;
+  const [c, g] = canvas(width * S, height * S);
+  g.scale(S, S);
   g.clearRect(0, 0, width, height);
+  const r = 10;
   g.beginPath();
-  const torn = (x0, y0, y1) => {
-    const steps = 10;
-    for (let i = 0; i <= steps; i++) g.lineTo(x0 + (r() - 0.5) * 10, y0 + ((y1 - y0) * i) / steps);
-  };
-  g.moveTo(6, 8);
-  g.lineTo(width - 8, 6);
-  torn(width - 8, 6, height - 8);
-  g.lineTo(8, height - 6);
-  torn(6, height - 6, 8);
-  g.closePath();
+  g.roundRect(4, 4, width - 8, height - 8, r);
   g.fillStyle = tape;
-  g.shadowColor = "rgba(0,0,0,0.18)";
-  g.shadowBlur = 6;
   g.fill();
-  g.shadowBlur = 0;
+  g.lineWidth = 3;
+  g.strokeStyle = "rgba(22,24,27,0.55)";
+  g.stroke();
   g.fillStyle = ink;
-  g.font = `${fontSize}px "Permanent Marker"`;
+  let size = fontSize * 0.78;
+  g.font = `700 ${size}px Archivo, sans-serif`;
+  while (g.measureText(text).width > width - 40 && size > 12) { size -= 2; g.font = `700 ${size}px Archivo, sans-serif`; }
   g.textBaseline = "middle";
   g.textAlign = align;
-  g.save();
-  g.translate(align === "center" ? width / 2 : 24, height / 2 + 4);
-  g.rotate((r() - 0.5) * 0.04);
-  g.fillText(text, 0, 0, width - 48);
-  g.restore();
+  g.fillText(text, align === "center" ? width / 2 : 22, height / 2 + 2);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
+  t.anisotropy = 16;
   return t;
 }
 
