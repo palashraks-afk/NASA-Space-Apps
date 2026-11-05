@@ -33,7 +33,9 @@ export function createRenderer(container, { quality = "high" } = {}) {
   const composer = new EffectComposer(renderer, target);
   composer.addPass(new RenderPass(scene, camera));
   let gtao = null;
-  if (quality === "high") {
+  // Ambient occlusion redraws the whole scene a second time; worth it only on strong GPUs, so it
+  // is opt-in with ?q=ultra.
+  if (quality === "ultra") {
     gtao = new GTAOPass(scene, camera, w, h);
     gtao.blendIntensity = 0.85;
     gtao.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1.5, thickness: 1.2, scale: 1.1, samples: 12 });

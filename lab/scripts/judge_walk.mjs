@@ -14,7 +14,7 @@ const PORT = 9334;
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), "sol-edge-judge-"));
 const outDir = path.resolve(".shots/judge");
 fs.mkdirSync(outDir, { recursive: true });
-const browser = spawn(EDGE, ["--headless=new", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--hide-scrollbars",
+const browser = spawn(EDGE, ["--headless=new", "--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--hide-scrollbars", "--disk-cache-size=1", "--disable-gpu-shader-disk-cache",
   `--remote-debugging-port=${PORT}`, "--remote-allow-origins=*", `--user-data-dir=${profile}`, `--window-size=${W},${H}`, "about:blank"], { stdio: "ignore" });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function json(p) { for (let i = 0; i < 60; i++) { try { return await (await fetch(`http://127.0.0.1:${PORT}${p}`)).json(); } catch { await sleep(250); } } throw new Error("no devtools"); }
@@ -61,3 +61,4 @@ fs.writeFileSync(path.join(outDir, "report.json"), JSON.stringify(report, null, 
 console.log(JSON.stringify(report, null, 2));
 await send("Browser.close").catch(() => {});
 browser.kill();
+setTimeout(() => { try { fs.rmSync(profile, { recursive: true, force: true }); } catch {} }, 1500); // profiles are hundreds of MB

@@ -240,7 +240,7 @@ export function buildModule(mats) {
 
   // Ventilation ducts along the overhead: corrugated fabric hose with clamps, as on the real station.
   const ductLen = ZMAX - ZMIN - 0.8;
-  const ribGeo = new THREE.TorusGeometry(0.056, 0.006, 8, 28);
+  const ribGeo = new THREE.TorusGeometry(0.056, 0.006, 4, 16); // 128 triangles a rib: 614 ribs were 275k triangles at 8x28
   for (const side of [-1, 1]) {
     const dx = side * 0.7, dy = 0.74;
     const hose = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, ductLen, 24, 1, true).rotateX(Math.PI / 2), mats.duct);

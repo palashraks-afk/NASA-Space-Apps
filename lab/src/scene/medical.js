@@ -65,9 +65,8 @@ export function buildMedical(mats) {
   name.position.set(0, 0.52, 0.03);
   group.add(name);
 
-  let pulseT = 0, last = null, acc = 0;
+  let pulseT = 0, last = null;
   function draw(info) {
-    const W = 1024;
     ctx.setTransform(RES, 0, 0, RES, 0, 0);
     ctx.fillStyle = "#0b131d"; ctx.fillRect(0, 0, 1024, 680);
     ctx.fillStyle = "#8fa3b8"; ctx.font = "700 34px Archivo, sans-serif";
@@ -85,35 +84,47 @@ export function buildMedical(mats) {
     tile(36, 250, "Sleep", info.sleep.toFixed(1), "h", "#c7b8f2", info.sleepNote);
     tile(358, 250, "To sleep", info.latency.toFixed(0), "min", "#c7b8f2", "");
     tile(680, 250, "Efficiency", info.eff.toFixed(0), "%", "#c7b8f2", "");
-    // Illustrative pulse trace at the current heart rate.
-    ctx.strokeStyle = "#7fd1b9"; ctx.lineWidth = 3; ctx.beginPath();
-    const period = 60 / info.hr;
-    for (let x = 0; x <= W - 72; x += 3) {
-      const t = pulseT + x / 320;
-      const ph = (t % period) / period;
-      let y = 0;
-      if (ph < 0.06) y = Math.sin((ph / 0.06) * Math.PI) * 0.18;
-      else if (ph > 0.12 && ph < 0.16) y = -Math.sin(((ph - 0.12) / 0.04) * Math.PI) * 0.25;
-      else if (ph >= 0.16 && ph < 0.2) y = Math.sin(((ph - 0.16) / 0.04) * Math.PI) * 1.0;
-      else if (ph >= 0.2 && ph < 0.24) y = -Math.sin(((ph - 0.2) / 0.04) * Math.PI) * 0.35;
-      else if (ph > 0.4 && ph < 0.55) y = Math.sin(((ph - 0.4) / 0.15) * Math.PI) * 0.3;
-      const py = 520 - y * 90;
-      x ? ctx.lineTo(36 + x, py) : ctx.moveTo(36, py);
-    }
-    ctx.stroke();
     tex.needsUpdate = true;
   }
+
+  // Illustrative pulse trace: one heartbeat drawn once into a small repeating texture that
+  // scrolls across the screen, so the big screen is redrawn only when the day or crew changes
+  // (re-uploading it 12 times a second was the costliest thing the app did each frame).
+  const beat = document.createElement("canvas");
+  beat.width = 256; beat.height = 64;
+  const bx = beat.getContext("2d");
+  bx.strokeStyle = "#7fd1b9"; bx.lineWidth = 3; bx.beginPath();
+  for (let x = 0; x <= 256; x += 2) {
+    const ph = x / 256;
+    let y = 0;
+    if (ph < 0.06) y = Math.sin((ph / 0.06) * Math.PI) * 0.18;
+    else if (ph > 0.12 && ph < 0.16) y = -Math.sin(((ph - 0.12) / 0.04) * Math.PI) * 0.25;
+    else if (ph >= 0.16 && ph < 0.2) y = Math.sin(((ph - 0.16) / 0.04) * Math.PI) * 1.0;
+    else if (ph >= 0.2 && ph < 0.24) y = -Math.sin(((ph - 0.2) / 0.04) * Math.PI) * 0.35;
+    else if (ph > 0.4 && ph < 0.55) y = Math.sin(((ph - 0.4) / 0.15) * Math.PI) * 0.3;
+    const py = 40 - y * 30;
+    x ? bx.lineTo(x, py) : bx.moveTo(x, py);
+  }
+  bx.stroke();
+  const beatTex = new THREE.CanvasTexture(beat);
+  beatTex.colorSpace = THREE.SRGBColorSpace;
+  beatTex.wrapS = THREE.RepeatWrapping;
+  const strip = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.065), new THREE.MeshBasicMaterial({ map: beatTex, transparent: true, toneMapped: false, depthWrite: false }));
+  strip.position.set(0, 0.118, 0.0615);
+  group.add(strip);
+  const SECONDS_SHOWN = 3;
 
   function update(dt, info) {
     if (!info) return;
     pulseT += dt;
     led.material.emissiveIntensity = 1.5 + 1.5 * Math.max(0, Math.sin((pulseT * info.hr) / 60 * Math.PI * 2));
-    acc += dt;
-    // Redraw ~12 times a second for the pulse trace, or at once when the day or crew changes.
-    const key = `${info.id}|${info.day}`;
-    if (acc > 1 / 12 || key !== last) { acc = 0; last = key; draw(info); }
+    beatTex.repeat.x = (SECONDS_SHOWN * info.hr) / 60;
+    beatTex.offset.x = (pulseT * info.hr) / 60;
+    const key = `${info.id}|${info.day}|${info.hrNote}|${info.sleepNote}`;
+    if (key !== last) { last = key; draw(info); }
   }
   // Live-data parts stay visible when a loaded model replaces the built-in props.
   screen.userData.data = true;
+  strip.userData.data = true;
   return { group, update };
 }

@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { createRenderer } from "./scene/renderer.js";
 import { makeMaterials } from "./scene/materials.js";
 import { buildModule, W, ZMAX } from "./scene/module.js";
+import { mergeStatic, atlasLabels } from "./scene/bake.js";
 import { buildEvidence, priorAsPosterior } from "./scene/evidence.js";
 import { buildClock } from "./scene/clock.js";
 import { buildBoard } from "./scene/board.js";
@@ -59,7 +60,7 @@ async function boot() {
 
   loadingText.textContent = "Pressurizing the module";
   const stage = $("#stage");
-  const quality = new URLSearchParams(location.search).get("q") === "low" ? "low" : "high";
+  const quality = { low: "low", ultra: "ultra" }[new URLSearchParams(location.search).get("q")] || "high";
   const R = createRenderer(stage, { quality });
   const { scene, camera, composer, renderer } = R;
   // From outside the hatch end the closed hatch would block the view down the module, so a global
@@ -73,7 +74,9 @@ async function boot() {
   const loadTex = (u) => new Promise((res) => loader.load(u, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; res(t); }, undefined, () => res(null)));
   const [earthDay, earthNight, moonT, marsT] = await Promise.all(["textures/earth_day.jpg", "textures/earth_night.jpg", "textures/moon.jpg", "textures/mars.jpg"].map((u) => loadTex(import.meta.env.BASE_URL + u)));
 
-  scene.add(buildModule(mats));
+  const moduleGroup = buildModule(mats);
+  const merged = mergeStatic(moduleGroup); // hundreds of static parts into a few draw calls
+  scene.add(moduleGroup);
   const outside = buildOutside({ earthDay, earthNight, moon: moonT, mars: marsT });
   scene.add(outside.group);
   const place = (obj, x, y, z, ry) => { obj.group.position.set(x, y, z); obj.group.rotation.y = ry; scene.add(obj.group); return obj; };
@@ -87,13 +90,20 @@ async function boot() {
   const radiation = place(buildRadiation(mats, { earthDay, data: RAD }), W - 0.06, 0.06, 0.05, -Math.PI / 2);
   const body = place(buildBody(mats), -0.35, 0.0, -1.1, 0.5);
 
+  // All printed labels into shared atlas pages: one draw call per page instead of one per label.
+  const labelCount = atlasLabels(scene);
   // Sharpest texture filtering the GPU offers, so labels and screens stay crisp at angles.
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
   scene.traverse((o) => { for (const mt of [].concat(o.material || [])) for (const key of ["map", "emissiveMap", "roughnessMap", "bumpMap"]) if (mt[key]) mt[key].anisotropy = maxAniso; });
 
+  // Shadows are cast by fixed lights onto fixed fittings: draw the shadow maps once, not
+  // every frame (they cost one extra pass over every caster per light).
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = true;
+
   // Teammates' .glb models (lab/public/models/models.json); loads in the background.
   loadModels({ base: import.meta.env.BASE_URL, scene, stations: { medical, air, galley, radiation, body, clock, evidence, board }, body })
-    .then((files) => { if (files.length) console.info(`Loaded models: ${files.join(", ")}`); });
+    .then((files) => { if (files.length) { console.info(`Loaded models: ${files.join(", ")}`); renderer.shadowMap.needsUpdate = true; } });
 
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const views = {
@@ -284,6 +294,16 @@ async function boot() {
     if (view === rig.current && tab === S.tab) return;
     if (tab === S.tab) rig.go(view); // same panel, just move the camera
     else showTab(tab, view);
+  }
+  // The periodic refresh rebuilds the panel only when something it shows could have changed;
+  // views with live values (radiation rate, experiments, body clock) always update.
+  const LIVE = new Set(["radiation", "experiments", "clock", "window"]);
+  let lastKey = "";
+  function refreshIfChanged() {
+    const key = [S.tab, S.crewSel, today(), Math.floor(hourNow() * 4), S.playing, S.speed, E.day, E.step, E.randomizing, !!E.power, E.locked, E.started, E.done].join("|");
+    if (key === lastKey && !LIVE.has(S.tab)) return;
+    lastKey = key;
+    refresh();
   }
   function refresh() { if (panel) panel.update(); renderTimeline(); renderStatus(); body.setStatus(bodyStatusMap(S.crewSel)); }
 
@@ -1189,6 +1209,7 @@ async function boot() {
   }
 
   // ---------------- loop ----------------
+  let dprChecked = false;
   let lastDay = today(), simT = 0, prevTs = null, fpsT = 0, fpsN = 0, lowered = false, uiT = 0;
   function frame(ts) {
     const dt = prevTs == null ? 0 : Math.min((ts - prevTs) / 1000, 0.1);
@@ -1197,6 +1218,7 @@ async function boot() {
     requestAnimationFrame(frame);
   }
   function tick(dt, draw) {
+    const cpu0 = performance.now();
     simT += dt;
     if (S.playing) {
       S.met = Math.min(H.days - 1, S.met + dt * S.speed);
@@ -1238,17 +1260,28 @@ async function boot() {
       if (m.userData.life <= 0) { scene.remove(m); m.geometry.dispose(); m.material.dispose(); confetti.splice(k, 1); }
     }
     uiT += dt;
-    if (uiT > 0.25) { uiT = 0; refresh(); }
+    if (uiT > 0.25) { uiT = 0; refreshIfChanged(); }
     rig.update();
     hatchCut.constant = camera.position.z > HATCH_CUT + 0.05 ? HATCH_CUT : 1e4;
     nav.update();
+    const cpu1 = performance.now();
     if (draw) composer.render(dt);
+    // CPU cost per frame (update vs render), summed; scripts/perf.mjs resets and reads it
+    const cpu2 = performance.now();
+    const cm = (window.__solCpu = window.__solCpu || { update: 0, render: 0, n: 0, max: 0 });
+    cm.update += cpu1 - cpu0; cm.render += cpu2 - cpu1; cm.n++; cm.max = Math.max(cm.max, cpu2 - cpu0);
     fpsT += dt; fpsN++;
     if (fpsT > 3) {
       const fps = fpsN / fpsT;
       // Slow machine: drop ambient occlusion only. Resizing the canvas here used to blank the whole
       // screen for a frame, which showed up as a dark flicker right after long camera moves.
       if (fps < 32 && !lowered && R.gtao) { R.gtao.enabled = false; lowered = true; }
+      // Once, in the first seconds: a slow GPU (often a laptop with a high-density screen) drops
+      // to one pixel per CSS pixel. Done early so it cannot flicker in the middle of use.
+      if (!dprChecked && simT > 4) {
+        dprChecked = true;
+        if (fps < 40 && renderer.getPixelRatio() > 1) { renderer.setPixelRatio(1); R.composer.setPixelRatio(1); R.onResize(); }
+      }
       window.__solFps = fps;
       fpsT = 0; fpsN = 0;
     }
@@ -1256,7 +1289,7 @@ async function boot() {
   requestAnimationFrame(frame);
 
   // ---------------- development hooks ----------------
-  window.__sol = { S, E, H, showTab, goStep, selectCrew, body, camera, goView, R, rig, scene, hatchCut };
+  window.__sol = { merged, labelCount, S, E, H, showTab, goStep, selectCrew, body, camera, goView, R, rig, scene, hatchCut };
   if (import.meta.env.DEV) {
     window.__solAdvance = (seconds, step = 1 / 60) => { for (let k = 0; k < seconds / step; k++) tick(step, false); return E.day; };
     const auto = new URLSearchParams(location.search).get("auto");
