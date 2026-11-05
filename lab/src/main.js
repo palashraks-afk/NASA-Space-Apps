@@ -15,7 +15,7 @@ import { buildRadiation } from "./scene/radiation.js";
 import { buildBody } from "./scene/body.js";
 import { loadModels } from "./scene/models.js";
 import { createPatches, PATCHES } from "./sim/patches.js";
-import { createTour } from "./ui/tour.js";
+import { createTour, QUICK } from "./ui/tour.js";
 import { createBlueprint } from "./ui/blueprint.js";
 import { INSTRUMENTS, parseReadings, SAMPLE_CSV, SAMPLE_FHIR } from "./sim/instruments.js";
 import { createMaps } from "./ui/maps.js";
@@ -252,21 +252,50 @@ async function boot() {
   // ---------------- tabs ----------------
   const TABS = [["overview", "Overview"], ["checkin", "Check-in"], ["body", "Body"], ["medical", "Vitals"], ["bloodwork", "Bloodwork"], ["air", "Air"], ["radiation", "Radiation"], ["galley", "Galley"], ["clock", "Clock"], ["experiments", "Experiments"], ["window", "Window"], ["maps", "Maps"], ["instruments", "Instruments"]];
   const tabsEl = $("#tabs");
-  tabsEl.innerHTML = TABS.map(([k, l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k === S.tab}">${l}</button>`).join("");
-  tabsEl.addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) showTab(b.dataset.tab); });
+  // Five sections in the top bar; a section's pages switch from the top of the side panel.
+  const SECTIONS = [
+    { key: "overview", label: "Overview", tabs: ["overview"] },
+    { key: "crew", label: "Crew", tabs: ["checkin", "body", "medical", "bloodwork"] },
+    { key: "station", label: "Station", tabs: ["air", "radiation", "galley", "clock", "maps", "window"] },
+    { key: "experiments", label: "Experiments", tabs: ["experiments"] },
+    { key: "instruments", label: "Instruments", tabs: ["instruments"] },
+  ];
+  const sectionOf = (tab) => SECTIONS.find((x) => x.tabs.includes(tab));
+  const lastInSection = {};
+  tabsEl.innerHTML = SECTIONS.map((x) => `<button class="tab" role="tab" data-section="${x.key}" aria-selected="${x.tabs.includes(S.tab)}">${x.label}</button>`).join("");
+  tabsEl.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-section]");
+    if (!b) return;
+    const sec = SECTIONS.find((x) => x.key === b.dataset.section);
+    showTab(lastInSection[sec.key] || sec.tabs[0]);
+  });
+  const tabLabel = (k) => TABS.find(([key]) => key === k)[1];
+  function subnav(root, tab) {
+    const sec = sectionOf(tab);
+    if (!sec || sec.tabs.length < 2) return;
+    const nav = document.createElement("div");
+    nav.className = "subnav";
+    nav.setAttribute("role", "tablist");
+    nav.innerHTML = sec.tabs.map((k) => `<button type="button" role="tab" data-sub="${k}" aria-selected="${k === tab}">${tabLabel(k)}</button>`).join("");
+    nav.addEventListener("click", (e) => { const b = e.target.closest("[data-sub]"); if (b && b.dataset.sub !== S.tab) showTab(b.dataset.sub); });
+    root.prepend(nav);
+  }
   let inspectorEl = $("#inspector");
   const viewFor = (tab) => (tab === "experiments" ? (E.step <= 2 ? "board" : "evidence") : tab === "bloodwork" || tab === "checkin" ? "medical" : tab === "maps" || tab === "instruments" ? "overview" : tab);
   let panel = null;
   let firstView = true;
   function showTab(tab, view) {
     S.tab = tab;
-    tabsEl.querySelectorAll("[data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
+    const sec = sectionOf(tab);
+    if (sec) lastInSection[sec.key] = tab;
+    tabsEl.querySelectorAll("[data-section]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.section === sec?.key)));
     panel = PANELS[tab];
     const fresh = inspectorEl.cloneNode(false); // drop old listeners with the old panel
     inspectorEl.replaceWith(fresh);
     inspectorEl = fresh;
     panel.mount(fresh);
     tidyPanel(fresh);
+    subnav(fresh, tab);
     maps.show(tab === "maps");
     blueprint.show(tab === "instruments");
     patches.see("tabs", tab, TABS.map(([k]) => k), "explorer");
@@ -348,13 +377,11 @@ async function boot() {
     mount(root) {
       ckKey = null;
       root.innerHTML = `<h2 id="ckTitle"></h2><p class="lede">Log today's measurements. Each one is checked against health guidelines and, where there is enough history, against your own normal, then given one of three levels with what to do next.</p>
-        <div class="levels">${Object.keys(LEVELS).map((t) => chip(t)).join("")}</div>
         <div class="kpis" id="ckK"></div>
-        <h3>Today's routine</h3><div id="ckRoutine" class="routine"></div>
+        <details class="fold" id="ckRoutineFold"><summary id="ckRoutineSum">Today's routine</summary><div id="ckRoutine" class="routine"></div></details>
         <div id="ckSurgeon"></div>
         <div id="ckList">${INDICATORS.map((ind) => `<section class="ck" data-ck="${ind.key}">
-          <div class="ck-head"><span class="name">${esc(ind.label)}</span><span class="ck-lvl"></span></div>
-          <div class="ck-now"></div>
+          <button type="button" class="ck-head" aria-expanded="false"><span class="name">${esc(ind.label)}</span><span class="ck-now"></span><span class="ck-lvl"></span></button>
           <form class="ck-form" data-ind="${ind.key}" novalidate>
             ${ind.fields.map((f) => f.scale
               ? `<div class="seg ck-scale" role="group" aria-label="${esc(f.label)}">${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-scale="${n}" aria-pressed="false">${n}</button>`).join("")}</div><input type="hidden" name="${f.id}">`
@@ -369,8 +396,10 @@ async function boot() {
         </section>`).join("")}</div>
         <p class="src">Values you log are stored in this browser only. Days you have not logged are filled from the crew health model (heart rate, temperature, sleep) or simulated (blood pressure, blood sugar, mood, exercise), and labelled. Guidance follows the sources on each card; where a source gives no escalation point, the team chose one, and it needs review by a clinician. Not a medical device.</p>`;
       root.addEventListener("click", (e) => {
+        const h = e.target.closest(".ck-head");
+        if (h) { const sec = h.closest(".ck"); const open = !sec.classList.contains("open"); sec.classList.toggle("open", open); h.setAttribute("aria-expanded", String(open)); return; }
         const j = e.target.closest("[data-jump]");
-        if (j) { const sec = $(`[data-ck="${j.dataset.jump}"]`); sec.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" }); sec.querySelector("input:not([type=hidden]), [data-scale]")?.focus({ preventScroll: true }); return; }
+        if (j) { const sec = $(`[data-ck="${j.dataset.jump}"]`); sec.classList.add("open"); sec.querySelector(".ck-head").setAttribute("aria-expanded", "true"); sec.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" }); sec.querySelector("input:not([type=hidden]), [data-scale]")?.focus({ preventScroll: true }); return; }
         const b = e.target.closest("[data-scale]");
         if (!b) return;
         const form = b.closest("form");
@@ -402,7 +431,11 @@ async function boot() {
       const k = S.crewSel, i = idx(), key = `${k}|${i}`;
       const rhtml = routineState(k).map((r) => `<button type="button" class="r r-${r.state}" data-jump="${r.key}"><span class="t">${clockText(r.hour)}</span><span>${esc(r.what)}</span><span class="st">${r.state === "done" ? "Logged" : r.state === "due" ? "Due" : "Later"}</span></button>`).join("");
       const rEl = $("#ckRoutine");
-      if (rEl.dataset.h !== rhtml) { rEl.innerHTML = rhtml; rEl.dataset.h = rhtml; }
+      if (rEl.dataset.h !== rhtml) {
+        rEl.innerHTML = rhtml; rEl.dataset.h = rhtml;
+        const rs = routineState(k), due = rs.filter((r) => r.state === "due").length, done = rs.filter((r) => r.state === "done").length;
+        $("#ckRoutineSum").innerHTML = `Today's routine: ${due ? `<span class="lvl lvl-watch">${due} due</span>` : ""} ${done} of ${rs.length} logged`;
+      }
       if (key === ckKey) return;
       ckKey = key;
       $("#ckTitle").textContent = `Daily check-in: crew ${H.crew[k].id}, mission day ${today()}`;
@@ -447,7 +480,6 @@ async function boot() {
     mount(root) {
       bodyKey = null;
       root.innerHTML = `<h2 id="bdTitle"></h2><p class="lede">Click a part of the figure, or pick one below. Colour shows the most serious level among the measurements linked to that part today.</p>
-        <div class="levels">${Object.keys(LEVELS).map((t) => chip(t)).join("")}<span class="lvl lvl-none">Not measured</span></div>
         <div class="parts" id="bdParts">${BODY_PARTS.map((p) => `<button type="button" class="part" data-part="${p.key}"><span>${esc(p.name)}</span><span class="pl"></span></button>`).join("")}</div>
         <div id="bdDetail"></div>
         <p class="src">Spaceflight effects summarised from NASA Human Research Program material. Levels come from the check-in guidance (see each card there). Not a medical device.</p>`;
@@ -583,6 +615,7 @@ async function boot() {
   PANELS.medical = {
     mount(root) {
       root.innerHTML = `<h2 id="medTitle"></h2><p class="lede">Today's values against this person's own range from ${PREFLIGHT} pre-flight days. The shaded band is that range; the lighter strip at the left is pre-flight.</p>
+        <p class="src">How often does a 14-day personal range flag a healthy day? Checked on 49 real people's sleep diaries: about 7 to 8% of single days fall outside it, but three days in a row outside happens on under 1% of days. So one day outside is only "keep an eye on it"; repeated days are what escalate (exploratory study, docs/STUDIES_RESULTS.md).</p>
         <div id="medList">${METRICS.map((m) => `<div class="metric" data-m="${m.key}"><span class="name">${m.name}</span><span class="val"></span><span class="state"></span><div class="chart"></div></div>`).join("")}</div>
         <p class="src">Sleep values are a real person's diary (Baigutanova et al. 2025, CC BY). Heart rate and HRV: levels, spreads and day-to-day correlation from the same dataset; series simulated. Temperature rise in flight from Stahn et al. 2017. Not a medical device.</p>`;
     },
@@ -1062,7 +1095,7 @@ async function boot() {
   const tl = $("#timeline");
   tl.innerHTML = `<div class="crew"><span>Crew</span>${[0, 1, 2, 3].map((k) => `<button type="button" data-crew="${k}" aria-label="Crew ${"ABCD"[k]}">${"ABCD"[k]}</button>`).join("")}</div>
     <button type="button" class="play" id="tlPlay">Play</button>
-    ${seg("tlSpeed", [["0.0417", "1 h/s"], ["0.25", "¼ day/s"], ["1", "1 day/s"], ["4", "4 days/s"], ["10", "10 days/s"]], S.speed)}
+    ${seg("tlSpeed", [["0.0417", "1 hour/s"], ["1", "1 day/s"], ["10", "10 days/s"]], S.speed)}
     <div class="track" id="tlTrack"><div class="done"></div><div class="exp" hidden></div><div class="head"></div></div>
     <button type="button" class="next" id="tlNext"></button>
     <div class="label" id="tlLabel"></div>`;
@@ -1187,8 +1220,10 @@ async function boot() {
 
   // ---------------- guided tour ----------------
   const tour = createTour({ host: $("#app"), show: (st) => { S.playing = false; if (st.body) { S.bodyPart = st.body; body.select(st.body); } showTab(st.tab); } });
+  function startQuick() { tour.start(() => { try { localStorage.setItem("sollab.toured", "1"); } catch { /* fine */ } }, QUICK); }
   function startTour() { tour.start(() => { patches.award("briefed"); try { localStorage.setItem("sollab.toured", "1"); } catch { /* fine */ } }); }
   $("#aboutBtn").addEventListener("click", () => $("#aboutDlg").showModal());
+  $("#aboutTour").addEventListener("click", () => { $("#aboutDlg").close(); startTour(); });
 
   // ---------------- start ----------------
   evidence.setRange({ delta: E.delta, sd: outcome().sd });
@@ -1199,13 +1234,17 @@ async function boot() {
   showTab("overview");
   renderTimeline();
   renderStatus();
+  // Fade the loading screen out, then remove it outright: in a background or throttled tab the
+  // fade can stall and leave it covering the app.
   setTimeout(() => $("#loading").classList.add("gone"), 200);
+  setTimeout(() => ($("#loading").hidden = true), 1100);
   // First visit (or ?tour=1): open the guided tour once the scene is up.
   {
     const q = new URLSearchParams(location.search);
     let toured = false;
     try { toured = localStorage.getItem("sollab.toured") === "1"; } catch { /* treat as new */ }
-    if (q.get("tour") === "1" || (!toured && !q.has("auto"))) setTimeout(startTour, 900);
+    if (q.get("tour") === "1") setTimeout(startTour, 900);
+    else if (!toured && !q.has("auto")) setTimeout(startQuick, 900);
   }
 
   // ---------------- loop ----------------
@@ -1309,6 +1348,7 @@ async function boot() {
         maps: () => { S.met = 60.3; showTab("maps"); },
         mapstation: () => { showTab("maps"); document.querySelector('[data-seg="mapMode"] [data-v="station"]').click(); },
         tour: () => startTour(),
+        quick: () => startQuick(),
         instruments: () => showTab("instruments"),
         mapsystems: () => { S.met = 60.3; showTab("maps"); document.querySelector('[data-seg="mapMode"] [data-v="systems"]').click(); },
         bloodwork: () => { S.crewSel = 1; showTab("bloodwork"); },

@@ -14,6 +14,14 @@ export const TOUR = [
   { tab: "overview", title: "Your turn", text: "Press Play to run the mission, switch crew with A to D, and download a crew report from this page. Left and Right arrows move between stations; the Instruments tab shows the real hardware behind each reading." },
 ];
 
+// Quick start for first-time users: four steps, each pointing at the real control.
+export const QUICK = [
+  { tab: "overview", target: "#ovCrew", title: "Your crew", text: "Each row is one astronaut, compared with their own normal. Amber means take a closer look." },
+  { tab: "checkin", target: ".ck", title: "Log a reading", text: "Click a row, type the value and press Log. You get a level and what to do next." },
+  { tab: "body", target: "#bdParts", body: "heart", title: "See what it means", text: "Click a body part, here or on the 3D figure, to see today's readings for it and how spaceflight affects it." },
+  { tab: "overview", target: "#tabs", title: "Explore", text: "Crew: your health. Station: the real ISS air, radiation and food. Experiments: test what fixes a problem. About has the full tour." },
+];
+
 export function createTour({ host, show }) {
   const el = document.createElement("div");
   el.className = "tour";
@@ -21,23 +29,38 @@ export function createTour({ host, show }) {
   el.setAttribute("role", "dialog");
   el.setAttribute("aria-label", "Guided tour");
   host.appendChild(el);
-  let k = 0, onDone = null;
+  const spot = document.createElement("div");
+  spot.className = "tour-spot";
+  spot.hidden = true;
+  host.appendChild(spot);
+  let k = 0, onDone = null, steps = TOUR;
+  function place() {
+    const s = steps[k];
+    const t = s.target && document.querySelector(s.target);
+    if (!t || el.hidden) { spot.hidden = true; return; }
+    const r = t.getBoundingClientRect(), pad = 6;
+    Object.assign(spot.style, { left: `${r.left - pad}px`, top: `${r.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${Math.min(r.height, innerHeight - r.top - 20) + pad * 2}px` });
+    spot.hidden = false;
+  }
   function render() {
-    const s = TOUR[k];
+    const s = steps[k];
     show(s);
-    el.innerHTML = `<div class="tour-step">${k + 1} of ${TOUR.length}</div><h3>${s.title}</h3><p>${s.text}</p>
-      <div class="actions"><button class="btn quiet" data-t="back" ${k === 0 ? "disabled" : ""}>Back</button><button class="btn" data-t="next">${k === TOUR.length - 1 ? "Finish" : "Next"}</button><button class="btn quiet" data-t="exit">Exit tour</button></div>`;
+    const last = k === steps.length - 1;
+    el.innerHTML = `<div class="tour-step">${k + 1} of ${steps.length}</div><h3>${s.title}</h3><p>${s.text}</p>
+      <div class="actions"><button class="btn quiet" data-t="back" ${k === 0 ? "disabled" : ""}>Back</button><button class="btn" data-t="next">${last ? "Done" : "Next"}</button><button class="btn quiet" data-t="exit">Skip</button></div>`;
     el.querySelector('[data-t="next"]').focus({ preventScroll: true });
+    requestAnimationFrame(() => requestAnimationFrame(place)); // after the panel has rendered
   }
   el.addEventListener("click", (e) => {
     const b = e.target.closest("[data-t]");
     if (!b) return;
     if (b.dataset.t === "exit") return stop();
     if (b.dataset.t === "back" && k > 0) { k--; render(); }
-    if (b.dataset.t === "next") { if (k < TOUR.length - 1) { k++; render(); } else { stop(); onDone && onDone(); } }
+    if (b.dataset.t === "next") { if (k < steps.length - 1) { k++; render(); } else { stop(); onDone && onDone(); } }
   });
   addEventListener("keydown", (e) => { if (!el.hidden && e.key === "Escape") stop(); });
-  function start(done) { onDone = done; k = 0; el.hidden = false; host.classList.add("touring"); render(); }
-  function stop() { el.hidden = true; host.classList.remove("touring"); }
+  addEventListener("resize", () => { if (!el.hidden) place(); });
+  function start(done, list = TOUR) { steps = list; onDone = done; k = 0; el.hidden = false; host.classList.add("touring"); render(); }
+  function stop() { el.hidden = true; spot.hidden = true; host.classList.remove("touring"); }
   return { start, stop, active: () => !el.hidden };
 }

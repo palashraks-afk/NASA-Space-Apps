@@ -11,7 +11,7 @@ export function createNav({ root, camera, stops, home, getCurrent, goTo, blocked
   root.innerHTML = `
     <button type="button" class="nav-arrow prev" aria-keyshortcuts="ArrowLeft"><span class="chev" aria-hidden="true">‹</span><span class="to"></span></button>
     <button type="button" class="nav-arrow next" aria-keyshortcuts="ArrowRight"><span class="to"></span><span class="chev" aria-hidden="true">›</span></button>
-    <div class="nav-hint" aria-hidden="true"><kbd>←</kbd> <kbd>→</kbd> move between stations <span>·</span> <kbd>Esc</kbd> back to overview</div>`;
+    <div class="nav-hint" aria-hidden="true">Click a dot to visit a station <span>·</span> <kbd>←</kbd> <kbd>→</kbd> next <span>·</span> <kbd>Esc</kbd> overview</div>`;
   const prev = root.querySelector(".prev"), next = root.querySelector(".next");
   const dotted = stops.filter((s) => s.anchor); // the home stop is reached by arrows and Escape, no dot
   const dots = dotted.map(({ view, label: text }) => {

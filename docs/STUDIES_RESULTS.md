@@ -27,3 +27,17 @@ Plans and bars were committed before running: `docs/STUDIES_PREREG.md` (commits 
 - About ten public Space Apps 2026 repos for this challenge were found; none use randomized self-experiments or Bayesian analysis. One (AstroBone) uses a personal baseline and a 3D digital twin, so 3D graphics alone are not a differentiator.
 - Mars-sol entrainment by light timing is published (2007); the app treats its own result as a replication.
 - Searches cover public sources only; private or unpublished work cannot be ruled out.
+
+## Study 4 (exploratory, not pre-registered): false flags from a personal usual range
+
+Question: the app compares each day with a usual range built from a person's first days (95% prediction interval). How often does that flag a healthy day, and does requiring several days in a row fix it? Data: the same 49 people's sleep diaries, 28 days each, with no intervention, so every flag after the baseline is false. Script: `lab/scripts/study_baseline.py`; output: `analysis/baseline_false_flags.json`.
+
+| Measure | Baseline days | Single-day false flags (mean) | People flagged on more than 15% of days | Three days in a row outside |
+|---|---|---|---|---|
+| Sleep duration | 14 | 8.0% | 7 of 49 | 0.34% of days |
+| Sleep efficiency | 14 | 6.7% | 6 of 49 | 0.51% |
+| Time to fall asleep | 14 | 7.1% | 7 of 49 | 0.34% |
+| Sleep duration | 7 | 8.9% | 12 of 49 | 0.43% |
+| Time to fall asleep | 7 | 11.3% | 13 of 49 | 1.29% |
+
+Reading: a single day outside a 14-day personal range happens on about 7 to 8% of healthy days, above the nominal 5%, and a minority of people are much noisier. Shorter baselines are worse. Requiring three consecutive days outside cuts false escalations to under 1% of days for every measure. This is why the app shows a single day only as "keep an eye on it" and escalates to the flight surgeon for sleep, mood and exercise only after three days. Limits: exploratory (analysis choices made while looking at the data), sleep diaries only, 28-day records, no true changes to detect, so this measures false flags, not sensitivity.

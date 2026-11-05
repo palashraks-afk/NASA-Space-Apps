@@ -24,7 +24,21 @@ export function buildBody(mats) {
   const figure = new THREE.Group();
   group.add(figure);
   const parts = {};
-  const mat = (key) => new THREE.MeshStandardMaterial({ color: COLORS.none, emissive: COLORS.none, emissiveIntensity: 0.35, transparent: true, opacity: 0.55, roughness: 0.4, depthWrite: false });
+  // Hologram look: edges glow (fresnel rim), centres stay see-through, faint scanlines drift
+  // upward. Built on the standard material so status colours and lighting still apply.
+  const holoTime = { value: 0 };
+  const holo = (m) => {
+    m.onBeforeCompile = (sh) => {
+      sh.uniforms.uHoloTime = holoTime;
+      sh.fragmentShader = "uniform float uHoloTime;\n" + sh.fragmentShader.replace("#include <dithering_fragment>", `#include <dithering_fragment>
+        float rim = pow(1.0 - abs(dot(normalize(normal), normalize(vViewPosition))), 2.2);
+        float scan = 0.82 + 0.18 * sin(vViewPosition.y * 260.0 - uHoloTime * 3.0);
+        gl_FragColor.rgb += diffuseColor.rgb * rim * 1.4;
+        gl_FragColor.a = clamp(gl_FragColor.a * (0.28 + rim * 1.3) * scan, 0.0, 1.0);`);
+    };
+    return m;
+  };
+  const mat = (key) => holo(new THREE.MeshStandardMaterial({ color: COLORS.none, emissive: COLORS.none, emissiveIntensity: 0.35, transparent: true, opacity: 0.55, roughness: 0.4, depthWrite: false }));
   function add(key, geo, x, y, z, rx = 0, rz = 0) {
     const m = new THREE.Mesh(geo, parts[key]?.material || mat(key));
     m.position.set(x, y, z);
@@ -54,7 +68,7 @@ export function buildBody(mats) {
   add("immune", cap(0.024, 0.22), -0.16, 0.12, 0, 0, 0.18);     // arms carry the blood draws
   add("immune", cap(0.024, 0.22), 0.16, 0.12, 0, 0, -0.18);
   // translucent torso shell so the organs read as inside a body
-  const shell = new THREE.Mesh(cap(0.11, 0.2), new THREE.MeshStandardMaterial({ color: 0x9cc4ff, emissive: 0x6fa8f5, emissiveIntensity: 0.3, transparent: true, opacity: 0.22, depthWrite: false }));
+  const shell = new THREE.Mesh(cap(0.11, 0.2), holo(new THREE.MeshStandardMaterial({ color: 0x9cc4ff, emissive: 0x6fa8f5, emissiveIntensity: 0.3, transparent: true, opacity: 0.35, depthWrite: false })));
   shell.position.y = 0.12;
   figure.add(shell);
   const neck = new THREE.Mesh(cap(0.025, 0.04), shell.material);
@@ -70,6 +84,7 @@ export function buildBody(mats) {
   }
   function select(key) { selected = key; }
   function update(dt, reduced) {
+    if (!reduced) holoTime.value += dt;
     t += dt;
     if (!reduced) figure.rotation.y = Math.sin(t * 0.35) * 0.5;
     for (const [key, p] of Object.entries(parts)) {

@@ -1,0 +1,96 @@
+{
+  "source": "Baigutanova et al. 2025 sleep diaries, 49 people x 28 days",
+  "rule": "95% prediction interval from the first B days",
+  "results": {
+    "sleep_duration": {
+      "7": {
+        "people": 49,
+        "median_false_flag_rate": 0.048,
+        "mean_false_flag_rate": 0.089,
+        "people_over_15pct": 12,
+        "three_day_run_rate": 0.0043
+      },
+      "10": {
+        "people": 49,
+        "median_false_flag_rate": 0.056,
+        "mean_false_flag_rate": 0.109,
+        "people_over_15pct": 14,
+        "three_day_run_rate": 0.0026
+      },
+      "14": {
+        "people": 49,
+        "median_false_flag_rate": 0.071,
+        "mean_false_flag_rate": 0.08,
+        "people_over_15pct": 7,
+        "three_day_run_rate": 0.0034
+      },
+      "21": {
+        "people": 49,
+        "median_false_flag_rate": 0.0,
+        "mean_false_flag_rate": 0.082,
+        "people_over_15pct": 4,
+        "three_day_run_rate": 0.0041
+      }
+    },
+    "sleep_efficiency": {
+      "7": {
+        "people": 49,
+        "median_false_flag_rate": 0.048,
+        "mean_false_flag_rate": 0.081,
+        "people_over_15pct": 9,
+        "three_day_run_rate": 0.0054
+      },
+      "10": {
+        "people": 49,
+        "median_false_flag_rate": 0.0,
+        "mean_false_flag_rate": 0.082,
+        "people_over_15pct": 12,
+        "three_day_run_rate": 0.0051
+      },
+      "14": {
+        "people": 49,
+        "median_false_flag_rate": 0.0,
+        "mean_false_flag_rate": 0.067,
+        "people_over_15pct": 6,
+        "three_day_run_rate": 0.0051
+      },
+      "21": {
+        "people": 49,
+        "median_false_flag_rate": 0.0,
+        "mean_false_flag_rate": 0.055,
+        "people_over_15pct": 3,
+        "three_day_run_rate": 0.0041
+      }
+    },
+    "sleep_latency": {
+      "7": {
+        "people": 49,
+        "median_false_flag_rate": 0.048,
+        "mean_false_flag_rate": 0.113,
+        "people_over_15pct": 13,
+        "three_day_run_rate": 0.0129
+      },
+      "10": {
+        "people": 49,
+        "median_false_flag_rate": 0.056,
+        "mean_false_flag_rate": 0.091,
+        "people_over_15pct": 10,
+        "three_day_run_rate": 0.0115
+      },
+      "14": {
+        "people": 49,
+        "median_false_flag_rate": 0.0,
+        "mean_false_flag_rate": 0.071,
+        "people_over_15pct": 7,
+        "three_day_run_rate": 0.0034
+      },
+      "21": {
+        "people": 49,
+        "median_false_flag_rate": 0.0,
+        "mean_false_flag_rate": 0.076,
+        "people_over_15pct": 6,
+        "three_day_run_rate": 0.0041
+      }
+    }
+  }
+}

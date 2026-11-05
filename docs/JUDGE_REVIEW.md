@@ -48,3 +48,35 @@ Fresh profile, 1366 by 768, software rendering (no GPU, the worst case): all 10 
 3. **Real 3D models** from the teammate for the body figure and stations (drop-in, `docs/MODELS.md`).
 4. **Clinician review** of the team-chosen escalation points.
 5. **Challenge Resources tab** not yet checked for listed datasets.
+
+## Second pass (same day): lag, clutter, graphics, first-time help
+
+Feedback: "graphics are trash", "a lot of clutter", "very laggy", "make it make sense", "a short tutorial for first-time users". Full list with status: `docs/CRITIQUE_100.md` (100 points, 53 fixed, 46 open).
+
+- **Lag.** Measured on the real GPU with `lab/scripts/perf.mjs` and a per-frame CPU meter built into the app. Overview CPU per frame about 41 ms before, about 9 ms after: static module parts merged (907 meshes to 280), about 80 labels packed into two texture pages, shadow maps drawn once, ambient occlusion opt-in, duct detail 275k to 80k triangles, the vitals screen no longer re-uploaded 12 times a second, panels rebuilt only on change, a one-time resolution drop on slow GPUs.
+- **Clutter and sense.** Thirteen tabs became five sections (Overview, Crew, Station, Experiments, Instruments) with a page switcher inside each; check-in rows open on click; routine folded to one line; duplicate legends gone; hotspot dots no longer pulse; three timeline speeds instead of five.
+- **Graphics.** Hologram shader on the body figure (glowing edges, see-through centres, scanlines) keeping status colours.
+- **First-time help.** A 4-step quick start that spotlights the real controls; the 10-step tour stays under About and on the overview.
+- **Rigor.** Study 4 (exploratory): on 49 real diaries a 14-day personal range flags 7 to 8% of healthy single days but three days in a row under 1%, the app's escalation rule.
+
+| Criterion | After pass 1 | After pass 2 | Why |
+|---|---|---|---|
+| Impact | 8 | 8 | Unchanged without a video |
+| Creativity | 8.5 | 8.5 | |
+| Novelty | 7.5 | 8 | Study 4 measures something we did not find published for this setting |
+| Fit to the brief | 9 | 9 | |
+| Scientific rigor | 9 | 9.5 | False-flag rate measured on real data; design justified by it |
+| Depth of real data | 9 | 9 | |
+| Feasibility | 7.5 | 8 | Runs smoothly on modest hardware; still no live link |
+| Profile fit | 8.5 | 9 | |
+| Visual appeal | 8.5 | 9 | No lag, less clutter, hologram |
+| Technical depth | 9 | 9.5 | Measured render optimisation, atlasing, merging |
+| Uniqueness | 8.5 | 8.5 | |
+| **Mean** | **8.5** | **8.7** | |
+
+What still keeps five criteria under 9, and what each needs:
+- **Impact (8):** a 60 to 90 s video of one crew member's problem caught and fixed.
+- **Feasibility (8):** the live link (repo public, Pages on).
+- **Novelty (8):** honest ceiling; personal baselines and N-of-1 trials exist on Earth.
+- **Creativity and uniqueness (8.5):** the teammate's real 3D models in place of the simple shapes.
+
