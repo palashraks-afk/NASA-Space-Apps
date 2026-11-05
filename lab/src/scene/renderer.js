@@ -25,7 +25,7 @@ export function createRenderer(container, { quality = "high" } = {}) {
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environmentIntensity = 0.32;
 
-  const camera = new THREE.PerspectiveCamera(56, container.clientWidth / container.clientHeight, 0.02, 1500);
+  const camera = new THREE.PerspectiveCamera(56, container.clientWidth / container.clientHeight || 16 / 9, 0.02, 1500);
 
   const size = () => [container.clientWidth, container.clientHeight];
   const [w, h] = size();
@@ -49,6 +49,7 @@ export function createRenderer(container, { quality = "high" } = {}) {
 
   const onResize = () => {
     const [nw, nh] = size();
+    if (!nw || !nh) return; // hidden or minimised: keep the last good size
     camera.aspect = nw / nh;
     camera.updateProjectionMatrix();
     renderer.setSize(nw, nh);

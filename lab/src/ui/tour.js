@@ -37,7 +37,7 @@ export function createTour({ host, show }) {
     if (b.dataset.t === "next") { if (k < TOUR.length - 1) { k++; render(); } else { stop(); onDone && onDone(); } }
   });
   addEventListener("keydown", (e) => { if (!el.hidden && e.key === "Escape") stop(); });
-  function start(done) { onDone = done; k = 0; el.hidden = false; render(); }
-  function stop() { el.hidden = true; }
+  function start(done) { onDone = done; k = 0; el.hidden = false; host.classList.add("touring"); render(); }
+  function stop() { el.hidden = true; host.classList.remove("touring"); }
   return { start, stop, active: () => !el.hidden };
 }

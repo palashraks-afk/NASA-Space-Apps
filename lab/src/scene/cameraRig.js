@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import gsap from "gsap";
 
+// Moves are timed by the clock, not by frames: on a slow machine (or software rendering) GSAP's
+// default lag smoothing stretched a 2-second glide into a minute.
+gsap.ticker.lagSmoothing(0);
+
 // Camera glides between stations with an ease-in-out move, then holds still. Reduced motion:
 // jumps instead of glides.
 export function createCameraRig(camera, dom, views) {
@@ -15,7 +19,9 @@ export function createCameraRig(camera, dom, views) {
     current = name;
     gsap.killTweensOf(camera.position);
     gsap.killTweensOf(target);
-    if (reduced || duration === 0 || window.__solInstant) {
+    const p = camera.position;
+    const broken = !Number.isFinite(p.x + p.y + p.z) || !Number.isFinite(target.x + target.y + target.z);
+    if (reduced || duration === 0 || window.__solInstant || broken) {
       camera.position.copy(v.pos);
       target.copy(v.look);
       onDone && onDone();

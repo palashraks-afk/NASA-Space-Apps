@@ -345,3 +345,6 @@ input[type="file"] { color: var(--muted); }
 .bp-tag.dim { opacity: 0.35 !important; }
 .bp-note { position: relative; padding: 8px 14px; color: #9db6dc; font-size: 0.82em; border-top: 1px solid rgba(140, 180, 240, 0.2); }
 @media (prefers-reduced-motion: reduce) { .bp-tag { transition: none; } }
+
+.tagline { margin: 0 0 10px !important; color: var(--muted); }
+.touring .nav-hint { display: none; }

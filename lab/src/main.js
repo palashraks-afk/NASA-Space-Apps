@@ -130,6 +130,9 @@ async function boot() {
   // the hatch end, on the side walls) sit inside the frame at the stage's current shape.
   const fitOverview = () => {
     const halfW = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
+    // A page opened in a hidden or zero-size window has no aspect yet; keep the default view
+    // until a real size arrives (a NaN here used to break every later camera move).
+    if (!Number.isFinite(halfW) || halfW <= 0) return;
     views.overview.pos.z = THREE.MathUtils.clamp(3.7 + (W + 0.05) / (0.8 * halfW), 5.4, 8.5);
     if (rig.current === "overview") rig.go("overview", { duration: 0 });
   };
@@ -137,7 +140,7 @@ async function boot() {
   window.addEventListener("resize", () => { R.onResize(); fitOverview(); });
 
   // ---------------- state ----------------
-  const S = { tab: "overview", met: 0.3, bodyPart: "heart", mapsOn: false, playing: false, speed: 1, crewSel: 0, dest: "iss", destLabel: DESTINATIONS.iss.label, simHours: dayStartHours, clockLux: 300, brightWake: false };
+  const S = { tab: "overview", met: 60.3, bodyPart: "heart", mapsOn: false, playing: false, speed: 1, crewSel: 0, dest: "iss", destLabel: DESTINATIONS.iss.label, simHours: dayStartHours, clockLux: 300, brightWake: false };
   const E = {
     step: 1, maxStep: 1, intervention: "caffeine", outcomeKey: "sleep_latency", speed: INTERVENTIONS.caffeine.speed,
     delta: OUTCOMES.sleep_latency.delta, thr: 0.95, mode: "hidden", practiceMult: 1.5, noise: "sim", crewMode: false,
@@ -289,7 +292,7 @@ async function boot() {
 
   PANELS.overview = {
     mount(root) {
-      root.innerHTML = `<h2>Crew overview</h2><p class="lede">Each measure is compared with that person's own pre-flight range, not a population norm. Amber marks a measure outside that range; nothing alarms.</p>
+      root.innerHTML = `<h2>Crew overview</h2><p class="tagline">Each person against their own normal.</p><p class="lede">Each measure is compared with that person's own pre-flight range, not a population norm. Amber marks a measure outside that range; nothing alarms.</p>
         <table class="grid" id="ovCrew"><thead><tr><th>Crew</th><th>Slept</th><th>HR</th><th>Temp</th><th>Vitals</th><th>Check-in</th></tr></thead><tbody></tbody></table>
         <h3>Cabin</h3><div class="kpis" id="ovCabin"></div>
         <details class="fold"><summary id="ovPatchTitle">Mission patches</summary><div class="patches" id="ovPatches"></div></details>
@@ -316,7 +319,7 @@ async function boot() {
       $("#ovCabin").innerHTML = kpi("CO2 today", env.co2[i].toFixed(1), "mmHg", env.co2[i] > AIR_LIMITS.co2_1h_mmHg ? "Above 3 mmHg limit" : "Under 3 mmHg limit", env.co2[i] > AIR_LIMITS.co2_1h_mmHg)
         + kpi("Headache risk", (env.headache[i] * 100).toFixed(1), "%", "From 7-day CO2", env.headache[i] > 0.01)
         + kpi("Radiation today", Math.round(radToday()), "µGy", "Measured on the ISS", false)
-        + kpi("Mission dose", (radTotal() / 1000).toFixed(1), "mGy", `${today() + 1} days`, false);
+        + kpi("Mission dose", (radTotal() / 1000).toFixed(1), "mGy", `over ${today() + 1} day${today() ? "s" : ""}`, false);
       $("#ovExp").textContent = !E.mission ? "No experiment set up. Open Experiments to design one." : E.started ? `Day ${E.day} of ${E.days}: "${intervention().label}" on ${outcome().label.toLowerCase()}${E.crew ? ", whole crew" : ""}.` : E.done ? "Finished. See Experiments for the result." : E.locked ? "Plan locked; ready to start." : "Plan being set up.";
     },
   };
@@ -639,7 +642,8 @@ async function boot() {
       const labels = BLOOD.timepoints.map((t) => t.replace("L-", "−").replace("R+", "+"));
       for (const p of BLOOD.panels) for (const a of p.analytes) {
         const row = $(`[data-b="${a.key}"]`), st = bloodState(k, a);
-        row.querySelector(".val").innerHTML = st.ret == null ? "–" : `${st.ret} <small>${esc(a.unit)}</small>`;
+        const dec = Math.max(...st.vals.filter((v) => v != null).map((v) => (String(v).split(".")[1] || "").length));
+        row.querySelector(".val").innerHTML = st.ret == null ? "–" : `${st.ret.toFixed(Math.min(2, dec))} <small>${esc(a.unit)}</small>`;
         const s = row.querySelector(".state");
         s.textContent = st.text;
         s.className = `state ${st.cls}`;
@@ -664,7 +668,7 @@ async function boot() {
       const d = today(), rate = radiation.rateAt();
       $("#radH").textContent = `Daily dose, 60 days`;
       $("#radK").innerHTML = kpi("Today", Math.round(radToday()), "µGy", `Typical ${Math.round(radMean)}`, false)
-        + kpi("Mission so far", (radTotal() / 1000).toFixed(1), "mGy", `${d + 1} days`, false)
+        + kpi("Mission so far", (radTotal() / 1000).toFixed(1), "mGy", `over ${d + 1} day${d ? "s" : ""}`, false)
         + kpi("Rate now", rate.toFixed(1), "µGy/h", rate > 20 ? "High-dose region" : "Quiet orbit", rate > 20)
         + kpi("180-day mission", ((radMean * 180) / 1000).toFixed(0), "mGy", "Projected", false);
       $("#radChart").innerHTML = bars(radSeries, { upTo: d, window: 60, unit: "µGy" });
