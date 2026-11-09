@@ -4,7 +4,7 @@ import * as THREE from "three";
 // stops, and the keyboard (Left/Right to step along the stops, Escape to go home).
 // `stops` are listed left to right as they sit in the room, each with its own camera view and the
 // 3D point its dot hangs at. Everything funnels through goTo(view), so mouse, dots and keys agree.
-export function createNav({ root, camera, stops, home, getCurrent, goTo, blocked = () => false }) {
+export function createNav({ root, camera, canvas, stops, home, getCurrent, goTo, blocked = () => false }) {
   const order = stops.map((s) => s.view);
   const label = Object.fromEntries(stops.map((s) => [s.view, s.label]));
 
@@ -42,14 +42,17 @@ export function createNav({ root, camera, stops, home, getCurrent, goTo, blocked
   function update() {
     sync();
     const cur = getCurrent(), w = root.clientWidth, h = root.clientHeight;
+    // The canvas can be larger than this layer (it runs under the panels): map from canvas space.
+    const cr = canvas ? canvas.getBoundingClientRect() : root.getBoundingClientRect(), rr = root.getBoundingClientRect();
     camera.updateMatrixWorld();
     dotted.forEach(({ view, anchor }, i) => {
       v.copy(anchor).project(camera);
-      const on = view !== cur && v.z < 1 && Math.abs(v.x) < 0.94 && Math.abs(v.y) < 0.92;
+      const x = ((v.x + 1) / 2) * cr.width + cr.left - rr.left, y = ((1 - v.y) / 2) * cr.height + cr.top - rr.top;
+      const on = view !== cur && v.z < 1 && x > w * 0.03 && x < w * 0.97 && y > h * 0.04 && y < h * 0.96;
       const b = dots[i];
       b.classList.toggle("off", !on);
       b.tabIndex = on ? 0 : -1;
-      if (on) b.style.transform = `translate(${((v.x + 1) / 2) * w}px, ${((1 - v.y) / 2) * h}px)`;
+      if (on) b.style.transform = `translate(${x}px, ${y}px)`;
     });
   }
 

@@ -1,4 +1,5 @@
 import "./styles.css";
+import "./theme-flight.css";
 import * as THREE from "three";
 import { createRenderer } from "./scene/renderer.js";
 import { makeMaterials } from "./scene/materials.js";
@@ -16,6 +17,7 @@ import { buildBody } from "./scene/body.js";
 import { loadModels } from "./scene/models.js";
 import { createPatches, PATCHES } from "./sim/patches.js";
 import { createTour, QUICK } from "./ui/tour.js";
+import { createHud } from "./ui/hud.js";
 import { createBlueprint } from "./ui/blueprint.js";
 import { INSTRUMENTS, parseReadings, SAMPLE_CSV, SAMPLE_FHIR } from "./sim/instruments.js";
 import { createMaps } from "./ui/maps.js";
@@ -61,7 +63,7 @@ async function boot() {
   loadingText.textContent = "Pressurizing the module";
   const stage = $("#stage");
   const quality = { low: "low", ultra: "ultra" }[new URLSearchParams(location.search).get("q")] || "high";
-  const R = createRenderer(stage, { quality });
+  const R = createRenderer(stage, { quality, viewRect: () => document.getElementById("nav").getBoundingClientRect() });
   const { scene, camera, composer, renderer } = R;
   // From outside the hatch end the closed hatch would block the view down the module, so a global
   // clip plane slices the hatch end away while the camera is out there (no clipping otherwise).
@@ -1158,7 +1160,19 @@ async function boot() {
   }
 
   const statusEl = $("#status");
+  const hud = createHud({ host: $("#app") });
+  function renderHud() {
+    const k = S.crewSel, i = idx(), c = H.crew[k];
+    hud.update({
+      day: today(), days: H.days, time: clockText(hourNow()), crew: c.id,
+      hr: c.hr[i], temp: c.temp[i], sleep: c.sleepDuration[i],
+      co2: H.env.co2[i], co2Over: H.env.co2[i] > AIR_LIMITS.co2_1h_mmHg,
+      dose: radToday(), mission: radTotal() / 1000,
+      watch: dayFindings(k).length, logged: loggedToday(k, i),
+    });
+  }
   function renderStatus() {
+    renderHud();
     statusEl.innerHTML = `<span class="dest">${esc(S.destLabel)}</span><span>Crew <b>${"ABCD"[S.crewSel]}</b></span><span>Day <b>${today()}</b>, ${clockText(hourNow())}</span>`;
   }
 
@@ -1187,6 +1201,7 @@ async function boot() {
 
   // ---------------- navigation: station dots, edge arrows, keys ----------------
   const nav = createNav({
+    canvas: renderer.domElement,
     root: $("#nav"), camera, home: "overview", getCurrent: () => rig.current, goTo: goView,
     blocked: () => tour.active(), // the guided tour owns Escape and the arrows while it is open
     // Left to right as they appear from the overview camera; `view` is the camera view each one goes to.
@@ -1303,6 +1318,7 @@ async function boot() {
     rig.update();
     hatchCut.constant = camera.position.z > HATCH_CUT + 0.05 ? HATCH_CUT : 1e4;
     nav.update();
+    hud.setOverview(S.tab === "overview" && rig.current === "overview");
     const cpu1 = performance.now();
     if (draw) composer.render(dt);
     // CPU cost per frame (update vs render), summed; scripts/perf.mjs resets and reads it
