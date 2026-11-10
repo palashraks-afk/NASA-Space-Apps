@@ -39,6 +39,7 @@ export function buildEvidence(mats) {
   floor.position.y = -HGT / 2 + 0.001;
   group.add(floor);
   const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.5, 0.12), mats.graphite);
+  bracket.name = "bracket";
   bracket.position.set(0, 0, -R - 0.08);
   group.add(bracket);
 

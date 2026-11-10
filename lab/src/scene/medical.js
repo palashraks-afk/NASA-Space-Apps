@@ -11,6 +11,7 @@ export function buildMedical(mats) {
 
   const rack = new THREE.Mesh(new RoundedBoxGeometry(1.0, 1.25, 0.05, 3, 0.015), new THREE.MeshStandardMaterial({ color: 0xe6e9eb, roughness: 0.7, metalness: 0.1 }));
   rack.receiveShadow = true;
+  rack.name = "rack"; // swapped for the Blender rack housing when it loads (station.js)
   group.add(rack);
 
   const bezel = new THREE.Mesh(new RoundedBoxGeometry(0.62, 0.42, 0.04, 3, 0.015), mats.graphite);

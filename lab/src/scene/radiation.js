@@ -32,6 +32,7 @@ export function buildRadiation(mats, { earthDay, data }) {
 
   const rack = new THREE.Mesh(new RoundedBoxGeometry(1.0, 1.25, 0.05, 3, 0.015), new THREE.MeshStandardMaterial({ color: 0xe3e6e9, roughness: 0.7, metalness: 0.1 }));
   rack.receiveShadow = true;
+  rack.name = "rack"; // swapped for the Blender rack housing when it loads (station.js)
   group.add(rack);
   const name = tapeMesh("Radiation", { w: 0.2, h: 0.055, fontSize: 70, seed: 1201 });
   name.position.set(-0.32, 0.55, 0.03);

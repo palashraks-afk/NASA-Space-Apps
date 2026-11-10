@@ -11,6 +11,7 @@ export function buildGalley(mats) {
 
   const rack = new THREE.Mesh(new RoundedBoxGeometry(1.05, 1.25, 0.05, 3, 0.015), new THREE.MeshStandardMaterial({ color: 0xe8e6e1, roughness: 0.7, metalness: 0.08 }));
   rack.receiveShadow = true;
+  rack.name = "rack"; // swapped for the Blender rack housing when it loads (station.js)
   group.add(rack);
 
   // Food warmer (briefcase-style) with a handle.

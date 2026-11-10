@@ -194,10 +194,12 @@ export function weave(seed = 2, base = [236, 236, 230]) {
 export function velcro(seed = 3) {
   const [c, g] = canvas(128, 128);
   const r = mulberry32(seed);
-  g.fillStyle = "#3a3f45";
+  // mid-grey loop fabric: dark enough to read as velcro, light enough not to crush to black under the
+  // baked cabin light
+  g.fillStyle = "#6a7077";
   g.fillRect(0, 0, 128, 128);
   for (let i = 0; i < 1600; i++) {
-    const v = 40 + r() * 50;
+    const v = 78 + r() * 70;
     g.fillStyle = `rgb(${v},${v + 3},${v + 6})`;
     g.beginPath();
     g.arc(r() * 128, r() * 128, 0.6 + r() * 1.1, 0, Math.PI * 2);

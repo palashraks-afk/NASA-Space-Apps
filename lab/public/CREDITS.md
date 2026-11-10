@@ -10,5 +10,8 @@
 - Health limits and targets: NASA-STD-3001 Vol. 2 (cabin temperature and humidity); NASA nominal 1-hour CO2 limit of 3 mmHg; Law et al. 2014 (CO2 and headache on the ISS); NASA JSC-67378 (2020) nutrition requirements; Stahn et al. 2017 (core body temperature in flight).
 - Biological variation numbers used in research notes: Coskun et al., Clin Chem Lab Med 2018.
 - Circadian model: Forger, Jewett and Kronauer 1999 with Serkh and Forger 2014 parameters, as implemented in HCRSimPY (Arcascope).
+- Fabric texture (cotton jersey): Poly Haven (polyhaven.com), CC0.
+- Command hub, rack housing, PBR textures, lightmap and reflection probe: made for this project in Blender from the scripts in `lab/blender/` (same licence as the code).
+- Draco mesh decoder: Google, Apache 2.0, as shipped with three.js.
 - Libraries: three.js (MIT), gsap (Standard "no charge" license), cannon-es (MIT), satellite.js (MIT), Archivo and Permanent Marker fonts (SIL Open Font License) via Fontsource.
 - Code written with Claude Code (AI) assistance, disclosed as the NASA Space Apps rules require.

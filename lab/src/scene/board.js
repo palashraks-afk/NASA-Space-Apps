@@ -47,7 +47,7 @@ export function buildBoard(mats) {
   group.add(title);
 
   const bag = new THREE.Mesh(new RoundedBoxGeometry(0.26, 0.2, 0.16, 4, 0.04), mats.fabricBlue);
-  bag.position.set(BW / 2 + 0.2, -BH / 2 + 0.12, 0.1);
+  bag.position.set(BW / 2 - 0.16, -BH / 2 - 0.15, 0.09); // under the board, clear of the bay ribs
   bag.castShadow = true;
   group.add(bag);
   const bagTape = tapeMesh("Schedule tokens", { w: 0.2, h: 0.045, fontSize: 60, seed: 630 });

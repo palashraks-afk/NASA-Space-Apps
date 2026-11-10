@@ -13,6 +13,7 @@ export function buildAir(mats) {
 
   const rack = new THREE.Mesh(new RoundedBoxGeometry(1.0, 1.3, 0.05, 3, 0.015), new THREE.MeshStandardMaterial({ color: 0xe1e5e8, roughness: 0.7, metalness: 0.12 }));
   rack.receiveShadow = true;
+  rack.name = "rack"; // swapped for the Blender rack housing when it loads (station.js)
   group.add(rack);
 
   // Scrubber cabinet with vent slats.
