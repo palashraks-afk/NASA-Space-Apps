@@ -234,7 +234,7 @@ export function createBlueprint({ host, onSelect = () => {} }) {
     resetView();
     setExplode(0); // assembled: parts separate only when the viewer presses Explode
     select(-1);
-    setMode(inst.photo ? "photo" : "three");
+    setMode("three"); // 3D first; the NASA photo is one click away
   }
   function resetView() {
     camera.position.set(0.46, 0.3, 0.6);
