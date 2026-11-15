@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { tapeMesh } from "./textures.js";
+import { plateMesh } from "./textures.js";
 
 // Radiation station: a globe projected above a rack, coloured by the dose rate the DOSTEL-1
 // detector on the ISS actually measured over each patch of Earth (NASA OSDR RadLab, 2022).
@@ -34,7 +34,7 @@ export function buildRadiation(mats, { earthDay, data }) {
   rack.receiveShadow = true;
   rack.name = "rack"; // swapped for the Blender rack housing when it loads (station.js)
   group.add(rack);
-  const name = tapeMesh("Radiation", { w: 0.2, h: 0.055, fontSize: 70, seed: 1201 });
+  const name = plateMesh("Radiation", { w: 0.3, h: 0.05 });
   name.position.set(-0.32, 0.55, 0.03);
   group.add(name);
 
@@ -109,8 +109,8 @@ export function buildRadiation(mats, { earthDay, data }) {
   const led = new THREE.Mesh(new THREE.CircleGeometry(0.008, 16), new THREE.MeshBasicMaterial({ color: 0x7fd1b9, toneMapped: false }));
   led.position.set(0.39, -0.35, 0.101);
   group.add(led);
-  const boxTag = tapeMesh("Dosimeter", { w: 0.13, h: 0.035, fontSize: 60, seed: 1202 });
-  boxTag.position.set(0.3, -0.4, 0.101);
+  const boxTag = plateMesh("Dosimeter", { w: 0.15, h: 0.028 });
+  boxTag.position.set(0.3, -0.405, 0.0995);
   group.add(boxTag);
 
   const scv = document.createElement("canvas");

@@ -79,6 +79,9 @@ mats["M_led_accent"] = make_material("M_led_accent", (1, 1, 1), 0.4, 0, (0.25, 0
 mats["M_led_green"] = make_material("M_led_green", (0.02, 0.1, 0.03), 0.4, 0, (0.3, 1.0, 0.45), 6.0)
 mats["M_led_amber"] = make_material("M_led_amber", (0.1, 0.06, 0.02), 0.4, 0, (1.0, 0.55, 0.15), 6.0)
 mats["M_screen"] = make_material("M_screen", (0.01, 0.02, 0.03), 0.3, 0, (0.3, 0.6, 0.9), 1.6)
+# nameplates: brushed steel with dark engraved lettering (added last so older material slots keep their index)
+mats["M_plate"] = make_material("M_plate", (0.62, 0.64, 0.66), 0.4, 1.0)
+mats["M_engrave"] = make_material("M_engrave", (0.02, 0.022, 0.026), 0.5, 0.0)
 NAMES = list(mats)
 
 main = Builder(NAMES)    # walls, floor, pedestals: lightmapped
@@ -176,9 +179,12 @@ def fastener(B, M, x, y, z):
 
 
 def placard(B, M, x, y, z, text, size=0.013, w=None):
+    """Brushed-steel nameplate (z = its back face) with the lettering stamped on it in dark ink."""
     w = w or (len(text) * size * 0.62 + 0.02)
-    B.box(M @ T(x, y, z), (w, size * 1.7, 0.0016), "M_label", bevel=0.0006, seg=1)
-    B.text(M @ T(x, y, z + 0.0022), text, size, "M_labeltext")
+    B.box(M @ T(x, y, z + 0.0008), (w, size * 1.7, 0.0016), "M_plate", bevel=0.0006, seg=1)
+    for sx in (-1, 1):
+        B.cyl(M @ T(x + sx * (w / 2 - size * 0.45), y, z + 0.0018), size * 0.17, 0.0006, "M_engrave", seg=8)
+    B.text(M @ T(x, y, z + 0.0018), text, size, "M_engrave")
 
 
 LOCKER_LABELS = ["SPARE FILTERS", "HYGIENE", "CABLE STOW", "SAMPLE BAGS", "EAR PLUGS", "WIPES", "LENSES",
@@ -297,10 +303,10 @@ def kick(M, w=BW):
 def soffit(M, title=None):
     main.box(M @ T(0, (SOFF + CEIL) / 2, 0.12), (BW, CEIL - SOFF, 0.24), "M_paintcool", bevel=0.01, seg=3)
     main.box(M @ T(0, SOFF - 0.004, 0.05), (BW - 0.08, 0.008, 0.045), "M_led_warm", bevel=0.002, seg=1)
-    main.box(M @ T(0, SOFF + 0.09, 0.241), (BW - 0.06, 0.03, 0.004), "M_graphite", bevel=0.0012, seg=1)
     if title:
-        detail.text(M @ T(-BW / 2 + 0.08, SOFF + 0.09, 0.2445), title, 0.032, "M_labeltext", align="LEFT")
-        detail.cyl(M @ T(BW / 2 - 0.07, SOFF + 0.09, 0.2445), 0.006, 0.004, "M_led_accent", seg=12)
+        pw = len(title) * 0.032 * 0.62 + 0.09
+        placard(detail, M, -BW / 2 + 0.06 + pw / 2, SOFF + 0.09, 0.24, title, size=0.032, w=pw)
+        detail.cyl(M @ T(BW / 2 - 0.07, SOFF + 0.09, 0.2435), 0.006, 0.004, "M_led_accent", seg=12)
 
 
 def upper(M):

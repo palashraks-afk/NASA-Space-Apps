@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mulberry32 } from "../engine/rng.js";
-import { tapeMesh } from "./textures.js";
+import { plateMesh } from "./textures.js";
 
 // Galley: food warmer, potable water dispenser, a Velcro tray of food pouches and cans, and
 // a screen with the selected crew member's meals for the day against NASA nutrition targets.
@@ -25,8 +25,8 @@ export function buildGalley(mats) {
   const warmLight = new THREE.Mesh(new THREE.CircleGeometry(0.008, 16), new THREE.MeshStandardMaterial({ color: 0xffa040, emissive: 0xffa040, emissiveIntensity: 3 }));
   warmLight.position.set(-0.16, 0.33, 0.171);
   group.add(warmLight);
-  const wTag = tapeMesh("Food warmer", { w: 0.17, h: 0.04, fontSize: 60, seed: 1001 });
-  wTag.position.set(-0.3, 0.3, 0.172);
+  const wTag = plateMesh("Food warmer", { w: 0.24, h: 0.036 });
+  wTag.position.set(-0.28, 0.27, 0.1695);
   group.add(wTag);
 
   // Potable water dispenser.
@@ -37,19 +37,19 @@ export function buildGalley(mats) {
   const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.05, 12), mats.graphite);
   nozzle.position.set(0.3, 0.13, 0.13);
   group.add(nozzle);
-  const dTag = tapeMesh("Water: hot / ambient", { w: 0.19, h: 0.04, fontSize: 54, seed: 1002 });
-  dTag.position.set(0.3, 0.38, 0.152);
+  const dTag = plateMesh("Potable water", { w: 0.19, h: 0.03 });
+  dTag.position.set(0.3, 0.36, 0.1495);
   group.add(dTag);
 
   // Velcro tray with pouches and cans.
-  const tray = new THREE.Mesh(new RoundedBoxGeometry(0.62, 0.3, 0.02, 2, 0.01), mats.velcro);
-  tray.position.set(0, -0.2, 0.04);
+  const tray = new THREE.Mesh(new RoundedBoxGeometry(0.62, 0.36, 0.02, 2, 0.01), mats.velcro);
+  tray.position.set(0, -0.14, 0.04);
   group.add(tray);
   const r = mulberry32(55);
   const pouchMat = [mats.aluWarm, mats.fabricTan, mats.aluBright];
   const labels = ["Shrimp cocktail", "Mac & cheese", "Tortillas", "Oatmeal", "Brisket", "Apricots"];
   labels.forEach((t, i) => {
-    const x = -0.22 + (i % 3) * 0.22, y = -0.13 - Math.floor(i / 3) * 0.14;
+    const x = -0.22 + (i % 3) * 0.22, y = -0.04 - Math.floor(i / 3) * 0.15;
     const isCan = i % 3 === 1;
     const item = isCan
       ? new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.06, 24), mats.aluCool)
@@ -59,12 +59,12 @@ export function buildGalley(mats) {
     item.rotation.z = (r() - 0.5) * 0.2;
     item.castShadow = true;
     group.add(item);
-    const lt = tapeMesh(t, { w: 0.12, h: 0.032, fontSize: 56, seed: 1100 + i });
-    lt.position.set(x, y, isCan ? 0.101 : 0.084);
-    lt.rotation.z = item.rotation.z;
+    // the plate rides on the velcro tray just under each item, never across a curved can or pouch edge
+    const lt = plateMesh(t, { w: 0.17, h: 0.026 });
+    lt.position.set(x, y - 0.068, 0.05);
     group.add(lt);
   });
-  const name = tapeMesh("Galley", { w: 0.18, h: 0.055, fontSize: 70, seed: 1003 });
+  const name = plateMesh("Galley", { w: 0.3, h: 0.05 });
   name.position.set(0, 0.55, 0.03);
   group.add(name);
 

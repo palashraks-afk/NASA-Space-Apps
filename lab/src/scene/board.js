@@ -2,7 +2,7 @@ import * as THREE from "three";
 import * as CANNON from "cannon-es";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mulberry32 } from "../engine/rng.js";
-import { tapeMesh } from "./textures.js";
+import { plateMesh } from "./textures.js";
 
 // Procedure board: one Velcro patch per mission day (rows are weeks). When the schedule is
 // randomized, tokens leave the cargo bag and drift across the cabin in zero gravity
@@ -37,21 +37,20 @@ export function buildBoard(mats) {
     patches.push(p);
   }
   for (let w = 0; w < ROWS; w++) {
-    const t = tapeMesh(`week ${w + 1}`, { w: 0.1, h: 0.032, width: 320, height: 112, fontSize: 64, seed: 600 + w });
-    t.position.set(origin.x - 0.13, origin.y - w * GY, 0.006);
+    const t = plateMesh(`wk ${w + 1}`, { w: 0.095, h: 0.026 });
+    t.position.set(origin.x - 0.133, origin.y - w * GY, 0.001);
     group.add(t);
   }
-  const title = tapeMesh("Procedure board", { w: 0.34, h: 0.065, fontSize: 72, seed: 620 });
-  title.position.set(-0.1, BH / 2 + 0.01, 0.01);
-  title.rotation.z = 0.015;
+  const title = plateMesh("Procedure board", { w: 0.42, h: 0.06 });
+  title.position.set(0, BH / 2 - 0.075, 0.001); // inside the panel edge, above the first row
   group.add(title);
 
   const bag = new THREE.Mesh(new RoundedBoxGeometry(0.26, 0.2, 0.16, 4, 0.04), mats.fabricBlue);
   bag.position.set(BW / 2 - 0.16, -BH / 2 - 0.15, 0.09); // under the board, clear of the bay ribs
   bag.castShadow = true;
   group.add(bag);
-  const bagTape = tapeMesh("Schedule tokens", { w: 0.2, h: 0.045, fontSize: 60, seed: 630 });
-  bagTape.position.set(bag.position.x, bag.position.y + 0.02, bag.position.z + 0.081);
+  const bagTape = plateMesh("Tokens", { w: 0.15, h: 0.03 });
+  bagTape.position.set(bag.position.x, bag.position.y, bag.position.z + 0.0795);
   group.add(bagTape);
 
   // current-day marker

@@ -68,6 +68,8 @@ export async function loadStationModule({ base, renderer }) {
     M_handrail: () => std({ color: 0x3d6596, roughness: 0.42, metalness: 0.75, normalMap: sets.brushed.normalMap, roughnessMap: sets.brushed.roughnessMap, normalScale: ns(0.3) }),
     M_hazard_y: () => std({ color: 0xf0b21c, roughness: 0.55, normalMap: sets.paint.normalMap, roughnessMap: sets.paint.roughnessMap }),
     M_hazard_k: () => std({ color: 0x111214, roughness: 0.55, normalMap: sets.paint.normalMap, roughnessMap: sets.paint.roughnessMap }),
+    M_plate: () => std({ color: 0xb9bdc2, roughness: 1, metalness: 0.8, normalMap: sets.brushed.normalMap, roughnessMap: sets.brushed.roughnessMap, normalScale: ns(0.2) }),
+    M_engrave: () => std({ color: 0x15171a, roughness: 0.55 }),
     M_label: () => std({ color: 0x0c0d10, roughness: 0.6 }),
     M_labeltext: () => std({ color: 0xe8e6df, roughness: 0.7 }),
     M_glass_dark: () => std({ color: 0x020305, roughness: 0.04, metalness: 0 }),

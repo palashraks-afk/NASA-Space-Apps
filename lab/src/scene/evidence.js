@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { cholesky } from "../engine/linalg.js";
 import { mulberry32, normal } from "../engine/rng.js";
-import { tapeMesh } from "./textures.js";
+import { plateMesh } from "./textures.js";
 
 // Evidence chamber: each mote is one draw from the posterior over
 //   x = effect (better to the right), y = day-to-day spread (up), z = weekly drift (depth).
@@ -74,16 +74,19 @@ export function buildEvidence(mats) {
     { text: "too small to matter", x: 0 },
     { text: "better", x: XS - 0.03 },
   ].map((l, i) => {
-    const t = tapeMesh(l.text, { w: i === 1 ? 0.17 : 0.09, h: 0.035, width: i === 1 ? 640 : 320, height: 128, fontSize: 64, seed: 300 + i });
-    t.position.set(l.x, -HGT / 2 - 0.035, R + 0.072);
+    const t = plateMesh(l.text, { w: i === 1 ? 0.17 : 0.095, h: 0.03 });
+    // follow the round plinth instead of floating flat in front of it
+    const rb = R + 0.06, th = Math.asin(THREE.MathUtils.clamp(l.x / rb, -0.95, 0.95));
+    t.position.set(rb * Math.sin(th), -HGT / 2 - 0.035, rb * Math.cos(th));
+    t.rotation.y = th;
     group.add(t);
     return t;
   });
-  const spreadLabel = tapeMesh("day-to-day spread", { w: 0.16, h: 0.034, width: 640, height: 128, fontSize: 60, seed: 310 });
+  const spreadLabel = plateMesh("day-to-day spread", { w: 0.24, h: 0.03 });
   spreadLabel.position.set(-R - 0.045, 0.05, R * 0.55);
   spreadLabel.rotation.set(0, -0.6, Math.PI / 2);
   group.add(spreadLabel);
-  const nameTape = tapeMesh("Evidence chamber", { w: 0.3, h: 0.06, fontSize: 70, seed: 320 });
+  const nameTape = plateMesh("Evidence chamber", { w: 0.34, h: 0.05 });
   nameTape.position.set(0, HGT / 2 + 0.105, 0.12);
   nameTape.rotation.x = -0.35;
   group.add(nameTape);

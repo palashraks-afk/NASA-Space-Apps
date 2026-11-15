@@ -228,47 +228,113 @@ export function kaptonBump(seed = 4) {
   return asDataTex(c, [1, 1]);
 }
 
-// White tape with a hand-written marker label. Edges are torn, the tape is slightly
-// translucent at the ends, and the text sits a little off-straight, like a real label.
-export function tapeLabel(text, { width = 512, height = 128, fontSize = 64, seed = 5, ink = "#16181b", tape = "#f6f6f1", align = "center" } = {}) {
-  const [c, g] = canvas(width, height);
-  const r = mulberry32(seed);
-  g.clearRect(0, 0, width, height);
-  g.beginPath();
-  const torn = (x0, y0, y1) => {
-    const steps = 10;
-    for (let i = 0; i <= steps; i++) g.lineTo(x0 + (r() - 0.5) * 10, y0 + ((y1 - y0) * i) / steps);
-  };
-  g.moveTo(6, 8);
-  g.lineTo(width - 8, 6);
-  torn(width - 8, 6, height - 8);
-  g.lineTo(8, height - 6);
-  torn(6, height - 6, 8);
-  g.closePath();
-  g.fillStyle = tape;
-  g.shadowColor = "rgba(0,0,0,0.18)";
-  g.shadowBlur = 6;
-  g.fill();
-  g.shadowBlur = 0;
-  g.fillStyle = ink;
-  g.font = `${fontSize}px "Permanent Marker"`;
-  g.textBaseline = "middle";
-  g.textAlign = align;
-  g.save();
-  g.translate(align === "center" ? width / 2 : 24, height / 2 + 4);
-  g.rotate((r() - 0.5) * 0.04);
-  g.fillText(text, 0, 0, width - 48);
-  g.restore();
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  t.anisotropy = 8;
-  return t;
+// Engraved metal nameplate: a thin brushed-steel plate with two screws and the label stamped into it.
+// The plate sizes itself to its text and never exceeds `w` metres: long text wraps to two lines first,
+// then the whole plate is scaled down to fit. `h` is the height of a one-line plate. `round` makes a
+// small round tab (single letters). Back face sits at z = 0, the engraved face about 4 mm in front.
+const PLATE_H = 160; // texture px for one line
+function plateShape(w, h, r) {
+  const s = new THREE.Shape();
+  if (r >= Math.min(w, h) / 2 - 1e-6) { s.absarc(0, 0, Math.min(w, h) / 2, 0, Math.PI * 2, false); return s; }
+  const x = w / 2, y = h / 2;
+  s.moveTo(-x + r, -y);
+  s.lineTo(x - r, -y); s.absarc(x - r, -y + r, r, -Math.PI / 2, 0, false);
+  s.lineTo(x, y - r); s.absarc(x - r, y - r, r, 0, Math.PI / 2, false);
+  s.lineTo(-x + r, y); s.absarc(-x + r, y - r, r, Math.PI / 2, Math.PI, false);
+  s.lineTo(-x, -y + r); s.absarc(-x + r, -y + r, r, Math.PI, Math.PI * 1.5, false);
+  return s;
 }
 
-export function tapeMesh(text, { w = 0.3, h = 0.075, ...opts } = {}) {
-  const tex = tapeLabel(text, opts);
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.85, metalness: 0 }));
-  m.userData.tape = true;
+export function plateMesh(text, { w = 0.3, h = 0.04, round = false } = {}) {
+  const label = String(text).toUpperCase();
+  const [mc, mg] = canvas(8, 8);
+  const fontPx = PLATE_H * 0.4;
+  const font = `700 ${fontPx}px Archivo, "Segoe UI", Arial, sans-serif`;
+  const track = round ? 0 : fontPx * 0.09;
+  const measure = (s) => { mg.font = font; if ("letterSpacing" in mg) mg.letterSpacing = `${track}px`; return mg.measureText(s).width; };
+  const SCREW = round ? 0 : PLATE_H * 0.95; // each end: screw plus breathing room
+  let lines = [label];
+  let textW = measure(label);
+  let wPx = round ? PLATE_H : textW + 2 * SCREW;
+  let hPx = PLATE_H;
+  const mPerPx = h / PLATE_H;
+  if (!round && wPx * mPerPx > w && label.includes(" ")) {
+    // wrap at the space nearest the middle
+    const mid = label.length / 2;
+    let cut = -1;
+    for (let i = 0; i < label.length; i++) if (label[i] === " " && (cut < 0 || Math.abs(i - mid) < Math.abs(cut - mid))) cut = i;
+    lines = [label.slice(0, cut), label.slice(cut + 1)];
+    textW = Math.max(measure(lines[0]), measure(lines[1]));
+    wPx = textW + 2 * SCREW;
+    hPx = PLATE_H * 1.55;
+  }
+  let scale = 1;
+  if (wPx * mPerPx > w) scale = w / (wPx * mPerPx);
+  const Wm = wPx * mPerPx * scale, Hm = hPx * mPerPx * scale;
+
+  const seed = [...label].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+  const r = mulberry32(seed);
+  const [c, g] = canvas(Math.ceil(wPx), Math.ceil(hPx));
+  const [bc, bg] = canvas(c.width, c.height);
+  const rad = round ? c.width / 2 : PLATE_H * 0.16;
+  const rr = (ctx, inset) => {
+    ctx.beginPath();
+    if (round) ctx.arc(c.width / 2, c.height / 2, c.width / 2 - inset, 0, Math.PI * 2);
+    else ctx.roundRect(inset, inset, c.width - 2 * inset, c.height - 2 * inset, Math.max(rad - inset, 1));
+  };
+  // brushed steel
+  const base = g.createLinearGradient(0, 0, c.width * 0.6, c.height);
+  base.addColorStop(0, "#c4c8cc"); base.addColorStop(0.5, "#aeb2b7"); base.addColorStop(1, "#9a9ea4");
+  g.fillStyle = base; g.fillRect(0, 0, c.width, c.height);
+  for (let i = 0; i < c.height * 3; i++) {
+    const y = r() * c.height, a = 0.04 + r() * 0.09;
+    g.fillStyle = r() < 0.5 ? `rgba(255,255,255,${a})` : `rgba(40,44,50,${a})`;
+    g.fillRect(0, y, c.width, 0.6 + r() * 1.2);
+  }
+  bg.fillStyle = "rgb(150,150,150)"; bg.fillRect(0, 0, c.width, c.height);
+  // pressed rim: light top-left edge, dark bottom-right edge
+  g.lineWidth = 5; rr(g, 6); g.strokeStyle = "rgba(255,255,255,0.45)"; g.stroke();
+  g.lineWidth = 3; rr(g, 11); g.strokeStyle = "rgba(30,34,40,0.35)"; g.stroke();
+  bg.lineWidth = 6; rr(bg, 8); bg.strokeStyle = "rgb(210,210,210)"; bg.stroke();
+  // screws
+  if (!round) {
+    for (const sx of [SCREW * 0.5, c.width - SCREW * 0.5]) {
+      const sy = c.height / 2, sr = PLATE_H * 0.15;
+      g.fillStyle = "#23262b"; g.beginPath(); g.arc(sx, sy, sr * 1.18, 0, Math.PI * 2); g.fill();
+      const sg = g.createRadialGradient(sx - sr * 0.3, sy - sr * 0.35, 1, sx, sy, sr);
+      sg.addColorStop(0, "#e1e4e8"); sg.addColorStop(1, "#80858c");
+      g.fillStyle = sg; g.beginPath(); g.arc(sx, sy, sr, 0, Math.PI * 2); g.fill();
+      const a = r() * Math.PI;
+      g.strokeStyle = "#2a2d32"; g.lineWidth = sr * 0.28; g.lineCap = "round";
+      g.beginPath(); g.moveTo(sx - Math.cos(a) * sr * 0.7, sy - Math.sin(a) * sr * 0.7); g.lineTo(sx + Math.cos(a) * sr * 0.7, sy + Math.sin(a) * sr * 0.7); g.stroke();
+      bg.fillStyle = "rgb(235,235,235)"; bg.beginPath(); bg.arc(sx, sy, sr, 0, Math.PI * 2); bg.fill();
+    }
+  }
+  // engraving
+  const lh = PLATE_H;
+  g.font = font; bg.font = font;
+  if ("letterSpacing" in g) { g.letterSpacing = `${track}px`; bg.letterSpacing = `${track}px`; }
+  g.textAlign = bg.textAlign = "center"; g.textBaseline = bg.textBaseline = "middle";
+  lines.forEach((line, i) => {
+    const cx = c.width / 2 + track / 2, cy = c.height / 2 + (i - (lines.length - 1) / 2) * lh * 0.78 + PLATE_H * 0.02;
+    g.fillStyle = "rgba(255,255,255,0.6)"; g.fillText(line, cx + 1.5, cy + 2.5);   // light catching the lower lip
+    g.fillStyle = "#24272c"; g.fillText(line, cx, cy);
+    g.fillStyle = "rgba(0,0,0,0.35)"; g.fillText(line, cx - 0.8, cy - 1);           // shadowed upper wall
+    bg.fillStyle = "rgb(20,20,20)"; bg.fillText(line, cx, cy);
+  });
+  const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 8;
+  const bump = new THREE.CanvasTexture(bc); bump.anisotropy = 8;
+  const mat = new THREE.MeshStandardMaterial({ map, bumpMap: bump, bumpScale: 2.2, metalness: 0.7, roughness: 0.4 });
+  const bev = 0.0006;
+  const geo = new THREE.ExtrudeGeometry(plateShape(Wm - 2 * bev, Hm - 2 * bev, round ? Hm : Math.min(0.006 * scale + 0.002, Hm / 2)), {
+    depth: 0.003, bevelEnabled: true, bevelThickness: bev, bevelSize: bev, bevelSegments: 1, curveSegments: round ? 20 : 4,
+  });
+  geo.translate(0, 0, bev);
+  const uv = geo.attributes.uv, pos = geo.attributes.position;
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, pos.getX(i) / Wm + 0.5, pos.getY(i) / Hm + 0.5);
+  const m = new THREE.Mesh(geo, mat);
+  m.userData.plate = true;
+  m.castShadow = false;
   return m;
 }
 
