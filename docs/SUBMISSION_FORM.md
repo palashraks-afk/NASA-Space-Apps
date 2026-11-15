@@ -46,7 +46,7 @@ Sol Lab follows the challenge's three steps: gather, evaluate, act.
 
 *Evaluate.* Every reading is compared with the person's own usual range, built from their pre-flight days, and given one of three levels: within range, keep an eye on it, or talk to the flight surgeon. Levels use colour plus a word, so they don't depend on colour vision. Where published cut-offs exist we use them (ACC/AHA blood pressure, ADA blood sugar, CDC fever, AASM sleep). Where none exist the team chose one and marked it for clinician review. A single odd day only asks you to keep an eye on it; repeated days escalate.
 
-*Act.* Every non-normal level comes with concrete next steps. For slow problems like poor sleep, the crew can design a small randomized self-experiment: pick a change, lock the plan before seeing results, and let the schedule decide which days get the change. A Bayesian engine then says whether it worked, made things worse, made no difference, or is not settled yet. Four crew members can pool their results.
+*Act (our signature feature).* Every non-normal level comes with concrete next steps. For slow problems like poor sleep, the crew can design a small randomized self-experiment: pick a change, lock the plan before seeing results, and let the schedule decide which days get the change. A Bayesian engine then says whether it worked, made things worse, made no difference, or is not settled yet. Four crew members can pool their results.
 
 **The station**
 
@@ -62,6 +62,7 @@ Ten instruments show the real hardware behind each reading, in exploded 3D views
 - ISS cabin air: 358 days of CO2, temperature and humidity from the NASA OSDR Environmental Data App, checked against today's 3 mmHg CO2 limit.
 - Bloodwork: the four Inspiration4 crew's complete blood counts and metabolic panels (OSDR OSD-569, OSD-575), flagged only when a change is larger than normal day-to-day variation.
 - Sleep: diaries from 49 people (Baigutanova et al. 2025).
+- Space weather: NASA DONKI logged 5 days of solar particle events and 6 geomagnetic storms during the same months. The dose inside Columbus did not rise on those days (299.5 and 306.8 µGy/day against 305.9 on quiet days): Earth's magnetic field shields low orbit, while crews bound for the Moon or Mars have no such shield.
 - Food: USDA FoodData Central. Orbit: CelesTrak elements propagated with SGP4.
 
 Readings nobody logged are simulated and labelled that way, and records from different people and years are combined into one 180-day mission. The app says so.
@@ -114,6 +115,8 @@ If there is a text box:
 | NASA Visible Earth: Blue Marble and Black Marble Earth imagery | https://visibleearth.nasa.gov/ |
 | NASA-STD-3001 human spaceflight standards (cabin limits, CO2) | https://www.nasa.gov/ochmo/human-spaceflight-and-aviation-standards/ |
 | NASA 3D Resources: Astronaut, ISS and Crew Lock Bag models | https://github.com/nasa/NASA-3D-Resources |
+| NASA DONKI space weather database (solar particle events, geomagnetic storms) | https://ccmc.gsfc.nasa.gov/tools/DONKI/ |
+| NASA Open APIs (DONKI endpoint) | https://api.nasa.gov/ |
 | NASA NTRS: ISS CDRA testing (CO2 removal specs) | https://ntrs.nasa.gov/citations/20000072884 |
 | NASA NTRS: ISS CDRA concepts and advancements | https://ntrs.nasa.gov/citations/20050210002 |
 | NASA NTRS: Major Constituent Analyzer on-orbit performance | https://ntrs.nasa.gov/citations/20160010396 |

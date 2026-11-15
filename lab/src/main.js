@@ -48,6 +48,8 @@ async function boot() {
   await Promise.all([document.fonts.load('64px "Permanent Marker"'), document.fonts.load('600 16px "Archivo"'), document.fonts.load('800 16px "Archivo"')]);
   const [realNoise, gp, foodsFile, RAD, BLOOD, CABIN] = await Promise.all(["data/real_noise.json", "data/iss_gp.json", "data/foods.json", "data/radiation.json", "data/bloodwork.json", "data/cabin.json"].map((u) => import.meta.env.BASE_URL + u).map((u) => fetch(u).then((r) => r.json())));
   const OUTCOMES = loadOutcomes(realNoise);
+  // NASA DONKI space-weather events during the replayed radiation period (optional file).
+  const SPACEWX = await fetch(import.meta.env.BASE_URL + "data/spaceweather.json").then((r) => (r.ok ? r.json() : null)).catch(() => null);
   const iss = makeISS(gp[0]);
   const issEpoch = new Date(gp[0].EPOCH + "Z");
   const sunrises = countSunrises(iss, issEpoch, 24, 20);
@@ -344,6 +346,13 @@ async function boot() {
   PANELS.overview = {
     mount(root) {
       root.innerHTML = `<h2>Crew overview</h2><p class="tagline">Each person against their own normal.</p><p class="lede">Each measure is compared with that person's own pre-flight range, not a population norm. Amber marks a measure outside that range; nothing alarms.</p>
+        <section class="hero-exp">
+          <div class="hero-kicker">Signature feature</div>
+          <h3>Did that change really help, or was it a lucky week?</h3>
+          <p>Crew members test a fix the way a clinical trial does: the schedule is randomized, the plan is locked before any results, and the answer is allowed to be "not settled". Checked on 49 real people's sleep records: wrong calls 0.68% of the time.</p>
+          <button type="button" class="btn hero-btn" data-act="demoExp"><span aria-hidden="true">▶</span> Watch a crew experiment</button>
+          <span class="hero-note">About 20 seconds: four crew, 56 days, live. The demo uses a large real effect; real tests often end "not settled".</span>
+        </section>
         <table class="grid" id="ovCrew"><thead><tr><th>Crew</th><th>Slept</th><th>HR</th><th>Temp</th><th>Vitals</th><th>Check-in</th></tr></thead><tbody></tbody></table>
         <h3>Cabin</h3><div class="kpis" id="ovCabin"></div>
         <details class="fold"><summary id="ovPatchTitle">Mission patches</summary><div class="patches" id="ovPatches"></div></details>
@@ -355,6 +364,7 @@ async function boot() {
       root.querySelector("#ovCrew").addEventListener("click", (e) => { const r = e.target.closest("[data-crew]"); if (r) selectCrew(+r.dataset.crew); });
       root.querySelector('[data-act="report"]').addEventListener("click", downloadReport);
       root.querySelector('[data-act="tour"]').addEventListener("click", startTour);
+      root.querySelector('[data-act="demoExp"]').addEventListener("click", runDemoExperiment);
       root.addEventListener("click", (e) => { const g = e.target.closest("[data-go]"); if (g) showTab(g.dataset.go); });
     },
     update() {
@@ -717,6 +727,14 @@ async function boot() {
       root.innerHTML = `<h2>Radiation</h2><p class="lede">Measured radiation inside the ISS, from a detector in the Columbus module. Each mission day replays a real measured day. The globe shows where in orbit the dose comes from.</p>
         <div class="kpis" id="radK"></div>
         <h3 id="radH">Daily dose</h3><div class="charts" id="radChart"></div>
+        ${SPACEWX ? (() => {
+          const c = SPACEWX.comparison;
+          return `<details class="fold"><summary>Space weather: did solar storms raise the dose? (NASA DONKI)</summary>
+          <p>NASA's space-weather database logged ${SPACEWX.events.filter((e) => e.type === "SEP").length} days of solar energetic particle events and ${SPACEWX.events.filter((e) => e.type === "GST").length} geomagnetic storms while these readings were taken. On those days and the day after, the dose inside Columbus did not rise: <b>${c.sep.mean}</b> µGy/day on particle-event days and <b>${c.gst.mean}</b> on storm days, against <b>${c.quiet.mean}</b> on quiet days (day-to-day spread ${c.quiet.sd}).</p>
+          <p>Earth's magnetic field turns most of these particles away from low orbit. Beyond it, on the way to the Moon or Mars, the same events are the main short-term radiation danger, which is why deep-space crews need storm shelters and warnings.</p>
+          <ul class="wx">${SPACEWX.events.map((e) => `<li><span class="lvl ${e.type === "SEP" ? "lvl-watch" : "lvl-ok"}">${e.type === "SEP" ? "Particles" : "Storm"}</span> ${esc(e.date)}: <a href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.label)}</a></li>`).join("")}</ul>
+          <p class="src">${esc(SPACEWX.source)}. Comparison: daily DOSTEL-1 dose, ${c.sep.days} particle-event days, ${c.gst.days} storm days, ${c.quiet.days} quiet days. A small sample of moderate events; a large solar storm can raise low-orbit dose.</p></details>`;
+        })() : ""}
         <p class="src"><b>Where it comes from.</b> Over these ${radDaily.length} days the station spent about ${Math.round(RAD.saa.minutes_per_day)} minutes a day in the South Atlantic Anomaly, where Earth's inner radiation belt dips low over South America, and collected ${Math.round(RAD.saa.share * 100)}% of its dose there. The rest is mostly galactic cosmic rays and outer-belt particles at high latitudes. The marker on the globe flies the real track of ${esc(RAD.track_date)}.</p>
         <h3>By module (same detector type, Dec 2019)</h3><div class="bars" id="radMods">${(() => { const mx = Math.max(...RAD.modules.map((m) => m.dose)); return RAD.modules.map((m) => `<div class="row"><span>${esc(m.module)}</span><span class="track"><span class="fill ok" style="width:${((m.dose / mx) * 100).toFixed(1)}%;background:#6fa8f5"></span></span><span class="v">${Math.round(m.dose)} µGy/day</span></div>`).join(""); })()}</div>
         <p class="src">${esc(RAD.modules_source)} The most exposed module received about ${(RAD.modules[RAD.modules.length - 1].dose / RAD.modules[0].dose).toFixed(1)} times the dose of the least, a difference shielding and where crew sleep can use. Detectors sit at fixed spots, so this is the dose at that spot, not the whole module.</p>
@@ -1025,6 +1043,43 @@ async function boot() {
       <p>${verdict === "inconclusive" ? `${E.days} days were not enough to settle it. That is common for one person: day-to-day spread is large compared with most real effects. Running it as a crew, a longer run, a quieter measure, or a change that acts within a day would help.` : right ? "The verdict matches the truth." : "This is the rare wrong call the threshold allows."}</p>
       ${E.mission.real ? `<p class="src">The day-to-day ups and downs were one real person's sleep diary; only the hidden change was added.</p>` : ""}`;
     if (right) celebrate();
+  }
+  // One-click demonstration of the signature feature: randomize a crew experiment on the board,
+  // lock the plan, then run 56 days at 10 days a second while the evidence chamber settles.
+  let demoRunning = false;
+  async function runDemoExperiment() {
+    if (demoRunning) return;
+    demoRunning = true;
+    const wait = (ms) => new Promise((r) => setTimeout(r, reduced ? 30 : ms));
+    const act = (a) => { const el = document.querySelector(`#inspector [data-act="${a}"]`); if (el && !el.disabled) { el.click(); return true; } return false; };
+    try {
+      S.playing = false;
+      if (E.mission || E.started || E.done) newExperiment(false);
+      E.crewMode = true;
+      // A demonstration needs a visible answer: set the true change to three times the smallest
+      // worthwhile change, where the power chart gives about a 95% chance of a clear verdict.
+      // The setup screen shows this; real tests use a hidden truth and often say "not settled".
+      E.mode = "practice";
+      E.practiceMult = 3;
+      syncDays();
+      showTab("experiments");
+      goStep(1);
+      await wait(900);
+      act("toRandomize");
+      await wait(700);
+      act("randomize");
+      for (let k = 0; k < 80 && E.randomizing; k++) await wait(150);
+      await wait(600);
+      act("lock");
+      await wait(500);
+      act("toRun");
+      await wait(500);
+      act("start");
+      const fast = document.querySelector('#timeline [data-v="10"]');
+      if (fast) fast.click(); else S.speed = 10; // the button keeps the speed control in sync
+      S.playing = true;
+      refresh();
+    } finally { demoRunning = false; }
   }
   function newExperiment(keep) {
     Object.assign(E, { mission: null, crew: null, locked: false, started: false, done: false, startDay: null, day: 0, history: [], last: null });
@@ -1372,6 +1427,8 @@ async function boot() {
         tour: () => startTour(),
         quick: () => startQuick(),
         instruments: () => showTab("instruments"),
+        demo: () => { window.__solInstant = false; runDemoExperiment(); },
+        demoend: () => { window.__solInstant = false; runDemoExperiment(); },
         // inst_<key>: open the Instruments tab on one device (for screenshots)
         ...Object.fromEntries(INSTRUMENTS.map((x) => [`inst_${x.key}`, () => { instKey = x.key; showTab("instruments"); }])),
         mapsystems: () => { S.met = 60.3; showTab("maps"); document.querySelector('[data-seg="mapMode"] [data-v="systems"]').click(); },

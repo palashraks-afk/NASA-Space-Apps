@@ -1,0 +1,88 @@
+{
+ "source": "NASA DONKI (Space Weather Database Of Notifications, Knowledge, Information), CCMC, NASA GSFC; api.nasa.gov/DONKI, 2022-01-01 to 2022-04-30",
+ "events": [
+  {
+   "type": "GST",
+   "date": "2022-01-14",
+   "label": "Geomagnetic storm, Kp 6",
+   "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/GST/18841/-1"
+  },
+  {
+   "type": "GST",
+   "date": "2022-01-19",
+   "label": "Geomagnetic storm, Kp 6",
+   "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/GST/18884/-1"
+  },
+  {
+   "type": "SEP",
+   "date": "2022-01-20",
+   "label": "Solar energetic particles, seen by GOES-P, SOHO",
+   "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/18899/-1"
+  },
+  {
+   "type": "GST",
+   "date": "2022-02-03",
+   "label": "Geomagnetic storm, Kp 5",
+   "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/GST/21084/-1"
+  },
+  {
+   "type": "GST",
+   "date": "2022-03-13",
+   "label": "Geomagnetic storm, Kp 6",
+   "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/GST/19427/-1"
+  },
+  {
+   "type": "SEP",
+   "date": "2022-03-28",
+   "label": "Solar energetic particles, seen by GOES-P, SOHO, STEREO A",
+   "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/19550/-1"
+  },
+  {
+   "type": "SEP",
+   "date": "2022-03-30",
+   "label": "Solar energetic particles, seen by STEREO A",
+   "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/19594/-1"
+  },
+  {
+   "type": "SEP",
+   "date": "2022-03-31",
+   "label": "Solar energetic particles, seen by GOES-P, SOHO",
+   "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/19613/-1"
+  },
+  {
+   "type": "SEP",
+   "date": "2022-04-02",
+   "label": "Solar energetic particles, seen by GOES-P, SOHO",
+   "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/SEP/19633/-1"
+  },
+  {
+   "type": "GST",
+   "date": "2022-04-10",
+   "label": "Geomagnetic storm, Kp 7",
+   "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/GST/19718/-1"
+  },
+  {
+   "type": "GST",
+   "date": "2022-04-14",
+   "label": "Geomagnetic storm, Kp 6",
+   "link": "https://ccmc.gsfc.nasa.gov/DONKI/view/GST/19773/-1"
+  }
+ ],
+ "comparison": {
+  "window": "event day and the day after",
+  "sep": {
+   "days": 9,
+   "mean": 299.5
+  },
+  "gst": {
+   "days": 10,
+   "mean": 306.8
+  },
+  "quiet": {
+   "days": 85,
+   "mean": 305.9,
+   "sd": 19.9
+  },
+  "unit": "µGy/day, DOSTEL-1, ISS Columbus"
+ }
+}

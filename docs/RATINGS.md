@@ -17,17 +17,17 @@ Two scales: the official Space Apps rubric (1 to 5 on five criteria) and the tea
 | Criterion | Before today | Now | Change |
 |---|---|---|---|
 | Impact | 8 | 8 | Unchanged without user evidence |
-| Creativity | 8.5 | 8.5 | Body redesign helps, but 3D is not unique |
+| Creativity | 8.5 | 9 | One-click live crew experiment as the signature feature; original logo |
 | Novelty | 8 | 8 | Self-experiments confirmed unique among this year's public repos; Earth prior art caps it |
 | Fit to the brief | 9 | 9.5 | CSA partner resource now used in the radiation station; challenge resources cited |
 | Scientific rigor | 9.5 | 9.5 | Study 5 (ML vs personal average, honest null); evidence chamber now exact and tested |
-| Depth of real data | 9 | 9.5 | Ten instruments with specs from NASA technical reports and papers; NASA 3D Resources models |
+| Depth of real data | 9 | 9.5 | Ten instruments with specs from NASA reports; NASA 3D models; NASA DONKI space weather cross-checked against ISS dose |
 | Feasibility | 8 | 8 | Still no public link until the repo is public |
 | Profile fit (biomedical) | 9 | 9.5 | Anatomically placed organs and skeleton; NASA-measured weightless posture |
 | Visual and interactive | 9 | 9.5 | Real human figure; NASA ISS and astronaut models; true-scale instrument blueprints |
 | Technical depth | 9.5 | 9.5 | Exact inverse-gamma sampler, leave-one-person-out ML |
 | Uniqueness | 8.5 | 8 | Lowered: a rival also has 3D with RadLab data |
-| **Mean** | **8.7** | **8.9** | |
+| **Mean** | **8.7** | **9.0** | |
 
 ## Machine learning, plainly
 

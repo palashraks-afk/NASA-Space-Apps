@@ -237,3 +237,27 @@ ol.spec-src a:hover { color: var(--accent); }
 .bp-scale i { display: block; height: 7px; border: 1px solid var(--text); border-top: 0; min-width: 8px; }
 .bp-key b { display: inline-block; width: 14px; height: 2px; background: var(--green); vertical-align: middle; margin-right: 6px; }
 .bp-key { color: var(--text); margin-right: 8px; }
+
+/* Logo */
+.brand { align-items: center; }
+.brand-mark { display: block; margin-right: 2px; }
+.load-mark { margin-bottom: 4px; animation: markIn 1.2s var(--ease) both; }
+@keyframes markIn { from { opacity: 0; transform: translateY(6px) scale(0.96); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .load-mark { animation: none; } }
+.loading::before { display: none; }
+
+/* Signature feature card on the overview */
+.hero-exp { position: relative; margin: 6px 0 18px; padding: 16px 16px 14px; border: 1px solid rgba(255, 170, 90, 0.45); background: linear-gradient(135deg, rgba(255, 140, 70, 0.10), rgba(57, 198, 244, 0.06) 70%); overflow: hidden; animation: panelIn 0.6s var(--ease) both; }
+.hero-exp::after { content: ""; position: absolute; right: -40px; top: -40px; width: 140px; height: 140px; border-radius: 50%; background: radial-gradient(circle, rgba(255, 170, 90, 0.22), transparent 70%); pointer-events: none; }
+.hero-kicker { font-size: var(--cap); letter-spacing: 0.2em; text-transform: uppercase; color: #ffb36b; margin-bottom: 6px; }
+.hero-exp h3 { margin: 0 0 6px !important; font-size: 1.12em !important; color: var(--text) !important; text-transform: none !important; letter-spacing: 0.01em !important; font-weight: 500 !important; }
+.hero-exp p { margin: 0 0 12px; font-size: 0.93em; }
+.hero-btn { background: linear-gradient(#ffb36b, #ff7a45) !important; color: #120800 !important; border: 0 !important; font-weight: 600 !important; box-shadow: 0 4px 18px rgba(255, 122, 69, 0.35); }
+.hero-btn:hover { filter: brightness(1.08) !important; }
+.hero-note { margin-left: 10px; font-size: 0.78em; color: var(--faint); }
+.tab[data-section="experiments"]::before { content: ""; position: absolute; right: 2px; top: 6px; width: 5px; height: 5px; border-radius: 50%; background: #ff9a55; box-shadow: 0 0 6px #ff9a55; }
+
+ul.wx { list-style: none; margin: 6px 0 8px; padding: 0; font-size: 0.88em; }
+ul.wx li { padding: 4px 0; border-bottom: 1px solid var(--line); }
+ul.wx a { color: var(--muted); }
+ul.wx a:hover { color: var(--accent); }

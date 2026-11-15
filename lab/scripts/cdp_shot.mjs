@@ -46,7 +46,7 @@ await send("Page.enable");
 await send("Runtime.enable");
 
 // Extra steps after the ?auto= driver has run, for states that need real-time animation.
-const after = {
+const after = { demo: 9000, demoend: 22000,
   rand: 0, crew: 1500, medical: 0, instruments: 2500, checkin: 0, body: 1500, maps: 1500, mapstation: 0, mapsystems: 0, bloodwork: 0, radiation: 1500, air: 0, galley: 0, window: 1500, setup: 0, crewrun: 0, step2: 4000, numbers2: 5000, overview: 0, locked: 0, run: 0, result: 0, resultnum: 1500, mars: 2500, clock: 3000,
 };
 

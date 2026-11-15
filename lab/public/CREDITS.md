@@ -17,4 +17,5 @@
 - Code written with Claude Code (AI) assistance, disclosed as the NASA Space Apps rules require.
 - 3D models from NASA 3D Resources (github.com/nasa/NASA-3D-Resources), NASA media usage guidelines: Astronaut (spacewalker outside the window), International Space Station (A) (on the radiation globe), Crew Lock Bag (ceiling stowage). Draco decoder from three.js (MIT).
 - Instrument specifications: Labrenz et al., J. Space Weather Space Clim. 5, A38 (2015), DOSTEL detector table; NASA technical reports NTRS 20000072884 and 20050210002 (CDRA), 20160010396 (Major Constituent Analyzer), 20150021957 (REM/Timepix), 20070011772, 20110012610 and 20100038357 (T2), 20060028227 (ARED); CERN Medipix (Timepix); Canadian Space Agency Bio-Monitor page; Pickering et al. 2005 and Whelton et al. 2017/2018 (blood pressure); Jubran 2015 and U.S. FDA (pulse oximetry); ISO 15197:2013 (glucose meters).
-
+- Space weather events: NASA DONKI (CCMC, NASA GSFC) via api.nasa.gov, 2022-01-01 to 2022-04-30 (lab/public/data/spaceweather.json).
+- Sol Lab logo: original mark by the team (docs/brand).

@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sol Lab</title>
+    <link rel="icon" type="image/svg+xml" href="./logo-mark.svg" />
     <meta name="description" content="Crew health console: monitor each crew member against their own usual range, track cabin air and nutrition, and run fair self-experiments." />
   </head>
   <body>
@@ -11,7 +12,7 @@
       <div id="stage" aria-hidden="true"></div>
 
       <header class="topbar">
-        <div class="brand"><b>Sol Lab</b><span>Crew health console</span></div>
+        <div class="brand"><img class="brand-mark" src="./logo-mark.svg" alt="" width="22" height="22"><b>Sol Lab</b><span>Crew health console</span></div>
         <button type="button" class="tour-btn" id="aboutBtn">About</button>
         <nav class="tabs" id="tabs" role="tablist" aria-label="Stations"></nav>
         <div class="status" id="status"></div>
@@ -49,7 +50,7 @@
         <p>Not a medical device. Code under Apache 2.0; data under their own licences. Built for NASA Space Apps 2026 with AI assistance (Claude Code), disclosed as the rules require.</p>
       </dialog>
 
-      <div class="loading" id="loading"><b>Sol Lab</b><p id="loadingText">Loading</p></div>
+      <div class="loading" id="loading"><img class="load-mark" src="./logo-mark.svg" alt="" width="56" height="56"><b>Sol Lab</b><p id="loadingText">Loading</p></div>
     </div>
     <script type="module" src="/src/main.js"></script>
   </body>

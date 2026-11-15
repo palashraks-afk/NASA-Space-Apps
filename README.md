@@ -1,8 +1,10 @@
+<p><img src="docs/brand/logo-lockup.svg" alt="Sol Lab" width="300"></p>
+
 # Sol Lab
 
 **A daily health check-in for astronauts that compares every reading with their own normal, says plainly what to do and when to call the flight surgeon, and helps them test what actually fixes it.**
 
-NASA Space Apps 2026, "Create Health Monitoring Software for Astronauts on Space Missions". Team: Palash (owner), ktm331, williamsel and cadeanderson. Local event: Temecula, CA.
+NASA Space Apps 2026, "Create Health Monitoring Software for Astronauts on Space Missions". Team Sol-Labs: Palash (owner), ktm331, williamsel and cadeanderson. Local event: Temecula, CA.
 
 **Try it:** `https://palashraks-afk.github.io/NASA-Space-Apps/` (live once Pages is switched on, see below). It opens with a 10-step guided tour.
 

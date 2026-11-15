@@ -19,7 +19,7 @@ export const QUICK = [
   { tab: "overview", target: "#ovCrew", title: "Your crew", text: "Each row is one astronaut, compared with their own normal. Amber means take a closer look." },
   { tab: "checkin", target: ".ck", title: "Log a reading", text: "Click a row, type the value and press Log. You get a level and what to do next." },
   { tab: "body", target: "#bdParts", body: "heart", title: "See what it means", text: "Click a body part, here or on the 3D figure, to see today's readings for it and how spaceflight affects it." },
-  { tab: "overview", target: "#tabs", title: "Explore", text: "Crew: your health. Station: the real ISS air, radiation and food. Experiments: test what fixes a problem. About has the full tour." },
+  { tab: "overview", target: ".hero-exp", title: "Test what actually works", text: "Sol Lab's signature: fair, randomized self-experiments. Press Watch a crew experiment to see one run in about 20 seconds. About has the full tour." },
 ];
 
 export function createTour({ host, show }) {
