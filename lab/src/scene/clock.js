@@ -44,7 +44,7 @@ export function buildClock(mats) {
     group.add(tp);
   });
   const nameTape = plateMesh("Body clock", { w: 0.42, h: 0.07 });
-  nameTape.position.set(0, RD + 0.13, 0.02);
+  nameTape.position.set(0, RD + 0.13, -0.056); // on the bay wall behind the dial (the clock hangs 9 cm off it)
   group.add(nameTape);
 
   // Lights-on arc, rebuilt when the schedule changes.

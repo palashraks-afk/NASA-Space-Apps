@@ -82,14 +82,16 @@ export function buildEvidence(mats) {
     group.add(t);
     return t;
   });
-  const spreadLabel = plateMesh("day-to-day spread", { w: 0.24, h: 0.03 });
-  spreadLabel.position.set(-R - 0.045, 0.05, R * 0.55);
-  spreadLabel.rotation.set(0, -0.6, Math.PI / 2);
-  group.add(spreadLabel);
-  const nameTape = plateMesh("Evidence chamber", { w: 0.34, h: 0.05 });
-  nameTape.position.set(0, HGT / 2 + 0.105, 0.12);
-  nameTape.rotation.x = -0.35;
-  group.add(nameTape);
+  // Every plate is riveted to the plinth: the spread plate on the base's left flank, the name on the cap.
+  const mountOnRing = (plate, th, y) => {
+    const rb = R + 0.06;
+    plate.position.set(rb * Math.sin(th), y, rb * Math.cos(th));
+    plate.rotation.y = th;
+    group.add(plate);
+    return plate;
+  };
+  const spreadLabel = mountOnRing(plateMesh("day-to-day spread", { w: 0.2, h: 0.03 }), -1.0, -HGT / 2 - 0.035);
+  const nameTape = mountOnRing(plateMesh("Evidence chamber", { w: 0.2, h: 0.036 }), 0, HGT / 2 + 0.035);
 
   // Motes.
   const crn = mulberry32(2026);

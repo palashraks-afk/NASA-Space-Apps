@@ -228,7 +228,7 @@ export function kaptonBump(seed = 4) {
   return asDataTex(c, [1, 1]);
 }
 
-// Engraved metal nameplate: a thin brushed-steel plate with two screws and the label stamped into it.
+// Engraved metal nameplate: a thin brushed-steel plate with two rivets and the label stamped into it.
 // The plate sizes itself to its text and never exceeds `w` metres: long text wraps to two lines first,
 // then the whole plate is scaled down to fit. `h` is the height of a one-line plate. `round` makes a
 // small round tab (single letters). Back face sits at z = 0, the engraved face about 4 mm in front.
@@ -296,18 +296,15 @@ export function plateMesh(text, { w = 0.3, h = 0.04, round = false } = {}) {
   g.lineWidth = 5; rr(g, 6); g.strokeStyle = "rgba(255,255,255,0.45)"; g.stroke();
   g.lineWidth = 3; rr(g, 11); g.strokeStyle = "rgba(30,34,40,0.35)"; g.stroke();
   bg.lineWidth = 6; rr(bg, 8); bg.strokeStyle = "rgb(210,210,210)"; bg.stroke();
-  // screws
+  // low-key rivets at each end: a shallow dome with a soft highlight, no slot
   if (!round) {
     for (const sx of [SCREW * 0.5, c.width - SCREW * 0.5]) {
-      const sy = c.height / 2, sr = PLATE_H * 0.15;
-      g.fillStyle = "#23262b"; g.beginPath(); g.arc(sx, sy, sr * 1.18, 0, Math.PI * 2); g.fill();
-      const sg = g.createRadialGradient(sx - sr * 0.3, sy - sr * 0.35, 1, sx, sy, sr);
-      sg.addColorStop(0, "#e1e4e8"); sg.addColorStop(1, "#80858c");
+      const sy = c.height / 2, sr = PLATE_H * 0.09;
+      g.fillStyle = "rgba(30,34,40,0.3)"; g.beginPath(); g.arc(sx + 1.5, sy + 2, sr * 1.12, 0, Math.PI * 2); g.fill();
+      const sg = g.createRadialGradient(sx - sr * 0.35, sy - sr * 0.4, 1, sx, sy, sr);
+      sg.addColorStop(0, "#d4d7db"); sg.addColorStop(1, "#8d9197");
       g.fillStyle = sg; g.beginPath(); g.arc(sx, sy, sr, 0, Math.PI * 2); g.fill();
-      const a = r() * Math.PI;
-      g.strokeStyle = "#2a2d32"; g.lineWidth = sr * 0.28; g.lineCap = "round";
-      g.beginPath(); g.moveTo(sx - Math.cos(a) * sr * 0.7, sy - Math.sin(a) * sr * 0.7); g.lineTo(sx + Math.cos(a) * sr * 0.7, sy + Math.sin(a) * sr * 0.7); g.stroke();
-      bg.fillStyle = "rgb(235,235,235)"; bg.beginPath(); bg.arc(sx, sy, sr, 0, Math.PI * 2); bg.fill();
+      bg.fillStyle = "rgb(205,205,205)"; bg.beginPath(); bg.arc(sx, sy, sr, 0, Math.PI * 2); bg.fill();
     }
   }
   // engraving

@@ -183,7 +183,7 @@ def placard(B, M, x, y, z, text, size=0.013, w=None):
     w = w or (len(text) * size * 0.62 + 0.02)
     B.box(M @ T(x, y, z + 0.0008), (w, size * 1.7, 0.0016), "M_plate", bevel=0.0006, seg=1)
     for sx in (-1, 1):
-        B.cyl(M @ T(x + sx * (w / 2 - size * 0.45), y, z + 0.0018), size * 0.17, 0.0006, "M_engrave", seg=8)
+        B.cyl(M @ T(x + sx * (w / 2 - size * 0.45), y, z + 0.0019), size * 0.11, 0.0007, "M_plate", seg=10, bevel=0.0002)  # low-key rivet
     B.text(M @ T(x, y, z + 0.0018), text, size, "M_engrave")
 
 
