@@ -27,7 +27,7 @@ Two scales: the official Space Apps rubric (1 to 5 on five criteria) and the tea
 | Visual and interactive | 9 | 9.5 | Real human figure; NASA ISS and astronaut models; true-scale instrument blueprints |
 | Technical depth | 9.5 | 9.5 | Exact inverse-gamma sampler, leave-one-person-out ML |
 | Uniqueness | 8.5 | 8 | Lowered: a rival also has 3D with RadLab data |
-| **Mean** | **8.7** | **9.0** | |
+| **Mean** | **8.7** | **8.9** | |
 
 ## Machine learning, plainly
 
