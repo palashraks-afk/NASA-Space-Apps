@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { gltfLoader } from "./gltf.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { tapeMesh } from "./textures.js";
 
@@ -99,6 +100,20 @@ export function buildRadiation(mats, { earthDay, data }) {
   globe.add(trail);
   const marker = new THREE.Mesh(new THREE.SphereGeometry(0.009, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }));
   globe.add(marker);
+  // NASA's own ISS model (NASA 3D Resources, public domain) rides the real track, nose along the
+  // direction of travel and its underside to Earth. The glowing marker stays as the dose colour.
+  const iss = new THREE.Group();
+  globe.add(iss);
+  gltfLoader().load(`${import.meta.env.BASE_URL}models/nasa/iss_a.glb`, (gltf) => {
+    const m = gltf.scene;
+    const box = new THREE.Box3().setFromObject(m), size = box.getSize(new THREE.Vector3());
+    m.scale.setScalar(0.07 / Math.max(size.x, size.y, size.z));
+    m.position.copy(box.getCenter(new THREE.Vector3()).multiplyScalar(-m.scale.x));
+    m.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.emissive = new THREE.Color(0x223344); o.material.emissiveIntensity = 0.6; } });
+    iss.add(m);
+    marker.scale.setScalar(0.55);
+  }, undefined, () => { /* the marker alone still shows the position */ });
+  const nextPos = new THREE.Vector3(), radial = new THREE.Vector3(), aim = new THREE.Matrix4();
 
   // Dosimeter box and readout.
   const box = new THREE.Mesh(new RoundedBoxGeometry(0.2, 0.12, 0.08, 3, 0.012), mats.aluCool);
@@ -149,6 +164,14 @@ export function buildRadiation(mats, { earthDay, data }) {
     if (tr[k][0] > hours) k = 0;
     const [, lat, lon, rate] = tr[k];
     llToVec(lat, lon, alt, marker.position);
+    const nx = tr[Math.min(k + 1, tr.length - 1)];
+    llToVec(nx[1], nx[2], alt, nextPos);
+    if (nextPos.distanceToSquared(marker.position) > 1e-12) {
+      radial.copy(marker.position).normalize();
+      aim.lookAt(nextPos, marker.position, radial);
+      iss.quaternion.setFromRotationMatrix(aim);
+    }
+    iss.position.copy(marker.position).addScaledVector(radial.copy(marker.position).normalize(), 0.012);
     // Show only the last ~90 minutes of track behind the marker: about one orbit.
     let j = k;
     while (j > 0 && hours - tr[j][0] < 1.5) j--;

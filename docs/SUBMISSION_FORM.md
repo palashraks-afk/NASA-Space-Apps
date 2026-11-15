@@ -109,6 +109,16 @@ If there is a text box:
 | NASA JSC: Neutral Body Posture in Spaceflight (Kim, Young, Rajulu 2019) | https://ntrs.nasa.gov/citations/20190032496 |
 | NASA Visible Earth: Blue Marble and Black Marble Earth imagery | https://visibleearth.nasa.gov/ |
 | NASA-STD-3001 human spaceflight standards (cabin limits, CO2) | https://www.nasa.gov/ochmo/human-spaceflight-and-aviation-standards/ |
+| NASA 3D Resources: Astronaut, ISS and Crew Lock Bag models | https://github.com/nasa/NASA-3D-Resources |
+| NASA NTRS: ISS CDRA testing (CO2 removal specs) | https://ntrs.nasa.gov/citations/20000072884 |
+| NASA NTRS: ISS CDRA concepts and advancements | https://ntrs.nasa.gov/citations/20050210002 |
+| NASA NTRS: Major Constituent Analyzer on-orbit performance | https://ntrs.nasa.gov/citations/20160010396 |
+| NASA NTRS: RadWorks ISS REM to BIRD to HERA | https://ntrs.nasa.gov/citations/20150021957 |
+| NASA NTRS: T2 treadmill development | https://ntrs.nasa.gov/citations/20070011772 |
+| NASA NTRS: T2 vibration isolation system | https://ntrs.nasa.gov/citations/20110012610 |
+| NASA NTRS: Biomechanical analysis of T2 exercise | https://ntrs.nasa.gov/citations/20100038357 |
+| NASA NTRS: Advanced Resistive Exercise Device mechanisms | https://ntrs.nasa.gov/citations/20060028227 |
+| NASA NTRS: Wearable biosensor monitor (Astroskin) | https://ntrs.nasa.gov/citations/20190000238 |
 
 ---
 
@@ -129,6 +139,14 @@ If there is a text box:
 | Contini, Drillis and Bluestein 1963, body segment proportions | https://doi.org/10.1177/001872086300500508 |
 | Baigutanova et al. 2025, Scientific Data article | https://doi.org/10.1038/s41597-025-05801-3 |
 | html-to-image (MIT) | https://github.com/bubkoo/html-to-image |
+| Labrenz et al. 2015, Matroshka DOSTEL detector specifications | https://doi.org/10.1051/swsc/2015039 |
+| CERN Medipix collaboration (Timepix chip) | https://medipix.web.cern.ch/ |
+| Pickering et al. 2005, blood pressure measurement recommendations | https://doi.org/10.1161/01.HYP.0000150859.47929.8e |
+| Whelton et al., 2017 ACC/AHA blood pressure guideline | https://doi.org/10.1161/HYP.0000000000000065 |
+| Jubran 2015, Pulse oximetry | https://doi.org/10.1186/s13054-015-0984-8 |
+| U.S. FDA, Pulse Oximeters | https://www.fda.gov/medical-devices/products-and-medical-procedures/pulse-oximeters |
+| ISO 15197:2013, blood glucose meter accuracy | https://www.iso.org/standard/54976.html |
+| Draco 3D mesh decoder (via three.js) | https://github.com/google/draco |
 | CelesTrak orbital elements | https://celestrak.org/NORAD/elements/ |
 | three.js (MIT) | https://threejs.org/ |
 | cannon-es (MIT) | https://github.com/pmndrs/cannon-es |

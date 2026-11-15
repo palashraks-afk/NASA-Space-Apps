@@ -565,8 +565,8 @@ async function boot() {
           <div class="actions"><button class="btn quiet" data-act="sampleCsv">Sample CSV</button><button class="btn quiet" data-act="sampleFhir">Sample FHIR</button></div>
           <div id="instPreview"></div>
         </details>
-        <p class="lede">Each instrument is real hardware used on the ISS, or the reference class of device. The exploded view shows how that kind of device works. Readings reach Sol Lab three ways: imported from a device file, loaded from a public dataset, or shown for reference.</p>
-        <p class="src">Sources: NASA ISS daily reports (blood pressure unit), Canadian Space Agency (Bio-Monitor and Astroskin), DLR (DOSTEL), NASA technical reports on ISS exercise hardware (T2) and life support (CDRA). FHIR R4 and LOINC are the health-data standards used by hospitals and wearables.</p>`;
+        <p class="lede">Ten devices: the real ISS hardware behind each reading, or the reference class of device. Every specification cites its source, mostly NASA technical reports. In the exploded view, parts outlined in green are built to a published dimension; the scale bar shows real size.</p>
+        <p class="src">FHIR R4 and LOINC are the health-data standards used by hospitals and wearables; any device that exports them can feed the check-in.</p>`;
       root.addEventListener("click", (e) => {
         const b = e.target.closest("[data-inst]");
         if (b) { instKey = b.dataset.inst; instKeyShown = null; refresh(); return; }
@@ -608,7 +608,10 @@ async function boot() {
         <dl class="facts"><dt>On the ISS</dt><dd>${esc(x.flight)}</dd><dt>Measures</dt><dd>${esc(x.measures)}</dd><dt>Data path</dt><dd>${esc(path)}</dd></dl>
         <div class="chips">${x.feeds.map((f) => `<button class="chip" data-go="${instTab(f)}">${esc(instLabel(f))}</button>`).join("")}</div>
         <p>${esc(x.how)}</p>
-        <ol class="parts-ol">${x.parts.map((p, k) => `<li><button type="button" data-part="${k}"><b>${esc(p.name)}</b><span>${esc(p.does)}</span></button></li>`).join("")}</ol></div>`;
+        ${x.specs ? `<h3>Specifications</h3><table class="spec"><tbody>${x.specs.map(([k, v, src]) => `<tr><th>${esc(k)}</th><td>${esc(v)}${src ? ` <sup>${src.split(",").map((s) => Object.keys(x.sources).indexOf(s.trim()) + 1).filter((n) => n > 0).join(",")}</sup>` : ""}</td></tr>`).join("")}</tbody></table>
+        <ol class="spec-src">${Object.values(x.sources).map(([t, u]) => `<li>${u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>` : esc(t)}</li>`).join("")}</ol>` : ""}
+        <h3>Parts</h3>
+        <ol class="parts-ol">${x.parts.map((p, k) => `<li><button type="button" data-part="${k}" class="${p.exact ? "exact" : ""}"><b>${esc(p.name)}</b><span>${esc(p.does)}${p.note ? ` (${esc(p.note)})` : ""}</span></button></li>`).join("")}</ol></div>`;
       blueprint.load(x);
     },
   };
@@ -1320,6 +1323,7 @@ async function boot() {
     rig.update();
     hatchCut.constant = camera.position.z > HATCH_CUT + 0.05 ? HATCH_CUT : 1e4;
     nav.update();
+    outside.tick(dt, reduced);
     hud.setOverview(S.tab === "overview" && rig.current === "overview");
     const cpu1 = performance.now();
     if (draw) composer.render(dt);
@@ -1368,6 +1372,8 @@ async function boot() {
         tour: () => startTour(),
         quick: () => startQuick(),
         instruments: () => showTab("instruments"),
+        // inst_<key>: open the Instruments tab on one device (for screenshots)
+        ...Object.fromEntries(INSTRUMENTS.map((x) => [`inst_${x.key}`, () => { instKey = x.key; showTab("instruments"); }])),
         mapsystems: () => { S.met = 60.3; showTab("maps"); document.querySelector('[data-seg="mapMode"] [data-v="systems"]').click(); },
         bloodwork: () => { S.crewSel = 1; showTab("bloodwork"); },
         radiation: () => { S.met = 60; refresh(); showTab("radiation"); },

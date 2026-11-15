@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { gltfLoader } from "./gltf.js";
 
 // Drop-in 3D models. Put .glb files in lab/public/models/ and list them in
 // lab/public/models/models.json (see docs/MODELS.md). Each entry either:
@@ -17,7 +17,7 @@ export async function loadModels({ base, scene, stations, body }) {
     if (!r.ok) return [];
     list = await r.json();
   } catch { return []; }
-  const loader = new GLTFLoader();
+  const loader = gltfLoader();
   const loaded = [];
   for (const m of list.models || []) {
     try {

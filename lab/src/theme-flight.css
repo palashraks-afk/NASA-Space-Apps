@@ -221,3 +221,19 @@ details.fold > summary { text-transform: uppercase; letter-spacing: 0.14em; font
 .nav-arrow .to { color: var(--text); opacity: 0.8; }
 .inspector { background: rgba(3, 6, 9, 0.88); }
 .nav-hint { color: rgba(238, 242, 245, 0.75); }
+
+/* Instrument specifications and blueprint scale */
+table.spec { width: 100%; border-collapse: collapse; margin: 4px 0 8px; font-size: 0.92em; }
+table.spec th { text-align: left; font-weight: 500; color: var(--muted); padding: 6px 10px 6px 0; vertical-align: top; width: 38%; border-bottom: 1px solid var(--line); }
+table.spec td { padding: 6px 0; border-bottom: 1px solid var(--line); color: var(--text); font-variant-numeric: tabular-nums; }
+table.spec sup { color: var(--accent); font-size: 0.72em; margin-left: 2px; }
+ol.spec-src { margin: 4px 0 12px 18px; padding: 0; font-size: 0.8em; color: var(--faint); }
+ol.spec-src li { margin: 3px 0; }
+ol.spec-src a { color: var(--muted); }
+ol.spec-src a:hover { color: var(--accent); }
+.parts-ol button.exact b::after { content: " · exact"; color: var(--green); font-weight: 400; font-size: 0.8em; }
+.bp-tag.exact i { background: var(--green); color: #000; }
+.bp-scale { position: absolute; left: 18px; bottom: 44px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; color: var(--text); font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; }
+.bp-scale i { display: block; height: 7px; border: 1px solid var(--text); border-top: 0; min-width: 8px; }
+.bp-key b { display: inline-block; width: 14px; height: 2px; background: var(--green); vertical-align: middle; margin-right: 6px; }
+.bp-key { color: var(--text); margin-right: 8px; }
