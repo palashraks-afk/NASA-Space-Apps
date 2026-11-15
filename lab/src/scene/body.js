@@ -270,21 +270,35 @@ export function buildBody(mats) {
       for (const mt of p.materials) { mt.color.setHex(c); if (mt.emissive) mt.emissive.setHex(c); }
     }
   }
-  function select(key) { selected = key; }
+  function select(key) { selected = key || null; }
+  // World-space centre of a body part (for the on-screen callout).
+  const tmpC = new THREE.Vector3();
+  function partCenter(key, out = new THREE.Vector3()) {
+    const m = parts[key] && parts[key].meshes.find(shown);
+    if (!m) return null;
+    m.updateWorldMatrix(true, false); // the loaded model's world matrix can lag a frame behind
+    if (!m.geometry.boundingBox) m.geometry.computeBoundingBox();
+    m.geometry.boundingBox.getCenter(tmpC);
+    return out.copy(tmpC).applyMatrix4(m.matrixWorld);
+  }
   function update(dt, reduced) {
     if (!reduced) holoTime.value += dt;
     t += dt;
-    if (!reduced) {
-      figure.rotation.y = real.rotation.y = Math.sin(t * 0.35) * 0.5;
-      figure.position.y = baseY + 0.012 * Math.sin(t * 0.8); // drifting, as a relaxed body does in orbit
-    }
+    // Idle: the figure sways slowly. With a part selected it turns to face the viewer and holds
+    // still, so the highlighted part stays where the callout points.
+    const targetRot = selected ? 0 : reduced ? 0 : Math.sin(t * 0.35) * 0.5;
+    const k = selected ? Math.min(1, dt * 4) : 1;
+    figure.rotation.y = real.rotation.y = real.rotation.y + (targetRot - real.rotation.y) * k;
+    if (!reduced) figure.position.y = baseY + 0.012 * Math.sin(t * 0.8);
+    // Selected part: full strength and glowing; everything else fades almost away.
     for (const [key, p] of Object.entries(parts)) {
       const on = key === selected;
       for (const mt of p.materials) {
-        mt.opacity = selected ? (on ? 0.95 : 0.4) : 0.7;
-        if (mt.emissive) mt.emissiveIntensity = on ? 1.0 + (reduced ? 0 : 0.25 * Math.sin(t * 4)) : 0.5;
+        mt.opacity = selected ? (on ? 1 : 0.08) : 0.7;
+        if (mt.emissive) mt.emissiveIntensity = on ? 1.6 + (reduced ? 0 : 0.4 * Math.sin(t * 4)) : selected ? 0.15 : 0.5;
       }
     }
+    skinMat.opacity = selected ? 0.1 : 0.16;
     if (!reduced) (realHeart || heart).scale.setScalar(1 + 0.05 * Math.max(0, Math.sin(t * 7)));
   }
   const shown = (o) => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
@@ -298,5 +312,5 @@ export function buildBody(mats) {
   }
   // A loaded model without named parts: keep the built-in organs visible inside it.
   function showOrgans() { figure.visible = true; for (const m of skin) m.visible = false; }
-  return { group, update, setStatus, select, pickables, adopt, showOrgans };
+  return { group, update, setStatus, select, pickables, adopt, showOrgans, partCenter, get selected() { return selected; } };
 }

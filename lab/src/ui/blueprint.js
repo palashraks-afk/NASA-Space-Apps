@@ -91,8 +91,8 @@ export function createBlueprint({ host, onSelect = () => {} }) {
   const el = document.createElement("div");
   el.className = "blueprint";
   el.hidden = true;
-  el.innerHTML = `<div class="bp-bar"><b class="bp-name"></b><label class="bp-explode">Explode <input type="range" min="0" max="1" step="0.01" value="0"></label><button type="button" class="bp-btn" data-bp="auto">Animate</button><button type="button" class="bp-btn" data-bp="xray" aria-pressed="false">X-ray</button><button type="button" class="bp-btn" data-bp="reset">Reset view</button></div>
-    <div class="bp-stage"></div><div class="bp-scale"><i></i><span></span></div><div class="bp-note"><span class="bp-key"><b></b>Built to a published dimension</span> Other parts show how the device works; sizes are approximate. Drag to rotate, scroll to zoom, click a part.</div>`;
+  el.innerHTML = `<div class="bp-bar"><b class="bp-name"></b><label class="bp-explode">Explode <input type="range" min="0" max="1" step="0.01" value="0"></label><span class="bp-views" role="group" aria-label="View"><button type="button" class="bp-btn" data-bp="photo" aria-pressed="false">NASA photo</button><button type="button" class="bp-btn" data-bp="three" aria-pressed="true">3D: how it works</button></span><button type="button" class="bp-btn" data-bp="auto">Explode</button><button type="button" class="bp-btn" data-bp="xray" aria-pressed="false">X-ray</button><button type="button" class="bp-btn" data-bp="reset">Reset view</button></div>
+    <div class="bp-stage"></div><figure class="bp-photo" hidden><img alt=""><figcaption></figcaption></figure><div class="bp-scale"><i></i><span></span></div><div class="bp-note"><span class="bp-key"><b></b>Built to a published dimension</span> Other parts show how the device works; sizes are approximate. Drag to rotate, scroll to zoom, click a part.</div>`;
   host.appendChild(el);
   const stage = el.querySelector(".bp-stage");
   const slider = el.querySelector("input[type=range]");
@@ -139,9 +139,24 @@ export function createBlueprint({ host, onSelect = () => {} }) {
     parts = [];
   }
 
+  const photoEl = el.querySelector(".bp-photo");
+  let mode = "three";
+  function setMode(m) {
+    mode = current && current.photo ? m : "three";
+    photoEl.hidden = mode !== "photo";
+    el.classList.toggle("photo-mode", mode === "photo");
+    el.querySelector('[data-bp="photo"]').setAttribute("aria-pressed", String(mode === "photo"));
+    el.querySelector('[data-bp="three"]').setAttribute("aria-pressed", String(mode === "three"));
+    el.querySelector('[data-bp="photo"]').hidden = !(current && current.photo);
+  }
   function load(inst) {
     clear();
     current = inst;
+    if (inst.photo) {
+      photoEl.querySelector("img").src = `${import.meta.env.BASE_URL}${inst.photo.src}`;
+      photoEl.querySelector("img").alt = inst.photo.caption;
+      photoEl.querySelector("figcaption").textContent = `${inst.photo.caption}. NASA ${inst.photo.id}`;
+    }
     el.querySelector(".bp-name").textContent = inst.name;
     inst.parts.forEach((p, idx) => {
       const g = new THREE.Group();
@@ -203,9 +218,9 @@ export function createBlueprint({ host, onSelect = () => {} }) {
     barLen = nl.n * fit;
     scaleBar.querySelector("span").textContent = nl.label;
     resetView();
-    setExplode(0);
+    setExplode(0); // assembled: parts separate only when the viewer presses Explode
     select(-1);
-    animate(0.85);
+    setMode(inst.photo ? "photo" : "three");
   }
   function resetView() {
     camera.position.set(0.46, 0.3, 0.6);
@@ -214,6 +229,8 @@ export function createBlueprint({ host, onSelect = () => {} }) {
   }
   function setExplode(v) {
     explode = v;
+    const ab = el.querySelector('[data-bp="auto"]');
+    if (ab) ab.textContent = v > 0.5 ? "Assemble" : "Explode";
     slider.value = String(v);
     const k = 0.28 * size * v; // in real metres, so every device explodes in proportion
     for (const p of parts) p.g.position.copy(p.base).addScaledVector(p.dir, k);
@@ -248,11 +265,13 @@ export function createBlueprint({ host, onSelect = () => {} }) {
     onSelect(idx);
   }
 
-  slider.addEventListener("input", () => setExplode(+slider.value));
+  slider.addEventListener("input", () => { if (mode !== "three") setMode("three"); setExplode(+slider.value); });
   el.addEventListener("click", (e) => {
     const b = e.target.closest("[data-bp]");
     if (!b) return;
-    if (b.dataset.bp === "auto") animate(explode > 0.5 ? 0 : 1);
+    if (b.dataset.bp === "auto") { if (mode !== "three") setMode("three"); animate(explode > 0.5 ? 0 : 1); b.textContent = explode > 0.5 ? "Explode" : "Assemble"; }
+    if (b.dataset.bp === "photo") setMode("photo");
+    if (b.dataset.bp === "three") setMode("three");
     if (b.dataset.bp === "reset") resetView();
     if (b.dataset.bp === "xray") {
       xray = !xray;
@@ -297,7 +316,7 @@ export function createBlueprint({ host, onSelect = () => {} }) {
   }
   return {
     el, load, select, render,
-    show(on) { el.hidden = !on; if (on) { resize(); if (current) animate(0.85); } },
+    show(on) { el.hidden = !on; if (on) resize(); },
     get selected() { return selected; },
   };
 }

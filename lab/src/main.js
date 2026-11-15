@@ -617,7 +617,7 @@ async function boot() {
       $("#instDetail").innerHTML = `<div class="part-card"><h3>${esc(x.name)}</h3>
         <dl class="facts"><dt>On the ISS</dt><dd>${esc(x.flight)}</dd><dt>Measures</dt><dd>${esc(x.measures)}</dd><dt>Data path</dt><dd>${esc(path)}</dd></dl>
         <div class="chips">${x.feeds.map((f) => `<button class="chip" data-go="${instTab(f)}">${esc(instLabel(f))}</button>`).join("")}</div>
-        ${x.photo ? `<figure class="inst-photo"><img src="${import.meta.env.BASE_URL}${esc(x.photo.src)}" alt="${esc(x.photo.caption)}" loading="lazy"><figcaption>${esc(x.photo.caption)}. <a href="https://images.nasa.gov/details/${esc(x.photo.id)}" target="_blank" rel="noopener">NASA ${esc(x.photo.id)}</a></figcaption></figure>` : `<p class="src">No public NASA photo of this device was found; the 3D view shows how it works.</p>`}
+        ${x.photo ? `<p class="src">Photo: ${esc(x.photo.caption)} (<a href="https://images.nasa.gov/details/${esc(x.photo.id)}" target="_blank" rel="noopener">NASA ${esc(x.photo.id)}</a>), shown in the main view.</p>` : `<p class="src">No public NASA photo of this device was found; the main view shows how it works in 3D.</p>`}
         <p>${esc(x.how)}</p>
         ${x.specs ? `<h3>Specifications</h3><table class="spec"><tbody>${x.specs.map(([k, v, src]) => `<tr><th>${esc(k)}</th><td>${esc(v)}${src ? ` <sup>${src.split(",").map((s) => Object.keys(x.sources).indexOf(s.trim()) + 1).filter((n) => n > 0).join(",")}</sup>` : ""}</td></tr>`).join("")}</tbody></table>
         <ol class="spec-src">${Object.values(x.sources).map(([t, u]) => `<li>${u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>` : esc(t)}</li>`).join("")}</ol>` : ""}
@@ -1222,6 +1222,37 @@ async function boot() {
 
   const statusEl = $("#status");
   const hud = createHud({ host: $("#app") });
+  // Body callout: names the selected part right on the 3D figure, with a line to it.
+  const callout = document.createElement("div");
+  callout.className = "body-callout";
+  callout.hidden = true;
+  callout.setAttribute("aria-hidden", "true");
+  callout.innerHTML = `<svg class="bc-line"><line x1="0" y1="0" x2="0" y2="0"/><circle r="5"/></svg><div class="bc-tag"><b></b><span></span></div>`;
+  $("#app").appendChild(callout);
+  const bcV = new THREE.Vector3();
+  let bcKey = null;
+  function updateCallout() {
+    const key = S.tab === "body" && rig.current === "body" ? body.selected : null;
+    if (!key || !body.partCenter(key, bcV)) { callout.hidden = true; return; }
+    bcV.project(camera);
+    const r = renderer.domElement.getBoundingClientRect();
+    const x = ((bcV.x + 1) / 2) * r.width + r.left, y = ((1 - bcV.y) / 2) * r.height + r.top;
+    if (bcV.z > 1 || x < 0 || y < 0) { callout.hidden = true; return; }
+    callout.hidden = false;
+    if (bcKey !== key + S.crewSel) {
+      bcKey = key + S.crewSel;
+      const part = BODY_PARTS.find((p) => p.key === key);
+      const tier = bodyStatusMap(S.crewSel)[key];
+      callout.querySelector("b").textContent = part ? part.name : key;
+      callout.querySelector("span").textContent = tier === "none" ? "Not measured today" : (LEVELS[tier] || {}).label || "";
+      callout.dataset.tier = tier;
+    }
+    const tx = x + 150, ty = y - 70; // the tag sits up and to the right of the part
+    const line = callout.querySelector("line"), dot = callout.querySelector("circle");
+    line.setAttribute("x1", x); line.setAttribute("y1", y); line.setAttribute("x2", tx); line.setAttribute("y2", ty + 14);
+    dot.setAttribute("cx", x); dot.setAttribute("cy", y);
+    callout.querySelector(".bc-tag").style.transform = `translate(${tx}px, ${ty}px)`;
+  }
   function renderHud() {
     const k = S.crewSel, i = idx(), c = H.crew[k];
     hud.update({
@@ -1295,7 +1326,20 @@ async function boot() {
   }
 
   // ---------------- guided tour ----------------
-  const tour = createTour({ host: $("#app"), show: (st) => { S.playing = false; if (st.body) { S.bodyPart = st.body; body.select(st.body); } showTab(st.tab); } });
+  // Tour steps can walk through every body part (cycle), one at a time with the callout on it.
+  let tourCycle = null;
+  const tour = createTour({ host: $("#app"), show: (st) => {
+    S.playing = false;
+    clearInterval(tourCycle);
+    if (st.body) { S.bodyPart = st.body; body.select(st.body); }
+    showTab(st.tab);
+    if (st.cycle) {
+      let i = 0;
+      const step = () => { S.bodyPart = st.cycle[i % st.cycle.length]; body.select(S.bodyPart); bodyKey = null; refresh(); i++; };
+      step();
+      tourCycle = setInterval(() => { if (!tour.active() || S.tab !== "body") { clearInterval(tourCycle); return; } step(); }, 2200);
+    }
+  } });
   function startQuick() { tour.start(() => { try { localStorage.setItem("sollab.toured", "1"); } catch { /* fine */ } }, QUICK); }
   function startTour() { tour.start(() => { patches.award("briefed"); try { localStorage.setItem("sollab.toured", "1"); } catch { /* fine */ } }); }
   $("#aboutBtn").addEventListener("click", () => $("#aboutDlg").showModal());
@@ -1379,6 +1423,7 @@ async function boot() {
     rig.update();
     hatchCut.constant = camera.position.z > HATCH_CUT + 0.05 ? HATCH_CUT : 1e4;
     nav.update();
+    updateCallout();
     outside.tick(dt, reduced);
     hud.setOverview(S.tab === "overview" && rig.current === "overview");
     const cpu1 = performance.now();
@@ -1427,6 +1472,7 @@ async function boot() {
         mapstation: () => { showTab("maps"); document.querySelector('[data-seg="mapMode"] [data-v="station"]').click(); },
         tour: () => startTour(),
         quick: () => startQuick(),
+        tourbody: () => { startTour(); setTimeout(() => { document.querySelector('.tour [data-t="next"]').click(); document.querySelector('.tour [data-t="next"]').click(); }, 300); },
         instruments: () => showTab("instruments"),
         demo: () => { window.__solInstant = false; runDemoExperiment(); },
         demoend: () => { window.__solInstant = false; runDemoExperiment(); },
