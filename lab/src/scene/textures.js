@@ -13,14 +13,14 @@ const asColorTex = (c, repeat = [1, 1]) => {
   t.colorSpace = THREE.SRGBColorSpace;
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(...repeat);
-  t.anisotropy = 8;
+  t.anisotropy = 16;
   return t;
 };
 const asDataTex = (c, repeat = [1, 1]) => {
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.repeat.set(...repeat);
-  t.anisotropy = 8;
+  t.anisotropy = 16;
   return t;
 };
 

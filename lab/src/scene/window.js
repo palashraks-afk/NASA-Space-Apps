@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { mulberry32 } from "../engine/rng.js";
+import { gltfLoader } from "./gltf.js";
 
 // Outside the window: Earth from the station (real SGP4 position and real Sun direction), or the
 // Moon / Mars, against stars and a faint Milky Way. Planets use their own lighting shader so the Sun
@@ -222,7 +223,34 @@ export function buildOutside(tex) {
     placeSun();
   }
 
+  // A spacewalker outside the window: NASA's EVA-suited astronaut model (NASA 3D Resources,
+  // public domain), scaled to 1.8 m and drifting slowly against Earth. Only at the ISS.
+  const eva = new THREE.Group();
+  eva.position.set(1.15, -0.45, -12.5);
+  eva.visible = false;
+  group.add(eva);
+  gltfLoader().load(`${import.meta.env.BASE_URL}models/nasa/astronaut.glb`, (gltf) => {
+    const m = gltf.scene;
+    const box = new THREE.Box3().setFromObject(m), size = box.getSize(new THREE.Vector3());
+    m.scale.setScalar(1.8 / size.y);
+    m.position.copy(box.getCenter(new THREE.Vector3()).multiplyScalar(-m.scale.x));
+    // Sunlit from outside: the cabin lights do not reach it, so lift it with its own texture.
+    m.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.emissive = new THREE.Color(0xffffff); o.material.emissiveMap = o.material.map; o.material.emissiveIntensity = 0.55; } });
+    eva.add(m);
+  }, undefined, () => { /* no spacewalker; the view still works */ });
+  let evaT = 0, t = 0;
+  function tick(dt, pixelRatio = 1, reduced = false) {
+    t += dt;
+    earthMat.uniforms.uTime.value = t;
+    starMat.uniforms.uPix.value = pixelRatio;
+    if (!eva.visible || reduced) return;
+    evaT += dt;
+    eva.rotation.set(-0.35 + 0.08 * Math.sin(evaT * 0.21), 0.6 + 0.25 * Math.sin(evaT * 0.13), 0.25 + 0.1 * Math.sin(evaT * 0.17));
+    eva.position.y = -0.45 + 0.12 * Math.sin(evaT * 0.27);
+  }
+
   function show(dest) {
+    eva.visible = dest === "iss";
     earth.visible = atmo.visible = dest === "iss";
     moon.visible = dest === "moon";
     mars.visible = marsAtmo.visible = dest === "mars";
@@ -239,13 +267,6 @@ export function buildOutside(tex) {
     mat.uniforms.sunDir.value.set(Math.cos(a), 0.25, Math.sin(a)).normalize();
     activeSun = mat.uniforms.sunDir.value;
     placeSun();
-  }
-
-  let t = 0;
-  function tick(dt, pixelRatio = 1) {
-    t += dt;
-    earthMat.uniforms.uTime.value = t;
-    starMat.uniforms.uPix.value = pixelRatio;
   }
 
   return { group, orientEarth, show, updateBody, tick };

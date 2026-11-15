@@ -1,35 +1,69 @@
+<p><img src="docs/brand/logo-lockup.svg" alt="Sol Lab" width="300"></p>
+
 # Sol Lab
 
-**NASA Space Apps 2026, "Create Health Monitoring Software for Astronauts on Space Missions."** Team owner: Palash (San Marino, CA).
+**A daily health check-in for astronauts that compares every reading with their own normal, says plainly what to do and when to call the flight surgeon, and helps them test what actually fixes it.**
 
-Every other entry we found watches astronauts and raises alerts. Sol Lab helps a crew member find out what actually works for *their own* body during a mission: design a small, fair experiment ("does cutting caffeine after noon help me fall asleep faster?"), run it in a 3D station module, and get an honest verdict, including "not settled". A whole crew can run the same experiment, and each person's answer gets sharper from what the crew shares.
+NASA Space Apps 2026, "Create Health Monitoring Software for Astronauts on Space Missions". Team Sol-Labs: Palash (owner), ktm331, williamsel and cadeanderson. Local event: Temecula, CA.
 
-It is laid out as a crew health console: a 3D station module on the left, an inspector on the right, and a mission timeline along the bottom. Each station in the module is a working part of the tool. Keys 1 to 0 switch stations, Space plays the mission (1 h/s runs the daily routine with gentle reminders), and the overview exports a crew report.
+**Try it:** `https://palashraks-afk.github.io/NASA-Space-Apps/` (live once Pages is switched on, see below). It opens with a 10-step guided tour.
 
-![Console overview](docs/img/console-overview.png)
+![Overview](docs/img/console-overview.png)
+
+## Gather, evaluate, act
+
+| Gather | Evaluate | Act |
+|---|---|---|
+| ![Check-in](docs/img/checkin.png) | ![Body figure](docs/img/body.png) | ![Experiments](docs/img/crew-running.png) |
+| A two-minute daily check-in: blood pressure, heart rate, blood sugar, temperature, sleep, mood, exercise. Typed in, or imported from any device as CSV or FHIR. Timed reminders follow the daily routine. | Each value is compared with that person's own normal and given one of three calm levels: within range, keep an eye on it, talk to the flight surgeon. A clickable 3D body shows which parts are affected and how spaceflight changes them. | Every non-normal level comes with what to do next. When something keeps drifting, the crew runs a fair self-experiment and gets an honest verdict, including "not settled". |
+
+## Why it matters
+
+On a Mars mission a message to Earth takes up to 22 minutes each way, so crews must judge their own health. Population ranges miss changes that are large for one person but normal for another; comparing each astronaut with their own normal catches them earlier, and a fair self-test stops a crew member trusting a lucky streak. The same approach helps people far from a doctor on Earth: Antarctic and offshore crews, rural patients, anyone tracking a long-term condition at home.
+
+## Built on real data
+
+| Record | Source | In the app |
+|---|---|---|
+| 123,695 ISS radiation readings, plus daily dose in six modules | NASA OSDR RadLab (DLR DOSTEL, REM detectors) | Radiation globe, module map, orbit map |
+| 358 days of ISS cabin CO2, temperature and humidity | NASA OSDR Environmental Data App | Air station, life-support map, headache risk |
+| Blood tests of the four Inspiration4 astronauts, before and after flight | NASA OSDR OSD-569, OSD-575 (SpaceX mission) | Bloodwork |
+| Sleep diaries of 49 people | Baigutanova et al. 2025, CC BY | Sleep values, experiment validation |
+| Nutrients of 19 foods | USDA FoodData Central | Galley |
+| ISS orbital elements | CelesTrak, propagated with SGP4 | Window, ground track |
+
+Where nobody logged a value, it is simulated and labelled "simulated" on screen. Records from different people and years are combined into one mission.
+
+## How it answers the brief
+
+| The brief asks | Where |
+|---|---|
+| Gather indicators (keyboard, clicks, files) | Check-in; Instruments import |
+| Evaluate status, colour at a glance | Three levels everywhere; overview; body figure |
+| Guidance on treatment and improvement | Actions on every non-normal level; experiments |
+| When to involve the flight surgeon | "For the flight surgeon" box |
+| Blood pressure, heart rate, blood sugar, temperature, sleep, mood | All six, plus exercise |
+| Five hazards of spaceflight | Overview, each linked to its stations |
+| Clickable human figure | Body |
+| Routine prompts, gamification, charts, instructions | Reminders, mission patches, every station, "How to measure" on every card |
+
+## Validated, not just built
+
+- On 49 real people's sleep diaries the self-experiment engine made a false call 0.68% of the time; its 95% intervals covered 94.7% to 97.3% (pre-registered, [docs/STUDIES_RESULTS.md](docs/STUDIES_RESULTS.md)).
+- Two pre-registered checks failed and are reported, not hidden: a first pooling method under-covered (fixed and re-tested), and the circadian model locks onto a Mars day more easily than a 2007 human study found.
+- Guidance cut-offs follow ACC/AHA, ADA, CDC, AHA and AASM; where no published cut-off exists, the team's choice is marked for clinician review.
+- 38 automated tests; every push is checked, tested and built.
+
+## More screens
 
 | | |
 |---|---|
-| ![Daily check-in](docs/img/checkin.png) | ![Overview with hazards](docs/img/console-overview.png) |
-| Check-in: the astronaut logs blood pressure, heart rate, blood sugar, temperature, sleep, mood and exercise, each with how-to instructions; every value gets one of three calm levels (within range / keep an eye on it / talk to the flight surgeon) with actions to take. | Overview: each crew member's vitals and check-in status, cabin air, radiation, and NASA's five hazards of spaceflight linked to the stations that track them. |
-| ![Body figure](docs/img/body.png) | ![Orbit and radiation map](docs/img/map-orbit.png) |
-| Body: a clickable 3D figure; each part (brain, eyes, heart, lungs, gut, bones, muscles, immune system) is coloured by today's measurements and explains what it does and how spaceflight affects it. | Maps: the ISS ground track from real orbital elements over Earth's day and night, with the radiation dose measured along the orbit. |
-| ![Station module map](docs/img/map-station.png) | ![Life support map](docs/img/map-life-support.png) |
-| Station map: measured daily dose in six ISS modules (REM detectors, Dec 2019). | Life support: the CO2, water and oxygen loop, with the replayed day's real cabin readings. |
-| ![Medical station](docs/img/medical.png) | ![Air station](docs/img/air.png) |
-| Medical: heart rate, HRV, core temperature and sleep for each crew member, against their own pre-flight range. Out-of-range values are marked, never alarmed. | Air: cabin CO2, 7-day average, headache risk (Law et al. 2014), temperature and humidity against NASA-STD-3001. The fan and airflow respond to CO2. |
-| ![Radiation station](docs/img/radiation.png) | ![Bloodwork](docs/img/bloodwork.png) |
-| Radiation: real ISS dose readings (NASA OSDR RadLab, DOSTEL-1, 2022) on a globe; the station marker flies a real day of track through the South Atlantic Anomaly. | Bloodwork: real blood tests of the four Inspiration4 astronauts (SpaceX, 2021; NASA OSDR), each compared with their own pre-flight draws. |
-| ![Galley station](docs/img/galley.png) | ![Crew mode mid-mission](docs/img/crew-running.png) |
-| Galley: each day's menu with USDA nutrient values, against NASA exploration targets for vitamin D, calcium and sodium. | Experiments: a randomized self-experiment run by the whole crew; each member's chance it works, with the crew and alone. |
-| ![Body clock on Mars](docs/img/body-clock.png) | ![Mars through the window](docs/img/window-mars.png) |
-| Body clock: a published circadian model running for four crew. | Destination: real ISS orbit (SGP4, CelesTrak), Moon or Mars. |
-
-## Guided tour
-
-The app opens with a 10-step tour on first visit (or add `?tour=1` to the address, or press **Tour** in the top bar). Mission patches on the overview reward check-ins, exploring and finished experiments; nothing is ever taken away.
-
-![Guided tour](docs/img/tour.png)
+| ![Orbit and radiation map](docs/img/map-orbit.png) | ![Instruments blueprint](docs/img/instruments.png) |
+| Maps: real ISS ground track over day and night with the measured dose rate; a module dose map; the life-support loop. | Instruments: the real ISS hardware behind each reading as exploded blueprints ([docs/INSTRUMENTS.md](docs/INSTRUMENTS.md)). |
+| ![Bloodwork](docs/img/bloodwork.png) | ![Radiation station](docs/img/radiation.png) |
+| Bloodwork: Inspiration4 astronauts against their own pre-flight draws. | Radiation: the globe lights up over the South Atlantic Anomaly. |
+| ![Air station](docs/img/air.png) | ![Body clock](docs/img/body-clock.png) |
+| Air: real ISS CO2 against the 3 mmHg limit. | Body clock: a published circadian model for four crew. |
 
 ## Run it
 
@@ -37,19 +71,15 @@ The app opens with a 10-step tour on first visit (or add `?tour=1` to the addres
 cd lab
 npm install
 npm run dev      # http://localhost:5199
-npm test         # 34 tests: statistics engine, pooling, missions, orbit, crew health, guidance, real data files
+npm test         # 38 tests: statistics engine, pooling, missions, orbit, crew health, guidance, real data files
 npm run check    # syntax check of every file
+npm run verify   # check + tests + production build
 npm run build    # static, works offline from any folder (dist/)
 ```
 
-## What is new, and how we checked
+## Novelty
 
-- **Crew-run self-experiments for spaceflight.** We found no N-of-1, single-case or crew-run randomized self-experiment work in spaceflight or analog missions, and none among about ten public Space Apps 2026 repos for this challenge (search on 2026-11-01; private work cannot be ruled out). N-of-1 apps and pooled N-of-1 trials exist on Earth; the spaceflight crew application is the new part. Details: [docs/STUDIES_RESULTS.md](docs/STUDIES_RESULTS.md).
-- **Validated, not just built.** Three studies were pre-registered before running ([docs/STUDIES_PREREG.md](docs/STUDIES_PREREG.md)):
-  - On 49 real people's sleep diaries, the engine made a false call 0.68% of the time when nothing was there, its 95% intervals covered 94.7% to 97.3%, and the in-app power preview matched real-data power within 4 points.
-  - Crew pooling cut each person's error by 20% to 45%. Our first pooling method failed its coverage bar (83% to 86%); the fixed method, pre-registered after that failure, passed (90.9% to 97.8%).
-  - The circadian model failed one pre-registered check against a 2007 human Mars-sol study; the app says so.
-- **Honest about limits.** A single four-week self-experiment usually ends "not settled" (about 10% to 14% of the time it settles a change 1.5 times the smallest worthwhile one). The app shows this before you start.
+We found no crew-run randomized self-experiment tool for spaceflight or analog missions in public sources, and none among the public entries for this challenge (searched 2026-11-01; private work cannot be ruled out). Self-experiments (N-of-1 trials) exist on Earth; applying them to a crew in flight, alongside personal-baseline monitoring on real mission data, is the new part.
 
 ## Where things are
 
@@ -57,7 +87,8 @@ npm run build    # static, works offline from any folder (dist/)
 - `docs/design.md`: concept, features, art direction
 - `docs/STUDIES_PREREG.md`, `docs/STUDIES_RESULTS.md`: validation studies
 - `docs/BUILD_LOG.md`: every decision made during the build, with reasons
-- `docs/PITCH.md`: 30-second summary, demo script, claims we can and cannot make
+- `docs/PITCH.md`: one sentence, 30-second version, demo script, how it answers the brief, claims we can and cannot make
+- `docs/GAP_ANALYSIS.md`, `docs/JUDGE_REVIEW.md`: honest scoring against the criteria and what was fixed
 - `analysis/`: all study outputs and simulations
 - `research_notes/`: judging research, competitor field, idea screening, evidence
 - `archive/`: earlier concepts (CALLSIGN, ECHO), kept for the record

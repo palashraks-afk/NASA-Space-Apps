@@ -86,6 +86,7 @@ export function buildViews() {
 export function fitOverview(view, camera) {
   const halfV = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   const half = Math.min(halfV, halfV * camera.aspect);
+  if (!Number.isFinite(half) || half <= 0) return; // hidden or zero-size window: keep the default view
   const dir = new THREE.Vector3(0, 6.0, 3.3).normalize();
   const d = THREE.MathUtils.clamp((A + 0.35) / half, 6.2, 7.4); // further back would leave the drum's footprint and show the outer hull
   view.pos.copy(view.look).addScaledVector(dir, d);

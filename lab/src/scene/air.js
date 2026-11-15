@@ -77,10 +77,12 @@ export function buildAir(mats) {
 
   // Readout panel.
   const canvas = document.createElement("canvas");
-  canvas.width = 640; canvas.height = 400;
+  const RES = 2;
+  canvas.width = 640 * RES; canvas.height = 400 * RES;
   const ctx = canvas.getContext("2d");
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 16;
   const panel = new THREE.Mesh(new THREE.PlaneGeometry(0.34, 0.212), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
   panel.position.set(-0.24, 0.2, 0.03);
   group.add(panel);
@@ -107,25 +109,28 @@ export function buildAir(mats) {
 
   let co2 = 2.2, fanSpeed = 1;
   function draw(env) {
+    ctx.setTransform(RES, 0, 0, RES, 0, 0);
     ctx.fillStyle = "#0b131d"; ctx.fillRect(0, 0, 640, 400);
-    ctx.fillStyle = "#8fa3b8"; ctx.font = "600 24px Archivo, sans-serif";
-    ctx.fillText("Cabin air", 26, 40);
-    ctx.fillStyle = env.co2 > 3 ? "#f0c27a" : "#e9edf2"; ctx.font = "800 72px Archivo, sans-serif";
-    ctx.fillText(env.co2.toFixed(1), 26, 130);
-    ctx.fillStyle = "#8fa3b8"; ctx.font = "600 24px Archivo, sans-serif";
-    ctx.fillText("mmHg CO2", 180, 128);
-    ctx.fillText(`7-day average ${env.co2_7d.toFixed(2)} mmHg`, 26, 180);
-    ctx.fillText(`Temperature ${env.temp.toFixed(1)} °C   Humidity ${env.rh.toFixed(0)} %`, 26, 222);
-    ctx.fillText(`Peak 1-hour CO2 ${env.peak1h.toFixed(1)} mmHg`, 26, 264);
-    ctx.fillStyle = "#5f7186"; ctx.font = "600 20px Archivo, sans-serif";
-    ctx.fillText(env.date ? `ISS telemetry ${env.date} (${env.mission}), NASA OSDR` : "Simulated", 26, 360);
+    ctx.fillStyle = "#a9b8c8"; ctx.font = "700 32px Archivo, sans-serif";
+    ctx.fillText("CO2", 28, 52);
+    ctx.fillStyle = env.co2 > 3 ? "#f0c27a" : "#e9edf2"; ctx.font = "800 120px Archivo, sans-serif";
+    ctx.fillText(env.co2.toFixed(1), 28, 170);
+    const w = ctx.measureText(env.co2.toFixed(1)).width;
+    ctx.fillStyle = "#a9b8c8"; ctx.font = "700 32px Archivo, sans-serif"; ctx.fillText("mmHg", 44 + w, 170);
+    ctx.font = "700 32px Archivo, sans-serif";
+    ctx.fillText(`7-day  ${env.co2_7d.toFixed(2)}`, 28, 250);
+    ctx.fillText(`Peak  ${env.peak1h.toFixed(1)}`, 330, 250);
+    ctx.fillText(`${env.temp.toFixed(1)} °C`, 28, 320);
+    ctx.fillText(`${env.rh.toFixed(0)} % RH`, 330, 320);
     tex.needsUpdate = true;
   }
 
   const warm = new THREE.Color(0xf0c27a), cool = new THREE.Color(0xdfe8f2), tmp = new THREE.Color();
   let lastEnv = null;
+  let drawT = 1; // real seconds since the screen texture was last re-uploaded
   function update(dt, env) {
-    if (env && (!lastEnv || env.day !== lastEnv.day)) { lastEnv = env; co2 = env.co2; draw(env); }
+    drawT += dt;
+    if (env && (!lastEnv || env.day !== lastEnv.day) && drawT >= 0.5) { drawT = 0; lastEnv = env; co2 = env.co2; draw(env); }
     const targetSpeed = 0.8 + 0.6 * Math.min(1, Math.max(0, (co2 - 2) / 1.8));
     fanSpeed += (targetSpeed - fanSpeed) * Math.min(1, dt);
     rotor.rotation.z -= dt * 14 * fanSpeed;

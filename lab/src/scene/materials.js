@@ -39,7 +39,8 @@ export function makeMaterials() {
     tag: new THREE.MeshStandardMaterial({ color: PALETTE.tag, roughness: 0.7, metalness: 0 }),
     led: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff3e2, emissiveIntensity: 1.9, roughness: 0.4 }),
     ledCool: new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xe8f1ff, emissiveIntensity: 1.6, roughness: 0.4 }),
-    glass: new THREE.MeshPhysicalMaterial({ color: 0xffffff, transmission: 1, thickness: 0.02, roughness: 0.04, ior: 1.5, metalness: 0, transparent: true, opacity: 1 }),
+    // Clear-coat glass, no transmission: transmission re-renders the whole scene every frame.
+    glass: new THREE.MeshPhysicalMaterial({ color: 0xdfeaff, roughness: 0.04, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.03, transparent: true, opacity: 0.14, depthWrite: false }),
     screen: new THREE.MeshStandardMaterial({ color: 0x0b1726, emissive: 0x9cc4ff, emissiveIntensity: 0.25, roughness: 0.2 }),
     aluWarm: new THREE.MeshStandardMaterial({ color: 0xe9e6df, roughness: 0.6, metalness: 0.1, roughnessMap: rough, ...surface(34) }),
     aluCool: new THREE.MeshStandardMaterial({ color: 0xcfd6dc, roughness: 0.5, metalness: 0.25, roughnessMap: rough, ...surface(35) }),

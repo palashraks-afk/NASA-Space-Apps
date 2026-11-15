@@ -61,7 +61,10 @@ const CinematicShader = {
     }`,
 };
 
-export function createRenderer(container, { quality = "high" } = {}) {
+// `viewRect()` (optional) returns the screen rectangle the camera should frame. The canvas fills
+// the whole window behind the glass panels, but the camera keeps framing that rectangle exactly,
+// so station views line up as before and the scene simply continues under the panels.
+export function createRenderer(container, { quality = "high", viewRect = null } = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance", stencil: false });
   const dprCap = quality === "high" ? 1.75 : 1;
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, dprCap));
@@ -93,7 +96,7 @@ export function createRenderer(container, { quality = "high" } = {}) {
     });
   }
 
-  const camera = new THREE.PerspectiveCamera(56, container.clientWidth / container.clientHeight, 0.02, 1500);
+  const camera = new THREE.PerspectiveCamera(56, container.clientWidth / container.clientHeight || 16 / 9, 0.02, 1500);
 
   const size = () => [container.clientWidth, container.clientHeight];
   const [w, h] = size();
@@ -101,7 +104,9 @@ export function createRenderer(container, { quality = "high" } = {}) {
   const composer = new EffectComposer(renderer, target);
   composer.addPass(new RenderPass(scene, camera));
   let gtao = null;
-  if (quality === "high") {
+  // Ambient occlusion redraws the whole scene a second time; worth it only on strong GPUs, so it
+  // is opt-in with ?q=ultra.
+  if (quality === "ultra") {
     gtao = new GTAOPass(scene, camera, w, h);
     gtao.blendIntensity = 0.7;
     gtao.updateGtaoMaterial({ radius: 0.28, distanceExponent: 1.6, thickness: 1.0, scale: 1.0, samples: 12 });
@@ -130,13 +135,21 @@ export function createRenderer(container, { quality = "high" } = {}) {
 
   const onResize = () => {
     const [nw, nh] = size();
-    camera.aspect = nw / nh;
-    camera.updateProjectionMatrix();
+    if (!nw || !nh) return; // hidden or minimised: keep the last good size
+    const r = viewRect && viewRect(), c = container.getBoundingClientRect();
+    if (r && r.width > 0 && r.height > 0) {
+      camera.aspect = r.width / r.height;
+      camera.setViewOffset(r.width, r.height, c.left - r.left, c.top - r.top, nw, nh);
+    } else {
+      camera.aspect = nw / nh;
+      camera.clearViewOffset();
+    }
     renderer.setSize(nw, nh);
     composer.setSize(nw, nh);
     if (gtao) gtao.setSize(nw, nh);
     final.uniforms.uResolution.value.set(nw, nh);
   };
   window.addEventListener("resize", onResize);
+  onResize();
   return { renderer, scene, camera, composer, bloom, gtao, final, render, loadProbe, pmrem, onResize };
 }

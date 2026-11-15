@@ -46,15 +46,15 @@ await send("Page.enable");
 await send("Runtime.enable");
 
 // Extra steps after the ?auto= driver has run, for states that need real-time animation.
-const after = {
-  rand: 0, crew: 1500, medical: 0, checkin: 0, body: 1500, maps: 1500, mapstation: 0, mapsystems: 0, bloodwork: 0, radiation: 1500, air: 0, galley: 0, window: 1500, setup: 0, crewrun: 0, step2: 4000, numbers2: 5000, overview: 0, locked: 0, run: 0, result: 0, resultnum: 1500, mars: 2500, clock: 3000,
+const after = { demo: 9000, demoend: 22000,
+  rand: 0, crew: 1500, medical: 0, instruments: 2500, checkin: 0, body: 1500, maps: 1500, mapstation: 0, mapsystems: 0, bloodwork: 0, radiation: 1500, air: 0, galley: 0, window: 1500, setup: 0, crewrun: 0, step2: 4000, numbers2: 5000, overview: 0, locked: 0, run: 0, result: 0, resultnum: 1500, mars: 2500, clock: 3000,
 };
 
 for (const sc of process.argv.slice(2)) {
   await send("Page.navigate", { url: `http://localhost:5199/?auto=${sc}` });
   // wait for boot (the app exposes __sol when ready) and for the scripted steps to run
   for (let i = 0; i < 120; i++) { if (await evaluate("!!window.__sol")) break; await sleep(500); }
-  await sleep(2500 + (after[sc] ?? 0));
+  await sleep(2500 + (after[sc] ?? (sc.startsWith("m3d_") ? 7000 : 0)));
   const shot = await send("Page.captureScreenshot", { format: "png" });
   fs.writeFileSync(path.join(outDir, `C_${sc}.png`), Buffer.from(shot.result.data, "base64"));
   const fps = await evaluate("window.__solFps");

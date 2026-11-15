@@ -13,5 +13,14 @@
 - Fabric texture (cotton jersey): Poly Haven (polyhaven.com), CC0.
 - Command hub, rack housing, PBR textures, lightmap and reflection probe: made for this project in Blender from the scripts in `lab/blender/` (same licence as the code).
 - Draco mesh decoder: Google, Apache 2.0, as shipped with three.js.
-- Libraries: three.js (MIT), gsap (Standard "no charge" license), cannon-es (MIT), satellite.js (MIT), Archivo and Permanent Marker fonts (SIL Open Font License) via Fontsource.
+- Body figure: segment proportions after Contini, Drillis and Bluestein (Human Factors, 1963); weightless neutral body posture after NASA-STD-3000 and Kim, Young and Rajulu, "Neutral Body Posture in Spaceflight", NASA JSC 2019 (ntrs.nasa.gov/citations/20190032496). Angles approximate.
+- Neutron share of ISS radiation (about 30%): Canadian Space Agency, "Monitoring radiation for astronaut health", 2026.
+- Machine-learning comparison (study 5): NumPy and scikit-learn (BSD).
+- Libraries: three.js (MIT), gsap (Standard "no charge" license), cannon-es (MIT), satellite.js (MIT), html-to-image (MIT); Archivo, Barlow and Permanent Marker fonts via Fontsource.
 - Code written with Claude Code (AI) assistance, disclosed as the NASA Space Apps rules require.
+- 3D models from NASA 3D Resources (github.com/nasa/NASA-3D-Resources), NASA media usage guidelines: Astronaut (spacewalker outside the window), International Space Station (A) (on the radiation globe), Crew Lock Bag (ceiling stowage). Draco decoder from three.js (MIT).
+- Instrument specifications: Labrenz et al., J. Space Weather Space Clim. 5, A38 (2015), DOSTEL detector table; NASA technical reports NTRS 20000072884 and 20050210002 (CDRA), 20160010396 (Major Constituent Analyzer), 20150021957 (REM/Timepix), 20070011772, 20110012610 and 20100038357 (T2), 20060028227 (ARED); CERN Medipix (Timepix); Canadian Space Agency Bio-Monitor page; Pickering et al. 2005 and Whelton et al. 2017/2018 (blood pressure); Jubran 2015 and U.S. FDA (pulse oximetry); ISO 15197:2013 (glucose meters).
+- Space weather events: NASA DONKI (CCMC, NASA GSFC) via api.nasa.gov, 2022-01-01 to 2022-04-30 (lab/public/data/spaceweather.json).
+- Sol Lab logo: original mark by the team (docs/brand).
+- Anatomy: BodyParts3D © The Database Center for Life Science (CC BY 4.0), via open-anatomy-3d (github.com/MervinR07/open-anatomy-3d, CC BY 4.0); structures merged by body system and recoloured as a hologram by Sol Lab.
+- Instrument photos: NASA Image and Video Library (images.nasa.gov): iss033e007246, iss018e043409, iss058e003984, iss062e103552, iss020e048842, iss009e13739.

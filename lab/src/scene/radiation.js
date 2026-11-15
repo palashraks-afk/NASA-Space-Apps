@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { gltfLoader } from "./gltf.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { plateMesh } from "./textures.js";
 
@@ -100,6 +101,20 @@ export function buildRadiation(mats, { earthDay, data }) {
   globe.add(trail);
   const marker = new THREE.Mesh(new THREE.SphereGeometry(0.009, 16, 12), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }));
   globe.add(marker);
+  // NASA's own ISS model (NASA 3D Resources, public domain) rides the real track, nose along the
+  // direction of travel and its underside to Earth. The glowing marker stays as the dose colour.
+  const iss = new THREE.Group();
+  globe.add(iss);
+  gltfLoader().load(`${import.meta.env.BASE_URL}models/nasa/iss_a.glb`, (gltf) => {
+    const m = gltf.scene;
+    const box = new THREE.Box3().setFromObject(m), size = box.getSize(new THREE.Vector3());
+    m.scale.setScalar(0.07 / Math.max(size.x, size.y, size.z));
+    m.position.copy(box.getCenter(new THREE.Vector3()).multiplyScalar(-m.scale.x));
+    m.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.emissive = new THREE.Color(0x223344); o.material.emissiveIntensity = 0.6; } });
+    iss.add(m);
+    marker.scale.setScalar(0.55);
+  }, undefined, () => { /* the marker alone still shows the position */ });
+  const nextPos = new THREE.Vector3(), radial = new THREE.Vector3(), aim = new THREE.Matrix4();
 
   // Dosimeter box and readout.
   const box = new THREE.Mesh(new RoundedBoxGeometry(0.2, 0.12, 0.08, 3, 0.012), mats.aluCool);
@@ -114,10 +129,12 @@ export function buildRadiation(mats, { earthDay, data }) {
   group.add(boxTag);
 
   const scv = document.createElement("canvas");
-  scv.width = 640; scv.height = 300;
+  const RES = 1.25; // lighter texture upload; the screen is small on camera
+  scv.width = 640 * RES; scv.height = 300 * RES;
   const sx = scv.getContext("2d");
   const stex = new THREE.CanvasTexture(scv);
   stex.colorSpace = THREE.SRGBColorSpace;
+  stex.anisotropy = 16;
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.14), new THREE.MeshBasicMaterial({ map: stex, toneMapped: false }));
   screen.position.set(0.3, 0.42, 0.035);
   const frame = new THREE.Mesh(new RoundedBoxGeometry(0.32, 0.16, 0.02, 2, 0.01), mats.graphite);
@@ -126,21 +143,21 @@ export function buildRadiation(mats, { earthDay, data }) {
 
   let hours = 0, k = 0, lastDraw = -1, info = null;
   function draw(rate) {
+    sx.setTransform(RES, 0, 0, RES, 0, 0);
     sx.fillStyle = "#0b131d"; sx.fillRect(0, 0, 640, 300);
-    sx.fillStyle = "#8fa3b8"; sx.font = "600 24px Archivo, sans-serif";
-    sx.fillText(`Dose rate now (track ${data.track_date})`, 24, 40);
+    sx.fillStyle = "#a9b8c8"; sx.font = "700 30px Archivo, sans-serif";
+    sx.fillText("Dose rate", 26, 48);
     rateColor(rate, c);
-    sx.fillStyle = `#${c.getHexString()}`; sx.font = "800 84px Archivo, sans-serif";
-    sx.fillText(rate.toFixed(1), 24, 140);
+    sx.fillStyle = `#${c.getHexString()}`; sx.font = "800 104px Archivo, sans-serif";
+    sx.fillText(rate.toFixed(1), 26, 160);
     const w = sx.measureText(rate.toFixed(1)).width;
-    sx.fillStyle = "#8fa3b8"; sx.font = "600 26px Archivo, sans-serif";
-    sx.fillText("µGy per hour", 24 + w + 16, 136);
-    if (info) sx.fillText(`Today ${Math.round(info.today)} µGy, mission ${(info.total / 1000).toFixed(1)} mGy`, 24, 200);
-    sx.fillStyle = "#5f7186"; sx.font = "600 20px Archivo, sans-serif";
-    sx.fillText("DOSTEL-1 readings, NASA OSDR RadLab", 24, 270);
+    sx.fillStyle = "#a9b8c8"; sx.font = "700 30px Archivo, sans-serif";
+    sx.fillText("µGy/h", 42 + w, 160);
+    if (info) sx.fillText(`Today ${Math.round(info.today)} µGy`, 26, 250);
     stex.needsUpdate = true;
   }
 
+  let drawT = 1;
   function update(dt, next) {
     if (next) info = next;
     // About one orbit every 12 seconds along the real track.
@@ -149,6 +166,14 @@ export function buildRadiation(mats, { earthDay, data }) {
     if (tr[k][0] > hours) k = 0;
     const [, lat, lon, rate] = tr[k];
     llToVec(lat, lon, alt, marker.position);
+    const nx = tr[Math.min(k + 1, tr.length - 1)];
+    llToVec(nx[1], nx[2], alt, nextPos);
+    if (nextPos.distanceToSquared(marker.position) > 1e-12) {
+      radial.copy(marker.position).normalize();
+      aim.lookAt(nextPos, marker.position, radial);
+      iss.quaternion.setFromRotationMatrix(aim);
+    }
+    iss.position.copy(marker.position).addScaledVector(radial.copy(marker.position).normalize(), 0.012);
     // Show only the last ~90 minutes of track behind the marker: about one orbit.
     let j = k;
     while (j > 0 && hours - tr[j][0] < 1.5) j--;
@@ -156,7 +181,10 @@ export function buildRadiation(mats, { earthDay, data }) {
     rateColor(rate, marker.material.color);
     globe.rotation.y += dt * 0.05;
     led.material.color.copy(marker.material.color);
-    if (Math.floor(hours * 60) !== lastDraw) { lastDraw = Math.floor(hours * 60); draw(rate); }
+    // Redraw the screen at most twice a second: each redraw re-uploads a 1280x600 texture, and
+    // redrawing on every replayed minute (about 8 times a second) stalled the GPU every few frames.
+    drawT += dt;
+    if (drawT >= 0.5 && Math.floor(hours * 60) !== lastDraw) { drawT = 0; lastDraw = Math.floor(hours * 60); draw(rate); }
   }
   // Live-data parts stay visible when a loaded model replaces the built-in props.
   globe.userData.data = true;

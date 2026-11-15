@@ -1,4 +1,5 @@
 import "./styles.css";
+import "./theme-flight.css";
 import * as THREE from "three";
 import { createRenderer } from "./scene/renderer.js";
 import { makeMaterials } from "./scene/materials.js";
@@ -16,7 +17,10 @@ import { buildRadiation } from "./scene/radiation.js";
 import { buildBody } from "./scene/body.js";
 import { loadModels } from "./scene/models.js";
 import { createPatches, PATCHES } from "./sim/patches.js";
-import { createTour } from "./ui/tour.js";
+import { createTour, QUICK } from "./ui/tour.js";
+import { createHud } from "./ui/hud.js";
+import { createBlueprint } from "./ui/blueprint.js";
+import { INSTRUMENTS, parseReadings, SAMPLE_CSV, SAMPLE_FHIR } from "./sim/instruments.js";
 import { createMaps } from "./ui/maps.js";
 import { BODY_PARTS, ROUTINE, clockText } from "./sim/bodyParts.js";
 import { createCameraRig } from "./scene/cameraRig.js";
@@ -45,6 +49,8 @@ async function boot() {
   await Promise.all([document.fonts.load('64px "Permanent Marker"'), document.fonts.load('600 16px "Archivo"'), document.fonts.load('800 16px "Archivo"')]);
   const [realNoise, gp, foodsFile, RAD, BLOOD, CABIN] = await Promise.all(["data/real_noise.json", "data/iss_gp.json", "data/foods.json", "data/radiation.json", "data/bloodwork.json", "data/cabin.json"].map((u) => import.meta.env.BASE_URL + u).map((u) => fetch(u).then((r) => r.json())));
   const OUTCOMES = loadOutcomes(realNoise);
+  // NASA DONKI space-weather events during the replayed radiation period (optional file).
+  const SPACEWX = await fetch(import.meta.env.BASE_URL + "data/spaceweather.json").then((r) => (r.ok ? r.json() : null)).catch(() => null);
   const iss = makeISS(gp[0]);
   const issEpoch = new Date(gp[0].EPOCH + "Z");
   const sunrises = countSunrises(iss, issEpoch, 24, 20);
@@ -59,8 +65,8 @@ async function boot() {
 
   loadingText.textContent = "Pressurizing the module";
   const stage = $("#stage");
-  const quality = new URLSearchParams(location.search).get("q") === "low" ? "low" : "high";
-  const R = createRenderer(stage, { quality });
+  const quality = { low: "low", ultra: "ultra" }[new URLSearchParams(location.search).get("q")] || "high";
+  const R = createRenderer(stage, { quality, viewRect: () => document.getElementById("nav").getBoundingClientRect() });
   const { scene, camera, composer, renderer } = R;
   const mats = makeMaterials();
   const loader = new THREE.TextureLoader();
@@ -112,9 +118,18 @@ async function boot() {
     glazeScreens(scene);
   }
 
+  // Sharpest texture filtering the GPU offers, so labels and screens stay crisp at angles.
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
+  scene.traverse((o) => { for (const mt of [].concat(o.material || [])) for (const key of ["map", "emissiveMap", "roughnessMap", "bumpMap"]) if (mt[key]) mt[key].anisotropy = maxAniso; });
+
+  // Shadows are cast by fixed lights onto fixed fittings: draw the shadow maps once, not
+  // every frame (they cost one extra pass over every caster per light).
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = true;
+
   // Teammates' .glb models (lab/public/models/models.json); loads in the background.
   loadModels({ base: import.meta.env.BASE_URL, scene, stations: { medical, air, galley, radiation, body, clock, evidence, board }, body })
-    .then((files) => { if (files.length) console.info(`Loaded models: ${files.join(", ")}`); });
+    .then((files) => { if (files.length) { console.info(`Loaded models: ${files.join(", ")}`); renderer.shadowMap.needsUpdate = true; } });
 
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
   const views = buildViews();
@@ -132,6 +147,7 @@ async function boot() {
     patchTimer = setTimeout(() => (patchToast.hidden = true), 5000);
     if (S.tab === "overview") refresh();
   });
+  const blueprint = createBlueprint({ host: $("#app"), onSelect: (k) => document.querySelectorAll(".parts-ol [data-part]").forEach((b) => b.classList.toggle("on", +b.dataset.part === k)) });
   const maps = createMaps({ host: $("#app"), rad: RAD, iss, epoch: issEpoch, earthImg: earthDay && earthDay.image, onTab: (t) => showTab(t), onMode: (m) => patches.see("maps", m, ["earth", "station", "systems"], "navigator") });
   rig.setReduced(reduced);
   // The overview is a cutaway from above; back it up until the whole drum fits the stage's shape.
@@ -143,7 +159,7 @@ async function boot() {
   window.addEventListener("resize", () => { R.onResize(); fitOverview(); });
 
   // ---------------- state ----------------
-  const S = { tab: "overview", met: 0.3, bodyPart: "heart", mapsOn: false, playing: false, speed: 1, crewSel: 0, dest: "iss", destLabel: DESTINATIONS.iss.label, simHours: dayStartHours, clockLux: 300, brightWake: false };
+  const S = { tab: "overview", met: 60.3, bodyPart: "heart", mapsOn: false, playing: false, speed: 1, crewSel: 0, dest: "iss", destLabel: DESTINATIONS.iss.label, simHours: dayStartHours, clockLux: 300, brightWake: false };
   const E = {
     step: 1, maxStep: 1, intervention: "caffeine", outcomeKey: "sleep_latency", speed: INTERVENTIONS.caffeine.speed,
     delta: OUTCOMES.sleep_latency.delta, thr: 0.95, mode: "hidden", practiceMult: 1.5, noise: "sim", crewMode: false,
@@ -181,13 +197,13 @@ async function boot() {
   const bands = H.crew.map((c) => Object.fromEntries(METRICS.map((m) => [m.key, usualRange(c[m.key], PREFLIGHT, m.bounds)])));
   function metricState(ci, m, i = idx()) {
     const c = H.crew[ci], v = c[m.key][i], b = bands[ci][m.key];
-    if (!b) return { v, cls: "", out: false, text: "Too few pre-flight days to set a usual range" };
+    if (!b) return { v, cls: "", out: false, text: "Not enough pre-flight days" };
     const out = v < b.lo || v > b.hi;
     const last7 = c[m.key].slice(Math.max(PREFLIGHT, i - 6), i + 1);
     const nOut = last7.filter((x) => x < b.lo || x > b.hi).length;
-    if (m.key === "temp" && v > b.hi && today() > 0) return { v, cls: "expected", out: true, text: "Above pre-flight range, as expected in flight: resting core temperature rises about 1 °C over 2.5 months (Stahn et al. 2017)." };
-    if (out) return { v, cls: "out", out: true, text: `Outside your usual range today; ${nOut} of the last ${last7.length} days were outside.` };
-    return { v, cls: "", out: false, text: `Within your usual range (${b.lo.toFixed(m.d)} to ${b.hi.toFixed(m.d)} ${m.unit}, from ${b.n} pre-flight days).` };
+    if (m.key === "temp" && v > b.hi && today() > 0) return { v, cls: "expected", out: true, text: "Above pre-flight range; expected in flight" };
+    if (out) return { v, cls: "out", out: true, text: `Outside usual range (${nOut} of last ${last7.length} days)` };
+    return { v, cls: "", out: false, text: `Usual ${b.lo.toFixed(m.d)} to ${b.hi.toFixed(m.d)} ${m.unit}` };
   }
   const kpi = (label, value, unit, note, flag) => `<div class="kpi ${flag ? "flag" : ""}"><div class="label">${label}</div><div class="value">${value}<small>${unit}</small></div><div class="note">${note}</div></div>`;
 
@@ -222,7 +238,7 @@ async function boot() {
 
   // ---------------- check-in ----------------
   const CK = buildCheckins(H);
-  const SRC_LABEL = { you: "you entered", model: "from the wearable model", simulated: "simulated" };
+  const SRC_LABEL = { you: "you entered", imported: "imported", model: "wearable model", simulated: "simulated" };
   // Assessment for crew k, day index i, indicator ind.
   function assessDay(k, i, ind) {
     const g = CK.get(k, i, ind.key);
@@ -243,25 +259,69 @@ async function boot() {
   const chip = (tier) => `<span class="lvl lvl-${tier}">${LEVELS[tier].label}</span>`;
 
   // ---------------- tabs ----------------
-  const TABS = [["overview", "Overview"], ["checkin", "Check-in"], ["body", "Body"], ["medical", "Vitals"], ["bloodwork", "Bloodwork"], ["air", "Air"], ["radiation", "Radiation"], ["galley", "Galley"], ["clock", "Clock"], ["experiments", "Experiments"], ["window", "Window"], ["maps", "Maps"]];
+  const TABS = [["overview", "Overview"], ["checkin", "Check-in"], ["body", "Body"], ["medical", "Vitals"], ["bloodwork", "Bloodwork"], ["air", "Air"], ["radiation", "Radiation"], ["galley", "Galley"], ["clock", "Clock"], ["experiments", "Experiments"], ["window", "Window"], ["maps", "Maps"], ["instruments", "Instruments"]];
   const tabsEl = $("#tabs");
-  tabsEl.innerHTML = TABS.map(([k, l]) => `<button class="tab" role="tab" data-tab="${k}" aria-selected="${k === S.tab}">${l}</button>`).join("");
-  tabsEl.addEventListener("click", (e) => { const b = e.target.closest("[data-tab]"); if (b) showTab(b.dataset.tab); });
+  // Five sections in the top bar; a section's pages switch from the top of the side panel.
+  const SECTIONS = [
+    { key: "overview", label: "Overview", tabs: ["overview"] },
+    { key: "crew", label: "Crew", tabs: ["checkin", "body", "medical", "bloodwork"] },
+    { key: "station", label: "Station", tabs: ["air", "radiation", "galley", "clock", "maps", "window"] },
+    { key: "experiments", label: "Experiments", tabs: ["experiments"] },
+    { key: "instruments", label: "Instruments", tabs: ["instruments"] },
+  ];
+  const sectionOf = (tab) => SECTIONS.find((x) => x.tabs.includes(tab));
+  const lastInSection = {};
+  tabsEl.innerHTML = SECTIONS.map((x) => `<button class="tab" role="tab" data-section="${x.key}" aria-selected="${x.tabs.includes(S.tab)}">${x.label}</button>`).join("");
+  tabsEl.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-section]");
+    if (!b) return;
+    const sec = SECTIONS.find((x) => x.key === b.dataset.section);
+    showTab(lastInSection[sec.key] || sec.tabs[0]);
+  });
+  const tabLabel = (k) => TABS.find(([key]) => key === k)[1];
+  function subnav(root, tab) {
+    const sec = sectionOf(tab);
+    if (!sec || sec.tabs.length < 2) return;
+    const nav = document.createElement("div");
+    nav.className = "subnav";
+    nav.setAttribute("role", "tablist");
+    nav.innerHTML = sec.tabs.map((k) => `<button type="button" role="tab" data-sub="${k}" aria-selected="${k === tab}">${tabLabel(k)}</button>`).join("");
+    nav.addEventListener("click", (e) => { const b = e.target.closest("[data-sub]"); if (b && b.dataset.sub !== S.tab) showTab(b.dataset.sub); });
+    root.prepend(nav);
+  }
   let inspectorEl = $("#inspector");
-  const viewFor = (tab) => (tab === "experiments" ? (E.step <= 2 ? "board" : "evidence") : tab === "bloodwork" || tab === "checkin" ? "medical" : tab === "maps" ? "overview" : tab);
+  const viewFor = (tab) => (tab === "experiments" ? (E.step <= 2 ? "board" : "evidence") : tab === "bloodwork" || tab === "checkin" ? "medical" : tab === "maps" || tab === "instruments" ? "overview" : tab);
   let panel = null;
+  let firstView = true;
   function showTab(tab, view) {
     S.tab = tab;
-    tabsEl.querySelectorAll("[data-tab]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === tab)));
+    const sec = sectionOf(tab);
+    if (sec) lastInSection[sec.key] = tab;
+    tabsEl.querySelectorAll("[data-section]").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.section === sec?.key)));
     panel = PANELS[tab];
     const fresh = inspectorEl.cloneNode(false); // drop old listeners with the old panel
     inspectorEl.replaceWith(fresh);
     inspectorEl = fresh;
     panel.mount(fresh);
+    tidyPanel(fresh);
+    subnav(fresh, tab);
     maps.show(tab === "maps");
+    blueprint.show(tab === "instruments");
     patches.see("tabs", tab, TABS.map(([k]) => k), "explorer");
     refresh();
-    rig.go(view || viewFor(tab));
+    rig.go(view || viewFor(tab), firstView ? { duration: 0 } : undefined);
+    firstView = false;
+  }
+  // Keep the inspector to numbers and controls: intro and source paragraphs move into a
+  // closed "About this view" section at the bottom.
+  function tidyPanel(root) {
+    const bits = [...root.querySelectorAll(":scope > .lede, :scope > p.src, :scope > .legend")];
+    if (!bits.length) return;
+    const d = document.createElement("details");
+    d.className = "about-view";
+    d.innerHTML = "<summary>About this view</summary>";
+    bits.forEach((b) => d.appendChild(b));
+    root.appendChild(d);
   }
   // Every camera view belongs to a tab; the experiments tab has two (board and evidence chamber).
   const tabOfView = (view) => (view === "board" || view === "evidence" ? "experiments" : view);
@@ -273,6 +333,16 @@ async function boot() {
     if (tab === S.tab) rig.go(view); // same panel, just move the camera
     else showTab(tab, view);
   }
+  // The periodic refresh rebuilds the panel only when something it shows could have changed;
+  // views with live values (radiation rate, experiments, body clock) always update.
+  const LIVE = new Set(["radiation", "experiments", "clock", "window"]);
+  let lastKey = "";
+  function refreshIfChanged() {
+    const key = [S.tab, S.crewSel, today(), Math.floor(hourNow() * 4), S.playing, S.speed, E.day, E.step, E.randomizing, !!E.power, E.locked, E.started, E.done].join("|");
+    if (key === lastKey && !LIVE.has(S.tab)) return;
+    lastKey = key;
+    refresh();
+  }
   function refresh() { if (panel) panel.update(); renderTimeline(); renderStatus(); body.setStatus(bodyStatusMap(S.crewSel)); }
 
   // ---------------- panels ----------------
@@ -280,18 +350,26 @@ async function boot() {
 
   PANELS.overview = {
     mount(root) {
-      root.innerHTML = `<h2>Crew overview</h2><p class="lede">Each measure is compared with that person's own pre-flight range, not a population norm. Amber marks a measure outside that range; nothing alarms.</p>
+      root.innerHTML = `<h2>Crew overview</h2><p class="tagline">Each person against their own normal.</p><p class="lede">Each measure is compared with that person's own pre-flight range, not a population norm. Amber marks a measure outside that range; nothing alarms.</p>
+        <section class="hero-exp">
+          <div class="hero-kicker">Signature feature</div>
+          <h3>Did that change really help, or was it a lucky week?</h3>
+          <p>Crew members test a fix the way a clinical trial does: the schedule is randomized, the plan is locked before any results, and the answer is allowed to be "not settled". Checked on 49 real people's sleep records: wrong calls 0.68% of the time.</p>
+          <button type="button" class="btn hero-btn" data-act="demoExp"><span aria-hidden="true">▶</span> Watch a crew experiment</button>
+          <span class="hero-note">About 20 seconds: four crew, 56 days, live. The demo uses a large real effect; real tests often end "not settled".</span>
+        </section>
         <table class="grid" id="ovCrew"><thead><tr><th>Crew</th><th>Slept</th><th>HR</th><th>Temp</th><th>Vitals</th><th>Check-in</th></tr></thead><tbody></tbody></table>
         <h3>Cabin</h3><div class="kpis" id="ovCabin"></div>
-        <h3 id="ovPatchTitle">Mission patches</h3><div class="patches" id="ovPatches"></div>
-        <h3>The five hazards of spaceflight</h3><div class="hazards">${HAZARDS.map((h) => `<div class="hazard"><b>${esc(h.name)}</b><p>${esc(h.what)}</p><div class="chips">${[...new Set(h.tracks.map((t) => t.split(":")[0]))].map((t) => `<button class="chip" data-go="${t}">${esc((TABS.find(([key]) => key === t) || [t, t])[1])}</button>`).join("")}</div></div>`).join("")}</div>
-        <p class="src">Hazards as defined by NASA's Human Research Program. Each links to the stations that track it.</p>
+        <details class="fold"><summary id="ovPatchTitle">Mission patches</summary><div class="patches" id="ovPatches"></div></details>
+        <details class="fold"><summary>The five hazards of spaceflight</summary><div class="hazards">${HAZARDS.map((h) => `<div class="hazard"><b>${esc(h.name)}</b><p>${esc(h.what)}</p><div class="chips">${[...new Set(h.tracks.map((t) => t.split(":")[0]))].map((t) => `<button class="chip" data-go="${t}">${esc((TABS.find(([key]) => key === t) || [t, t])[1])}</button>`).join("")}</div></div>`).join("")}</div>
+        </details>
         <h3>Experiment</h3><p id="ovExp"></p>
-        <div class="actions"><button class="btn" data-act="tour">Take the tour</button><button class="btn quiet" data-act="report">Download crew report</button><span class="src">Keys: 1 to 0 switch stations, Space plays, arrows step a day</span></div>
+        <div class="actions"><button class="btn" data-act="tour">Take the tour</button><button class="btn quiet" data-act="report">Download crew report</button></div>
         <p class="src">Sleep: real diaries from an open dataset (each crew member is one participant). Heart measures and temperature simulated from published spreads. Cabin air: real ISS telemetry (NASA OSDR).</p>`;
       root.querySelector("#ovCrew").addEventListener("click", (e) => { const r = e.target.closest("[data-crew]"); if (r) selectCrew(+r.dataset.crew); });
       root.querySelector('[data-act="report"]').addEventListener("click", downloadReport);
       root.querySelector('[data-act="tour"]').addEventListener("click", startTour);
+      root.querySelector('[data-act="demoExp"]').addEventListener("click", runDemoExperiment);
       root.addEventListener("click", (e) => { const g = e.target.closest("[data-go]"); if (g) showTab(g.dataset.go); });
     },
     update() {
@@ -304,10 +382,10 @@ async function boot() {
       const pe = $("#ovPatches");
       if (pe.dataset.h !== ph) { pe.innerHTML = ph; pe.dataset.h = ph; $("#ovPatchTitle").textContent = `Mission patches: ${patches.count()} of ${PATCHES.length}`; }
       const env = H.env;
-      $("#ovCabin").innerHTML = kpi("CO2 today", env.co2[i].toFixed(1), "mmHg", env.co2[i] > AIR_LIMITS.co2_1h_mmHg ? "Above the 3 mmHg nominal limit" : "Within the nominal limit", env.co2[i] > AIR_LIMITS.co2_1h_mmHg)
-        + kpi("Headache risk", (env.headache[i] * 100).toFixed(1), "%", "From the 7-day CO2 average (Law et al. 2014)", env.headache[i] > 0.01)
-        + kpi("Radiation today", Math.round(radToday()), "µGy", "Measured on the ISS (NASA RadLab)", false)
-        + kpi("Mission dose", (radTotal() / 1000).toFixed(1), "mGy", `Absorbed, ${today() + 1} days`, false);
+      $("#ovCabin").innerHTML = kpi("CO2 today", env.co2[i].toFixed(1), "mmHg", env.co2[i] > AIR_LIMITS.co2_1h_mmHg ? "Above 3 mmHg limit" : "Under 3 mmHg limit", env.co2[i] > AIR_LIMITS.co2_1h_mmHg)
+        + kpi("Headache risk", (env.headache[i] * 100).toFixed(1), "%", "From 7-day CO2", env.headache[i] > 0.01)
+        + kpi("Radiation today", Math.round(radToday()), "µGy", "Measured on the ISS", false)
+        + kpi("Mission dose", (radTotal() / 1000).toFixed(1), "mGy", `over ${today() + 1} day${today() ? "s" : ""}`, false);
       $("#ovExp").textContent = !E.mission ? "No experiment set up. Open Experiments to design one." : E.started ? `Day ${E.day} of ${E.days}: "${intervention().label}" on ${outcome().label.toLowerCase()}${E.crew ? ", whole crew" : ""}.` : E.done ? "Finished. See Experiments for the result." : E.locked ? "Plan locked; ready to start." : "Plan being set up.";
     },
   };
@@ -316,13 +394,11 @@ async function boot() {
     mount(root) {
       ckKey = null;
       root.innerHTML = `<h2 id="ckTitle"></h2><p class="lede">Log today's measurements. Each one is checked against health guidelines and, where there is enough history, against your own normal, then given one of three levels with what to do next.</p>
-        <div class="levels">${Object.keys(LEVELS).map((t) => chip(t)).join("")}</div>
         <div class="kpis" id="ckK"></div>
-        <h3>Today's routine</h3><div id="ckRoutine" class="routine"></div>
+        <details class="fold" id="ckRoutineFold"><summary id="ckRoutineSum">Today's routine</summary><div id="ckRoutine" class="routine"></div></details>
         <div id="ckSurgeon"></div>
         <div id="ckList">${INDICATORS.map((ind) => `<section class="ck" data-ck="${ind.key}">
-          <div class="ck-head"><span class="name">${esc(ind.label)}</span><span class="ck-lvl"></span></div>
-          <div class="ck-now"></div>
+          <button type="button" class="ck-head" aria-expanded="false"><span class="name">${esc(ind.label)}</span><span class="ck-now"></span><span class="ck-lvl"></span></button>
           <form class="ck-form" data-ind="${ind.key}" novalidate>
             ${ind.fields.map((f) => f.scale
               ? `<div class="seg ck-scale" role="group" aria-label="${esc(f.label)}">${[1, 2, 3, 4, 5].map((n) => `<button type="button" data-scale="${n}" aria-pressed="false">${n}</button>`).join("")}</div><input type="hidden" name="${f.id}">`
@@ -337,8 +413,10 @@ async function boot() {
         </section>`).join("")}</div>
         <p class="src">Values you log are stored in this browser only. Days you have not logged are filled from the crew health model (heart rate, temperature, sleep) or simulated (blood pressure, blood sugar, mood, exercise), and labelled. Guidance follows the sources on each card; where a source gives no escalation point, the team chose one, and it needs review by a clinician. Not a medical device.</p>`;
       root.addEventListener("click", (e) => {
+        const h = e.target.closest(".ck-head");
+        if (h) { const sec = h.closest(".ck"); const open = !sec.classList.contains("open"); sec.classList.toggle("open", open); h.setAttribute("aria-expanded", String(open)); return; }
         const j = e.target.closest("[data-jump]");
-        if (j) { const sec = $(`[data-ck="${j.dataset.jump}"]`); sec.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" }); sec.querySelector("input:not([type=hidden]), [data-scale]")?.focus({ preventScroll: true }); return; }
+        if (j) { const sec = $(`[data-ck="${j.dataset.jump}"]`); sec.classList.add("open"); sec.querySelector(".ck-head").setAttribute("aria-expanded", "true"); sec.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" }); sec.querySelector("input:not([type=hidden]), [data-scale]")?.focus({ preventScroll: true }); return; }
         const b = e.target.closest("[data-scale]");
         if (!b) return;
         const form = b.closest("form");
@@ -370,13 +448,17 @@ async function boot() {
       const k = S.crewSel, i = idx(), key = `${k}|${i}`;
       const rhtml = routineState(k).map((r) => `<button type="button" class="r r-${r.state}" data-jump="${r.key}"><span class="t">${clockText(r.hour)}</span><span>${esc(r.what)}</span><span class="st">${r.state === "done" ? "Logged" : r.state === "due" ? "Due" : "Later"}</span></button>`).join("");
       const rEl = $("#ckRoutine");
-      if (rEl.dataset.h !== rhtml) { rEl.innerHTML = rhtml; rEl.dataset.h = rhtml; }
+      if (rEl.dataset.h !== rhtml) {
+        rEl.innerHTML = rhtml; rEl.dataset.h = rhtml;
+        const rs = routineState(k), due = rs.filter((r) => r.state === "due").length, done = rs.filter((r) => r.state === "done").length;
+        $("#ckRoutineSum").innerHTML = `Today's routine: ${due ? `<span class="lvl lvl-watch">${due} due</span>` : ""} ${done} of ${rs.length} logged`;
+      }
       if (key === ckKey) return;
       ckKey = key;
       $("#ckTitle").textContent = `Daily check-in: crew ${H.crew[k].id}, mission day ${today()}`;
       const finds = dayFindings(k, i), surgeon = finds.filter((f) => f.a.tier === "surgeon");
-      $("#ckK").innerHTML = kpi("Logged by you today", loggedToday(k, i), `of ${INDICATORS.length}`, loggedToday(k, i) === INDICATORS.length ? "Check-in complete" : "Log the rest to complete today", false)
-        + kpi("Check-in streak", streak(k, i), "days", "Days in a row with every measurement logged", false);
+      $("#ckK").innerHTML = kpi("Logged by you today", loggedToday(k, i), `of ${INDICATORS.length}`, loggedToday(k, i) === INDICATORS.length ? "Check-in complete" : "", false)
+        + kpi("Check-in streak", streak(k, i), "days", "", false);
       $("#ckSurgeon").innerHTML = surgeon.length
         ? `<div class="callout"><b>For the flight surgeon</b><ul>${surgeon.map((f) => `<li>${esc(f.ind.label)}: ${esc(f.ind.format(f.a.value))} ${esc(f.ind.unit)}. ${esc(f.a.text)}</li>`).join("")}</ul><p>Bring these to the next medical conference, or sooner where the card says "now".</p></div>`
         : finds.length ? `<p class="note-ok">Nothing for the flight surgeon today. ${finds.length} to keep an eye on.</p>` : `<p class="note-ok">Everything within range today.</p>`;
@@ -415,7 +497,6 @@ async function boot() {
     mount(root) {
       bodyKey = null;
       root.innerHTML = `<h2 id="bdTitle"></h2><p class="lede">Click a part of the figure, or pick one below. Colour shows the most serious level among the measurements linked to that part today.</p>
-        <div class="levels">${Object.keys(LEVELS).map((t) => chip(t)).join("")}<span class="lvl lvl-none">Not measured</span></div>
         <div class="parts" id="bdParts">${BODY_PARTS.map((p) => `<button type="button" class="part" data-part="${p.key}"><span>${esc(p.name)}</span><span class="pl"></span></button>`).join("")}</div>
         <div id="bdDetail"></div>
         <p class="src">Spaceflight effects summarised from NASA Human Research Program material. Levels come from the check-in guidance (see each card there). Not a medical device.</p>`;
@@ -452,21 +533,112 @@ async function boot() {
 
   PANELS.maps = {
     mount(root) {
-      root.innerHTML = `<h2>Maps</h2><p class="lede">Three maps of where health risks come from: the orbit, the station, and the systems that keep the air breathable.</p>
-        <div class="part-card"><h3>Orbit and radiation</h3><p>The ISS ground track from real orbital elements (SGP4, CelesTrak), with Earth's night side and the radiation dose rate measured along the way. The dose spikes over South America, in the South Atlantic Anomaly.</p>
+      root.innerHTML = `<h2>Maps</h2>
         <div class="legend"><span>Dose rate</span><i style="background:linear-gradient(90deg,#5a9ef2,#80d1b8,#f0c259,#f06b5c)"></i><span>2 to 300+ µGy/h</span></div>
-        <p class="src">White line: last 45 minutes. Dashed: next three orbits. Yellow dot: the point where the Sun is overhead.</p></div>
-        <div class="part-card"><h3>Station modules</h3><p>Measured daily dose in six modules. Where crew spend time and sleep changes their dose.</p></div>
-        <div class="part-card"><h3>Life support</h3><p>The loop that removes CO2 and recycles water into oxygen, with today's real cabin readings.</p></div>
+        <p class="lede"><b>Orbit and radiation:</b> the ISS ground track from real orbital elements (SGP4, CelesTrak), Earth's night side, and the dose rate measured along the orbit. White line: last 45 minutes; dashed: next three orbits; yellow dot: the Sun overhead. <b>Station modules:</b> measured daily dose in six modules. <b>Life support:</b> the CO2, water and oxygen loop with today's real cabin readings.</p>
         <p class="src">Radiation: NASA OSDR RadLab. Cabin air: NASA OSDR Environmental Data App. Orbit: CelesTrak elements propagated in the browser.</p>`;
     },
     update() {},
   };
 
+  // ---------------- instruments ----------------
+  let instKey = INSTRUMENTS[0].key, pending = null;
+  const instTab = (f) => (INDICATOR[f] ? "checkin" : f);
+  const instLabel = (f) => (INDICATOR[f] ? INDICATOR[f].label : (TABS.find(([k]) => k === f) || [f, f])[1]);
+  function importRows(rows, k) {
+    if (!rows.length) return { n: 0, bad: 0 };
+    const dates = rows.map((r) => r.date).sort();
+    const last = new Date(dates[dates.length - 1] + "T00:00:00Z");
+    let n = 0, bad = 0;
+    for (const r of rows) {
+      const back = Math.round((last - new Date(r.date + "T00:00:00Z")) / 86400000);
+      const i = idx() - back;
+      const ind = INDICATOR[r.key];
+      if (i < 0 || !ind || validate(ind, r.value)) { bad++; continue; }
+      CK.set(k, i, r.key, { ...r.value, _src: "import" });
+      n++;
+    }
+    return { n, bad };
+  }
+  const downloadText = (name, text, type) => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([text], { type }));
+    a.download = name;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  };
+
+  PANELS.instruments = {
+    mount(root) {
+      instKeyShown = null;
+      root.innerHTML = `<h2>Instruments</h2>
+        <div class="inst-list">${INSTRUMENTS.map((x) => `<button type="button" class="inst" data-inst="${x.key}"><b>${esc(x.name)}</b><span>${esc(x.agency)}</span></button>`).join("")}</div>
+        <div id="instDetail"></div>
+        <details class="fold" id="instImport"><summary>Import readings from any device</summary>
+          <p class="hint">CSV with a date column, or a FHIR bundle of Observations (LOINC codes). The newest date lands on today's mission day.</p>
+          <input type="file" id="instFile" accept=".csv,.json,.txt,text/csv,application/json">
+          <div class="actions"><button class="btn quiet" data-act="sampleCsv">Sample CSV</button><button class="btn quiet" data-act="sampleFhir">Sample FHIR</button></div>
+          <div id="instPreview"></div>
+        </details>
+        <p class="lede">Ten devices: the real ISS hardware behind each reading, or the reference class of device. Every specification cites its source, mostly NASA technical reports. In the exploded view, parts outlined in green are built to a published dimension; the scale bar shows real size.</p>
+        <p class="src">FHIR R4 and LOINC are the health-data standards used by hospitals and wearables; any device that exports them can feed the check-in.</p>`;
+      root.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-inst]");
+        if (b) { instKey = b.dataset.inst; instKeyShown = null; refresh(); return; }
+        const pp = e.target.closest("[data-part]");
+        if (pp) { blueprint.select(+pp.dataset.part); return; }
+        const g = e.target.closest("[data-go]");
+        if (g) { showTab(g.dataset.go); return; }
+        const a = e.target.closest("[data-act]");
+        if (!a) return;
+        if (a.dataset.act === "sampleCsv") downloadText("sol-lab-sample.csv", SAMPLE_CSV, "text/csv");
+        if (a.dataset.act === "sampleFhir") downloadText("sol-lab-sample-fhir.json", SAMPLE_FHIR, "application/json");
+        if (a.dataset.act === "doImport" && pending) {
+          const r = importRows(pending.rows, S.crewSel);
+          $("#instPreview").innerHTML = `<p class="note-ok">Imported ${r.n} readings for crew ${H.crew[S.crewSel].id}${r.bad ? `; ${r.bad} skipped (out of range or before the mission)` : ""}.</p>`;
+          pending = null; ckKey = null; bodyKey = null;
+          if (r.n) patches.award("first_log");
+        }
+      });
+      root.querySelector("#instFile").addEventListener("change", async (e) => {
+        const f = e.target.files[0];
+        if (!f) return;
+        const text = await f.text();
+        pending = parseReadings(text, f.name);
+        const byKey = {};
+        for (const r of pending.rows) byKey[r.key] = (byKey[r.key] || 0) + 1;
+        const days = new Set(pending.rows.map((r) => r.date)).size;
+        $("#instPreview").innerHTML = pending.rows.length
+          ? `<p>${esc(f.name)}: ${pending.rows.length} readings over ${days} day${days === 1 ? "" : "s"} (${Object.entries(byKey).map(([k, n]) => `${esc(INDICATOR[k]?.label || k)} ${n}`).join(", ")}).</p><div class="actions"><button class="btn" data-act="doImport">Import for crew ${H.crew[S.crewSel].id}</button></div>`
+          : `<p class="ck-err">${esc(pending.skipped[0] || "No readings found.")}</p>`;
+      });
+    },
+    update() {
+      if (instKey === instKeyShown) return;
+      instKeyShown = instKey;
+      const x = INSTRUMENTS.find((i) => i.key === instKey);
+      document.querySelectorAll("[data-inst]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.inst === instKey)));
+      const path = { import: "Import a device file (below)", dataset: "Loaded from a public dataset", reference: "Reference only" }[x.path];
+      $("#instDetail").innerHTML = `<div class="part-card"><h3>${esc(x.name)}</h3>
+        <dl class="facts"><dt>On the ISS</dt><dd>${esc(x.flight)}</dd><dt>Measures</dt><dd>${esc(x.measures)}</dd><dt>Data path</dt><dd>${esc(path)}</dd></dl>
+        <div class="chips">${x.feeds.map((f) => `<button class="chip" data-go="${instTab(f)}">${esc(instLabel(f))}</button>`).join("")}</div>
+        ${x.photo ? `<p class="src">Photo: ${esc(x.photo.caption)} (<a href="https://images.nasa.gov/details/${esc(x.photo.id)}" target="_blank" rel="noopener">NASA ${esc(x.photo.id)}</a>); press NASA photo above the 3D view to see it.</p>` : `<p class="src">No public NASA photo of this device was found; the main view shows how it works in 3D.</p>`}
+        <p>${esc(x.how)}</p>
+        ${x.specs ? `<h3>Specifications</h3><table class="spec"><tbody>${x.specs.map(([k, v, src]) => `<tr><th>${esc(k)}</th><td>${esc(v)}${src ? ` <sup>${src.split(",").map((s) => Object.keys(x.sources).indexOf(s.trim()) + 1).filter((n) => n > 0).join(",")}</sup>` : ""}</td></tr>`).join("")}</tbody></table>
+        <ol class="spec-src">${Object.values(x.sources).map(([t, u]) => `<li>${u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>` : esc(t)}</li>`).join("")}</ol>` : ""}
+        <h3>Parts</h3>
+        <ol class="parts-ol">${x.parts.map((p, k) => `<li><button type="button" data-part="${k}" class="${p.exact ? "exact" : ""}"><b>${esc(p.name)}</b><span>${esc(p.does)}${p.note ? ` (${esc(p.note)})` : ""}</span></button></li>`).join("")}</ol></div>`;
+      blueprint.load(x);
+    },
+  };
+  let instKeyShown = null;
+
   PANELS.medical = {
     mount(root) {
       root.innerHTML = `<h2 id="medTitle"></h2><p class="lede">Today's values against this person's own range from ${PREFLIGHT} pre-flight days. The shaded band is that range; the lighter strip at the left is pre-flight.</p>
-        <div id="medList">${METRICS.map((m) => `<div class="metric" data-m="${m.key}"><span class="name">${m.name} <span class="src">${m.src}</span></span><span class="val"></span><span class="state"></span><div class="chart"></div></div>`).join("")}</div>
+        <p class="src">How often does a 14-day personal range flag a healthy day? Checked on 49 real people's sleep diaries: about 7 to 8% of single days fall outside it, but three days in a row outside happens on under 1% of days. So one day outside is only "keep an eye on it"; repeated days are what escalate (exploratory study, docs/STUDIES_RESULTS.md).</p>
+        <p class="src">Could machine learning predict tomorrow better than your own average? We trained ridge regression and gradient-boosted trees on 48 people and tested on the 49th, for all 49. Neither beat the person's own running average (within about 1% to 3%, not consistent), so the range stays centred on your own average (exploratory study 5, docs/STUDIES_RESULTS.md).</p>
+        <div id="medList">${METRICS.map((m) => `<div class="metric" data-m="${m.key}"><span class="name">${m.name}</span><span class="val"></span><span class="state"></span><div class="chart"></div></div>`).join("")}</div>
         <p class="src">Sleep values are a real person's diary (Baigutanova et al. 2025, CC BY). Heart rate and HRV: levels, spreads and day-to-day correlation from the same dataset; series simulated. Temperature rise in flight from Stahn et al. 2017. Not a medical device.</p>`;
     },
     update() {
@@ -491,12 +663,12 @@ async function boot() {
     },
     update() {
       const i = idx(), e = H.env;
-      $("#airK").innerHTML = kpi("CO2 now", e.co2[i].toFixed(1), "mmHg", e.co2[i] > 3 ? "Above the 3 mmHg nominal limit" : "Within the nominal limit", e.co2[i] > 3)
-        + kpi("7-day average", e.co2_7d[i].toFixed(2), "mmHg", e.co2_7d[i] > 2.5 ? "Above the 2.5 mmHg headache guidance" : "Under the 2.5 mmHg guidance", e.co2_7d[i] > 2.5)
-        + kpi("Headache risk", (e.headache[i] * 100).toFixed(1), "%", "Per crew member, from the 7-day average", e.headache[i] > 0.01)
-        + kpi("Peak 1-hour CO2", e.peak1h[i].toFixed(1), "mmHg", e.peak1h[i] > 3 ? "Above the 3 mmHg limit for part of the day" : "Under the 3 mmHg limit all day", e.peak1h[i] > 3)
-        + kpi("Temperature", e.temp[i].toFixed(1), "°C", "Range 18 to 27 °C", false)
-        + kpi("Humidity", e.rh[i].toFixed(0), "%", "Range 25 to 75%", false);
+      $("#airK").innerHTML = kpi("CO2 now", e.co2[i].toFixed(1), "mmHg", e.co2[i] > 3 ? "Above 3 mmHg limit" : "Under 3 mmHg limit", e.co2[i] > 3)
+        + kpi("7-day average", e.co2_7d[i].toFixed(2), "mmHg", e.co2_7d[i] > 2.5 ? "Above 2.5 guidance" : "Under 2.5 guidance", e.co2_7d[i] > 2.5)
+        + kpi("Headache risk", (e.headache[i] * 100).toFixed(1), "%", "Per crew member", e.headache[i] > 0.01)
+        + kpi("Peak 1-hour CO2", e.peak1h[i].toFixed(1), "mmHg", e.peak1h[i] > 3 ? "Above limit today" : "Under limit all day", e.peak1h[i] > 3)
+        + kpi("Temperature", e.temp[i].toFixed(1), "°C", "18 to 27 °C", false)
+        + kpi("Humidity", e.rh[i].toFixed(0), "%", "25 to 75%", false);
       $("#airChart").innerHTML = lineWithRefs(e.co2, { upTo: i, window: 90, unit: "mmHg", refs: [{ y: 3, label: "3.0 nominal limit", color: "#ef6a5c" }, { y: 2.5, label: "2.5 headache guidance (7-day)", color: "#e0b25a" }], minY: 1.5 });
     },
   };
@@ -540,12 +712,13 @@ async function boot() {
       $("#bwTitle").textContent = `Bloodwork: crew ${"ABCD"[k]} (Inspiration4 ${b.id})`;
       const flags = bloodFlags(k);
       const total = BLOOD.panels.reduce((n, p) => n + p.analytes.length, 0);
-      $("#bwK").innerHTML = kpi("Draws", BLOOD.timepoints.length, "", "3 before launch, 4 after landing", false)
+      $("#bwK").innerHTML = kpi("Draws", BLOOD.timepoints.length, "", "3 before, 4 after flight", false)
         + kpi("Changed at landing", flags.length, `of ${total}`, flags.length ? flags.map((a) => a.label).join(", ") : "Nothing beyond normal variation or lab range", flags.length > 0);
       const labels = BLOOD.timepoints.map((t) => t.replace("L-", "−").replace("R+", "+"));
       for (const p of BLOOD.panels) for (const a of p.analytes) {
         const row = $(`[data-b="${a.key}"]`), st = bloodState(k, a);
-        row.querySelector(".val").innerHTML = st.ret == null ? "–" : `${st.ret} <small>${esc(a.unit)}</small>`;
+        const dec = Math.max(...st.vals.filter((v) => v != null).map((v) => (String(v).split(".")[1] || "").length));
+        row.querySelector(".val").innerHTML = st.ret == null ? "–" : `${st.ret.toFixed(Math.min(2, dec))} <small>${esc(a.unit)}</small>`;
         const s = row.querySelector(".state");
         s.textContent = st.text;
         s.className = `state ${st.cls}`;
@@ -560,20 +733,28 @@ async function boot() {
       root.innerHTML = `<h2>Radiation</h2><p class="lede">Measured radiation inside the ISS, from a detector in the Columbus module. Each mission day replays a real measured day. The globe shows where in orbit the dose comes from.</p>
         <div class="kpis" id="radK"></div>
         <h3 id="radH">Daily dose</h3><div class="charts" id="radChart"></div>
-        <h3>Where it comes from</h3>
-        <p>Over these ${radDaily.length} days the station spent about ${Math.round(RAD.saa.minutes_per_day)} minutes a day in the South Atlantic Anomaly, where Earth's inner radiation belt dips low over South America, and collected ${Math.round(RAD.saa.share * 100)}% of its dose there. The rest is mostly galactic cosmic rays and outer-belt particles at high latitudes. The marker on the globe flies the real track of ${esc(RAD.track_date)}.</p>
+        ${SPACEWX ? (() => {
+          const c = SPACEWX.comparison;
+          return `<details class="fold"><summary>Space weather: did solar storms raise the dose? (NASA DONKI)</summary>
+          <p>NASA's space-weather database logged ${SPACEWX.events.filter((e) => e.type === "SEP").length} days of solar energetic particle events and ${SPACEWX.events.filter((e) => e.type === "GST").length} geomagnetic storms while these readings were taken. On those days and the day after, the dose inside Columbus did not rise: <b>${c.sep.mean}</b> µGy/day on particle-event days and <b>${c.gst.mean}</b> on storm days, against <b>${c.quiet.mean}</b> on quiet days (day-to-day spread ${c.quiet.sd}).</p>
+          <p>Earth's magnetic field turns most of these particles away from low orbit. Beyond it, on the way to the Moon or Mars, the same events are the main short-term radiation danger, which is why deep-space crews need storm shelters and warnings.</p>
+          <ul class="wx">${SPACEWX.events.map((e) => `<li><span class="lvl ${e.type === "SEP" ? "lvl-watch" : "lvl-ok"}">${e.type === "SEP" ? "Particles" : "Storm"}</span> ${esc(e.date)}: <a href="${esc(e.link)}" target="_blank" rel="noopener">${esc(e.label)}</a></li>`).join("")}</ul>
+          <p class="src">${esc(SPACEWX.source)}. Comparison: daily DOSTEL-1 dose, ${c.sep.days} particle-event days, ${c.gst.days} storm days, ${c.quiet.days} quiet days. A small sample of moderate events; a large solar storm can raise low-orbit dose.</p></details>`;
+        })() : ""}
+        <p class="src"><b>Where it comes from.</b> Over these ${radDaily.length} days the station spent about ${Math.round(RAD.saa.minutes_per_day)} minutes a day in the South Atlantic Anomaly, where Earth's inner radiation belt dips low over South America, and collected ${Math.round(RAD.saa.share * 100)}% of its dose there. The rest is mostly galactic cosmic rays and outer-belt particles at high latitudes. The marker on the globe flies the real track of ${esc(RAD.track_date)}.</p>
         <h3>By module (same detector type, Dec 2019)</h3><div class="bars" id="radMods">${(() => { const mx = Math.max(...RAD.modules.map((m) => m.dose)); return RAD.modules.map((m) => `<div class="row"><span>${esc(m.module)}</span><span class="track"><span class="fill ok" style="width:${((m.dose / mx) * 100).toFixed(1)}%;background:#6fa8f5"></span></span><span class="v">${Math.round(m.dose)} µGy/day</span></div>`).join(""); })()}</div>
         <p class="src">${esc(RAD.modules_source)} The most exposed module received about ${(RAD.modules[RAD.modules.length - 1].dose / RAD.modules[0].dose).toFixed(1)} times the dose of the least, a difference shielding and where crew sleep can use. Detectors sit at fixed spots, so this is the dose at that spot, not the whole module.</p>
         <div class="legend"><span>Dose rate</span><i style="background:linear-gradient(90deg,#5a9ef2,#80d1b8,#f0c259,#f06b5c)"></i><span>2 to 300+ µGy/h</span></div>
-        <p class="src">${esc(RAD.source)} Daily dose: time-weighted average rate on days with at least 20 hours of readings (${radDaily.length} days, ${esc(radDates[0])} to ${esc(radDates[radDates.length - 1])}); median ${Math.round(median)} µGy a day, in line with DLR's published 250 to 290 µGy a day for this detector. This is absorbed dose in a silicon detector. NASA's career limit (600 mSv) is set in effective dose, a different quantity that accounts for radiation type and the body's own shielding, so the two are not compared here.</p>`;
+        <p class="src">${esc(RAD.source)} Daily dose: time-weighted average rate on days with at least 20 hours of readings (${radDaily.length} days, ${esc(radDates[0])} to ${esc(radDates[radDates.length - 1])}); median ${Math.round(median)} µGy a day, in line with DLR's published 250 to 290 µGy a day for this detector. This is absorbed dose in a silicon detector. NASA's career limit (600 mSv) is set in effective dose, a different quantity that accounts for radiation type and the body's own shielding, so the two are not compared here.</p>
+        <p class="src"><b>What these detectors miss.</b> DOSTEL uses silicon detectors, which measure charged particles. Neutrons make up about 30% of total radiation on the ISS (Canadian Space Agency, 2026) and are largely missed here, so the true exposure is higher than shown. The CSA is developing CANS, an autonomous neutron spectrometer, to measure them continuously.</p>`;
     },
     update() {
       const d = today(), rate = radiation.rateAt();
-      $("#radH").textContent = `Daily dose, last 60 days (today replays ${radDates[radDay(d)]})`;
-      $("#radK").innerHTML = kpi("Today", Math.round(radToday()), "µGy", `Average day: ${Math.round(radMean)} µGy`, false)
-        + kpi("Mission so far", (radTotal() / 1000).toFixed(1), "mGy", `${d + 1} days, absorbed`, false)
-        + kpi("Rate now", rate.toFixed(1), "µGy/h", rate > 20 ? "Inside a high-dose region" : "Quiet part of the orbit", rate > 20)
-        + kpi("180-day mission", ((radMean * 180) / 1000).toFixed(0), "mGy", "At the measured average rate", false);
+      $("#radH").textContent = `Daily dose, 60 days`;
+      $("#radK").innerHTML = kpi("Today", Math.round(radToday()), "µGy", `Typical ${Math.round(radMean)}`, false)
+        + kpi("Mission so far", (radTotal() / 1000).toFixed(1), "mGy", `over ${d + 1} day${d ? "s" : ""}`, false)
+        + kpi("Rate now", rate.toFixed(1), "µGy/h", rate > 20 ? "High-dose region" : "Quiet orbit", rate > 20)
+        + kpi("180-day mission", ((radMean * 180) / 1000).toFixed(0), "mGy", "Projected", false);
       $("#radChart").innerHTML = bars(radSeries, { upTo: d, window: 60, unit: "µGy" });
     },
   };
@@ -869,6 +1050,43 @@ async function boot() {
       ${E.mission.real ? `<p class="src">The day-to-day ups and downs were one real person's sleep diary; only the hidden change was added.</p>` : ""}`;
     if (right) celebrate();
   }
+  // One-click demonstration of the signature feature: randomize a crew experiment on the board,
+  // lock the plan, then run 56 days at 10 days a second while the evidence chamber settles.
+  let demoRunning = false;
+  async function runDemoExperiment() {
+    if (demoRunning) return;
+    demoRunning = true;
+    const wait = (ms) => new Promise((r) => setTimeout(r, reduced ? 30 : ms));
+    const act = (a) => { const el = document.querySelector(`#inspector [data-act="${a}"]`); if (el && !el.disabled) { el.click(); return true; } return false; };
+    try {
+      S.playing = false;
+      if (E.mission || E.started || E.done) newExperiment(false);
+      E.crewMode = true;
+      // A demonstration needs a visible answer: set the true change to three times the smallest
+      // worthwhile change, where the power chart gives about a 95% chance of a clear verdict.
+      // The setup screen shows this; real tests use a hidden truth and often say "not settled".
+      E.mode = "practice";
+      E.practiceMult = 3;
+      syncDays();
+      showTab("experiments");
+      goStep(1);
+      await wait(900);
+      act("toRandomize");
+      await wait(700);
+      act("randomize");
+      for (let k = 0; k < 80 && E.randomizing; k++) await wait(150);
+      await wait(600);
+      act("lock");
+      await wait(500);
+      act("toRun");
+      await wait(500);
+      act("start");
+      const fast = document.querySelector('#timeline [data-v="10"]');
+      if (fast) fast.click(); else S.speed = 10; // the button keeps the speed control in sync
+      S.playing = true;
+      refresh();
+    } finally { demoRunning = false; }
+  }
   function newExperiment(keep) {
     Object.assign(E, { mission: null, crew: null, locked: false, started: false, done: false, startDay: null, day: 0, history: [], last: null });
     lastProbsDay = -1;
@@ -945,7 +1163,7 @@ async function boot() {
   const tl = $("#timeline");
   tl.innerHTML = `<div class="crew"><span>Crew</span>${[0, 1, 2, 3].map((k) => `<button type="button" data-crew="${k}" aria-label="Crew ${"ABCD"[k]}">${"ABCD"[k]}</button>`).join("")}</div>
     <button type="button" class="play" id="tlPlay">Play</button>
-    ${seg("tlSpeed", [["0.0417", "1 h/s"], ["0.25", "¼ day/s"], ["1", "1 day/s"], ["4", "4 days/s"], ["10", "10 days/s"]], S.speed)}
+    ${seg("tlSpeed", [["0.0417", "1 hour/s"], ["1", "1 day/s"], ["10", "10 days/s"]], S.speed)}
     <div class="track" id="tlTrack"><div class="done"></div><div class="exp" hidden></div><div class="head"></div></div>
     <button type="button" class="next" id="tlNext"></button>
     <div class="label" id="tlLabel"></div>`;
@@ -1008,8 +1226,51 @@ async function boot() {
   }
 
   const statusEl = $("#status");
+  const hud = createHud({ host: $("#app") });
+  // Body callout: names the selected part right on the 3D figure, with a line to it.
+  const callout = document.createElement("div");
+  callout.className = "body-callout";
+  callout.hidden = true;
+  callout.setAttribute("aria-hidden", "true");
+  callout.innerHTML = `<svg class="bc-line"><line x1="0" y1="0" x2="0" y2="0"/><circle r="5"/></svg><div class="bc-tag"><b></b><span></span></div>`;
+  $("#app").appendChild(callout);
+  const bcV = new THREE.Vector3();
+  let bcKey = null;
+  function updateCallout() {
+    const key = S.tab === "body" && rig.current === "body" ? body.selected : null;
+    if (!key || !body.partCenter(key, bcV)) { callout.hidden = true; return; }
+    bcV.project(camera);
+    const r = renderer.domElement.getBoundingClientRect();
+    const x = ((bcV.x + 1) / 2) * r.width + r.left, y = ((1 - bcV.y) / 2) * r.height + r.top;
+    if (bcV.z > 1 || x < 0 || y < 0) { callout.hidden = true; return; }
+    callout.hidden = false;
+    if (bcKey !== key + S.crewSel) {
+      bcKey = key + S.crewSel;
+      const part = BODY_PARTS.find((p) => p.key === key);
+      const tier = bodyStatusMap(S.crewSel)[key];
+      callout.querySelector("b").textContent = part ? part.name : key;
+      callout.querySelector("span").textContent = tier === "none" ? "Not measured today" : (LEVELS[tier] || {}).label || "";
+      callout.dataset.tier = tier;
+    }
+    const tx = x + 150, ty = y - 70; // the tag sits up and to the right of the part
+    const line = callout.querySelector("line"), dot = callout.querySelector("circle");
+    line.setAttribute("x1", x); line.setAttribute("y1", y); line.setAttribute("x2", tx); line.setAttribute("y2", ty + 14);
+    dot.setAttribute("cx", x); dot.setAttribute("cy", y);
+    callout.querySelector(".bc-tag").style.transform = `translate(${tx}px, ${ty}px)`;
+  }
+  function renderHud() {
+    const k = S.crewSel, i = idx(), c = H.crew[k];
+    hud.update({
+      day: today(), days: H.days, time: clockText(hourNow()), crew: c.id,
+      hr: c.hr[i], temp: c.temp[i], sleep: c.sleepDuration[i],
+      co2: H.env.co2[i], co2Over: H.env.co2[i] > AIR_LIMITS.co2_1h_mmHg,
+      dose: radToday(), mission: radTotal() / 1000,
+      watch: dayFindings(k).length, logged: loggedToday(k, i),
+    });
+  }
   function renderStatus() {
-    statusEl.innerHTML = `<span>${esc(S.destLabel)}</span><span>Crew <b>${"ABCD"[S.crewSel]}</b></span><span>Day <b>${today()}</b>, ${clockText(hourNow())}</span>`;
+    renderHud();
+    statusEl.innerHTML = `<span class="dest">${esc(S.destLabel)}</span><span>Crew <b>${"ABCD"[S.crewSel]}</b></span><span>Day <b>${today()}</b>, ${clockText(hourNow())}</span>`;
   }
 
   // ---------------- clock ----------------
@@ -1037,6 +1298,7 @@ async function boot() {
 
   // ---------------- navigation: station dots, edge arrows, keys ----------------
   const nav = createNav({
+    canvas: renderer.domElement,
     root: $("#nav"), camera, home: "overview", getCurrent: () => rig.current, goTo: goView,
     blocked: () => tour.active(), // the guided tour owns Escape and the arrows while it is open
     // Clockwise round the hub from the galley (back left) to the evidence chamber by the airlock;
@@ -1064,9 +1326,24 @@ async function boot() {
   }
 
   // ---------------- guided tour ----------------
-  const tour = createTour({ host: $("#app"), show: (st) => { S.playing = false; if (st.body) { S.bodyPart = st.body; body.select(st.body); } showTab(st.tab); } });
+  // Tour steps can walk through every body part (cycle), one at a time with the callout on it.
+  let tourCycle = null;
+  const tour = createTour({ host: $("#app"), show: (st) => {
+    S.playing = false;
+    clearInterval(tourCycle);
+    if (st.body) { S.bodyPart = st.body; body.select(st.body); }
+    showTab(st.tab);
+    if (st.cycle) {
+      let i = 0;
+      const step = () => { S.bodyPart = st.cycle[i % st.cycle.length]; body.select(S.bodyPart); bodyKey = null; refresh(); i++; };
+      step();
+      tourCycle = setInterval(() => { if (!tour.active() || S.tab !== "body") { clearInterval(tourCycle); return; } step(); }, 2200);
+    }
+  } });
+  function startQuick() { tour.start(() => { try { localStorage.setItem("sollab.toured", "1"); } catch { /* fine */ } }, QUICK); }
   function startTour() { tour.start(() => { patches.award("briefed"); try { localStorage.setItem("sollab.toured", "1"); } catch { /* fine */ } }); }
-  $("#tourBtn").addEventListener("click", startTour);
+  $("#aboutBtn").addEventListener("click", () => $("#aboutDlg").showModal());
+  $("#aboutTour").addEventListener("click", () => { $("#aboutDlg").close(); startTour(); });
 
   // ---------------- start ----------------
   evidence.setRange({ delta: E.delta, sd: outcome().sd });
@@ -1077,16 +1354,21 @@ async function boot() {
   showTab("overview");
   renderTimeline();
   renderStatus();
+  // Fade the loading screen out, then remove it outright: in a background or throttled tab the
+  // fade can stall and leave it covering the app.
   setTimeout(() => $("#loading").classList.add("gone"), 200);
+  setTimeout(() => ($("#loading").hidden = true), 1100);
   // First visit (or ?tour=1): open the guided tour once the scene is up.
   {
     const q = new URLSearchParams(location.search);
     let toured = false;
     try { toured = localStorage.getItem("sollab.toured") === "1"; } catch { /* treat as new */ }
-    if (q.get("tour") === "1" || (!toured && !q.has("auto"))) setTimeout(startTour, 900);
+    if (q.get("tour") === "1") setTimeout(startTour, 900);
+    else if (!toured && !q.has("auto")) setTimeout(startQuick, 900);
   }
 
   // ---------------- loop ----------------
+  let dprChecked = false;
   let lastDay = today(), simT = 0, prevTs = null, fpsT = 0, fpsN = 0, lowered = false, uiT = 0;
   function frame(ts) {
     const dt = prevTs == null ? 0 : Math.min((ts - prevTs) / 1000, 0.1);
@@ -1095,6 +1377,7 @@ async function boot() {
     requestAnimationFrame(frame);
   }
   function tick(dt, draw) {
+    const cpu0 = performance.now();
     simT += dt;
     if (S.playing) {
       S.met = Math.min(H.days - 1, S.met + dt * S.speed);
@@ -1121,6 +1404,7 @@ async function boot() {
     galley.update(dt, { id: c.id, day: d, meal: c.meals[i] });
     radiation.update(dt, { today: radToday(), total: radTotal() });
     body.update(dt, reduced);
+    blueprint.render();
     maps.render({ simHours: S.simHours, day: d, env: { co2: H.env.co2[i], peak1h: H.env.peak1h[i], temp: H.env.temp[i], rh: H.env.rh[i], date: H.env.date[i] } });
     checkRoutine();
     clock.render();
@@ -1135,20 +1419,33 @@ async function boot() {
       if (m.userData.life <= 0) { scene.remove(m); m.geometry.dispose(); m.material.dispose(); confetti.splice(k, 1); }
     }
     uiT += dt;
-    if (uiT > 0.25) { uiT = 0; refresh(); }
+    if (uiT > 0.25) { uiT = 0; refreshIfChanged(); }
     rig.update();
     // Cutaway: the ceiling disappears as the camera rises through it to the overview.
     if (station) { const under = camera.position.y < CEIL; for (const o of station.ceiling) o.visible = under; }
     nav.update();
     atmosphere.update(dt, camera);
-    outside.tick(dt, renderer.getPixelRatio());
+    updateCallout();
+    outside.tick(dt, renderer.getPixelRatio(), reduced);
+    hud.setOverview(S.tab === "overview" && rig.current === "overview");
+    const cpu1 = performance.now();
     if (draw) R.render(dt);
+    // CPU cost per frame (update vs render), summed; scripts/perf.mjs resets and reads it
+    const cpu2 = performance.now();
+    const cm = (window.__solCpu = window.__solCpu || { update: 0, render: 0, n: 0, max: 0 });
+    cm.update += cpu1 - cpu0; cm.render += cpu2 - cpu1; cm.n++; cm.max = Math.max(cm.max, cpu2 - cpu0);
     fpsT += dt; fpsN++;
     if (fpsT > 3) {
       const fps = fpsN / fpsT;
       // Slow machine: drop ambient occlusion only. Resizing the canvas here used to blank the whole
       // screen for a frame, which showed up as a dark flicker right after long camera moves.
       if (fps < 32 && !lowered && R.gtao) { R.gtao.enabled = false; lowered = true; }
+      // Once, in the first seconds: a slow GPU (often a laptop with a high-density screen) drops
+      // to one pixel per CSS pixel. Done early so it cannot flicker in the middle of use.
+      if (!dprChecked && simT > 4) {
+        dprChecked = true;
+        if (fps < 40 && renderer.getPixelRatio() > 1) { renderer.setPixelRatio(1); R.composer.setPixelRatio(1); R.onResize(); }
+      }
       window.__solFps = fps;
       fpsT = 0; fpsN = 0;
     }
@@ -1176,6 +1473,14 @@ async function boot() {
         maps: () => { S.met = 60.3; showTab("maps"); },
         mapstation: () => { showTab("maps"); document.querySelector('[data-seg="mapMode"] [data-v="station"]').click(); },
         tour: () => startTour(),
+        quick: () => startQuick(),
+        tourbody: () => { startTour(); setTimeout(() => { document.querySelector('.tour [data-t="next"]').click(); document.querySelector('.tour [data-t="next"]').click(); }, 300); },
+        instruments: () => showTab("instruments"),
+        demo: () => { window.__solInstant = false; runDemoExperiment(); },
+        demoend: () => { window.__solInstant = false; runDemoExperiment(); },
+        // inst_<key>: open the Instruments tab on one device (for screenshots)
+        ...Object.fromEntries(INSTRUMENTS.map((x) => [`inst_${x.key}`, () => { instKey = x.key; showTab("instruments"); }])),
+        ...Object.fromEntries(INSTRUMENTS.map((x) => [`m3d_${x.key}`, () => { instKey = x.key; showTab("instruments"); setTimeout(() => document.querySelector('.blueprint [data-bp="three"]')?.click(), 2000); }])),
         mapsystems: () => { S.met = 60.3; showTab("maps"); document.querySelector('[data-seg="mapMode"] [data-v="systems"]').click(); },
         bloodwork: () => { S.crewSel = 1; showTab("bloodwork"); },
         radiation: () => { S.met = 60; refresh(); showTab("radiation"); },

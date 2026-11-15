@@ -1,0 +1,63 @@
+{
+  "source": "Baigutanova et al. 2025 sleep diaries",
+  "design": "leave-one-person-out; nights 8-28 scored",
+  "results": {
+    "sleep_duration": {
+      "people": 49,
+      "nights_scored": 1029,
+      "mae": {
+        "mean": 1.1055,
+        "last": 1.4804,
+        "ridge": 1.1135,
+        "gbm": 1.0696
+      },
+      "ridge_gain_vs_mean": -0.0072,
+      "ridge_minus_mean_mae_95ci_by_person": [
+        -0.0036,
+        0.0206
+      ],
+      "false_flag_rate_single_night": {
+        "mean": 0.0727,
+        "ridge": 0.0753
+      }
+    },
+    "sleep_efficiency": {
+      "people": 49,
+      "nights_scored": 1029,
+      "mae": {
+        "mean": 0.038,
+        "last": 0.0467,
+        "ridge": 0.0378,
+        "gbm": 0.0388
+      },
+      "ridge_gain_vs_mean": 0.0073,
+      "ridge_minus_mean_mae_95ci_by_person": [
+        -0.0012,
+        0.0006
+      ],
+      "false_flag_rate_single_night": {
+        "mean": 0.0982,
+        "ridge": 0.1237
+      }
+    },
+    "sleep_latency": {
+      "people": 49,
+      "nights_scored": 1029,
+      "mae": {
+        "mean": 0.3467,
+        "last": 0.4066,
+        "ridge": 0.3432,
+        "gbm": 0.3586
+      },
+      "ridge_gain_vs_mean": 0.0101,
+      "ridge_minus_mean_mae_95ci_by_person": [
+        -0.0148,
+        0.0059
+      ],
+      "false_flag_rate_single_night": {
+        "mean": 0.1097,
+        "ridge": 0.1301
+      }
+    }
+  }
+}

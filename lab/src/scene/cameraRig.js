@@ -1,6 +1,10 @@
 import * as THREE from "three";
 import gsap from "gsap";
 
+// Moves are timed by the clock, not by frames: on a slow machine (or software rendering) GSAP's
+// default lag smoothing stretched a 2-second glide into a minute.
+gsap.ticker.lagSmoothing(0);
+
 // Camera glides between stations with an ease-in-out move. Reduced motion: jumps instead of glides.
 // Drag to orbit (mouse, pen or one finger) and scroll or pinch to zoom. Each view orbits its `pivot`
 // (default: the point it looks at) within its own limits; going to another view eases the orbit
@@ -25,7 +29,8 @@ export function createCameraRig(camera, dom, views) {
     gsap.killTweensOf(pivot);
     gsap.killTweensOf(orbit);
     const pv = v.pivot || v.look;
-    if (reduced || duration === 0 || window.__solInstant) {
+    const broken = !Number.isFinite(basePos.x + basePos.y + basePos.z) || !Number.isFinite(target.x + target.y + target.z);
+    if (reduced || duration === 0 || window.__solInstant || broken) {
       basePos.copy(v.pos);
       target.copy(v.look);
       pivot.copy(pv);

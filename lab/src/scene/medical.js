@@ -19,11 +19,12 @@ export function buildMedical(mats) {
   bezel.castShadow = true;
   group.add(bezel);
   const canvas = document.createElement("canvas");
-  canvas.width = 1024; canvas.height = 680;
+  const RES = 1.5; // drawn at 1.5x for sharp text up close
+  canvas.width = 1024 * RES; canvas.height = 680 * RES;
   const ctx = canvas.getContext("2d");
   const tex = new THREE.CanvasTexture(canvas);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 8;
+  tex.anisotropy = 16;
   const screen = new THREE.Mesh(new THREE.PlaneGeometry(0.58, 0.385), new THREE.MeshBasicMaterial({ map: tex, toneMapped: false }));
   screen.position.set(0, 0.22, 0.061);
   group.add(screen);
@@ -65,54 +66,68 @@ export function buildMedical(mats) {
   name.position.set(0, 0.52, 0.03);
   group.add(name);
 
-  let pulseT = 0, last = null, acc = 0;
+  let pulseT = 0, last = null;
   function draw(info) {
-    const W = canvas.width, H = canvas.height;
-    ctx.fillStyle = "#0b131d"; ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = "#8fa3b8"; ctx.font = "600 30px Archivo, sans-serif";
-    ctx.fillText(`Crew ${info.id}   Mission day ${info.day}`, 36, 52);
+    ctx.setTransform(RES, 0, 0, RES, 0, 0);
+    ctx.fillStyle = "#0b131d"; ctx.fillRect(0, 0, 1024, 680);
+    ctx.fillStyle = "#8fa3b8"; ctx.font = "700 34px Archivo, sans-serif";
+    ctx.fillText(`Crew ${info.id}    Day ${info.day}`, 36, 54);
     const tile = (x, y, label, value, unit, color, note) => {
-      ctx.fillStyle = "#13202f"; ctx.fillRect(x, y, 300, 150);
-      ctx.fillStyle = "#8fa3b8"; ctx.font = "600 24px Archivo, sans-serif"; ctx.fillText(label, x + 18, y + 36);
-      ctx.fillStyle = color; ctx.font = "800 64px Archivo, sans-serif"; ctx.fillText(value, x + 18, y + 104);
-      ctx.fillStyle = "#8fa3b8"; ctx.font = "600 24px Archivo, sans-serif"; ctx.fillText(unit, x + 20 + ctx.measureText(value).width * 0 + 190, y + 104);
-      if (note) { ctx.fillStyle = "#c9a35a"; ctx.font = "600 20px Archivo, sans-serif"; ctx.fillText(note, x + 18, y + 136); }
+      ctx.fillStyle = note ? "#2a2416" : "#13202f"; ctx.fillRect(x, y, 300, 150);
+      ctx.fillStyle = "#a9b8c8"; ctx.font = "700 28px Archivo, sans-serif"; ctx.fillText(label, x + 18, y + 40);
+      ctx.fillStyle = note ? "#f0c27a" : color; ctx.font = "800 76px Archivo, sans-serif"; ctx.fillText(value, x + 18, y + 120);
+      const vw = ctx.measureText(value).width;
+      ctx.fillStyle = "#a9b8c8"; ctx.font = "700 28px Archivo, sans-serif"; ctx.fillText(unit, x + 28 + vw, y + 120);
     };
     tile(36, 80, "Heart rate", info.hr.toFixed(0), "bpm", "#7fd1b9", info.hrNote);
-    tile(358, 80, "HRV (RMSSD)", info.rmssd.toFixed(0), "ms", "#9cc4ff", info.rmssdNote);
-    tile(680, 80, "Core temp", info.temp.toFixed(1), "°C", "#f0c27a", info.tempNote);
-    tile(36, 250, "Slept", info.sleep.toFixed(1), "h", "#c7b8f2", info.sleepNote);
-    tile(358, 250, "Fell asleep in", info.latency.toFixed(0), "min", "#c7b8f2", "");
-    tile(680, 250, "Sleep efficiency", info.eff.toFixed(0), "%", "#c7b8f2", "");
-    // Illustrative pulse trace at the current heart rate.
-    ctx.strokeStyle = "#7fd1b9"; ctx.lineWidth = 3; ctx.beginPath();
-    const period = 60 / info.hr;
-    for (let x = 0; x <= W - 72; x += 3) {
-      const t = pulseT + x / 320;
-      const ph = (t % period) / period;
-      let y = 0;
-      if (ph < 0.06) y = Math.sin((ph / 0.06) * Math.PI) * 0.18;
-      else if (ph > 0.12 && ph < 0.16) y = -Math.sin(((ph - 0.12) / 0.04) * Math.PI) * 0.25;
-      else if (ph >= 0.16 && ph < 0.2) y = Math.sin(((ph - 0.16) / 0.04) * Math.PI) * 1.0;
-      else if (ph >= 0.2 && ph < 0.24) y = -Math.sin(((ph - 0.2) / 0.04) * Math.PI) * 0.35;
-      else if (ph > 0.4 && ph < 0.55) y = Math.sin(((ph - 0.4) / 0.15) * Math.PI) * 0.3;
-      const py = 520 - y * 90;
-      x ? ctx.lineTo(36 + x, py) : ctx.moveTo(36, py);
-    }
-    ctx.stroke();
-    ctx.fillStyle = "#5f7186"; ctx.font = "600 20px Archivo, sans-serif";
-    ctx.fillText("Pulse trace is illustrative, drawn at today's heart rate. Daily values: see Medical panel.", 36, 640);
+    tile(358, 80, "HRV", info.rmssd.toFixed(0), "ms", "#9cc4ff", info.rmssdNote);
+    tile(680, 80, "Temp", info.temp.toFixed(1), "°C", "#9cc4ff", "");
+    tile(36, 250, "Sleep", info.sleep.toFixed(1), "h", "#c7b8f2", info.sleepNote);
+    tile(358, 250, "To sleep", info.latency.toFixed(0), "min", "#c7b8f2", "");
+    tile(680, 250, "Efficiency", info.eff.toFixed(0), "%", "#c7b8f2", "");
     tex.needsUpdate = true;
   }
 
+  // Illustrative pulse trace: one heartbeat drawn once into a small repeating texture that
+  // scrolls across the screen, so the big screen is redrawn only when the day or crew changes
+  // (re-uploading it 12 times a second was the costliest thing the app did each frame).
+  const beat = document.createElement("canvas");
+  beat.width = 256; beat.height = 64;
+  const bx = beat.getContext("2d");
+  bx.strokeStyle = "#7fd1b9"; bx.lineWidth = 3; bx.beginPath();
+  for (let x = 0; x <= 256; x += 2) {
+    const ph = x / 256;
+    let y = 0;
+    if (ph < 0.06) y = Math.sin((ph / 0.06) * Math.PI) * 0.18;
+    else if (ph > 0.12 && ph < 0.16) y = -Math.sin(((ph - 0.12) / 0.04) * Math.PI) * 0.25;
+    else if (ph >= 0.16 && ph < 0.2) y = Math.sin(((ph - 0.16) / 0.04) * Math.PI) * 1.0;
+    else if (ph >= 0.2 && ph < 0.24) y = -Math.sin(((ph - 0.2) / 0.04) * Math.PI) * 0.35;
+    else if (ph > 0.4 && ph < 0.55) y = Math.sin(((ph - 0.4) / 0.15) * Math.PI) * 0.3;
+    const py = 40 - y * 30;
+    x ? bx.lineTo(x, py) : bx.moveTo(x, py);
+  }
+  bx.stroke();
+  const beatTex = new THREE.CanvasTexture(beat);
+  beatTex.colorSpace = THREE.SRGBColorSpace;
+  beatTex.wrapS = THREE.RepeatWrapping;
+  const strip = new THREE.Mesh(new THREE.PlaneGeometry(0.52, 0.065), new THREE.MeshBasicMaterial({ map: beatTex, transparent: true, toneMapped: false, depthWrite: false }));
+  strip.position.set(0, 0.118, 0.0615);
+  group.add(strip);
+  const SECONDS_SHOWN = 3;
+
+  let drawT = 1; // real seconds since the screen texture was last re-uploaded
   function update(dt, info) {
     if (!info) return;
     pulseT += dt;
     led.material.emissiveIntensity = 1.5 + 1.5 * Math.max(0, Math.sin((pulseT * info.hr) / 60 * Math.PI * 2));
-    acc += dt;
-    if (acc > 1 / 15 || info !== last) { acc = 0; last = info; draw(info); }
+    beatTex.repeat.x = (SECONDS_SHOWN * info.hr) / 60;
+    beatTex.offset.x = (pulseT * info.hr) / 60;
+    const key = `${info.id}|${info.day}|${info.hrNote}|${info.sleepNote}`;
+    drawT += dt;
+    if (key !== last && (drawT >= 0.5 || last === null || !last.startsWith(info.id + "|"))) { drawT = 0; last = key; draw(info); }
   }
   // Live-data parts stay visible when a loaded model replaces the built-in props.
   screen.userData.data = true;
+  strip.userData.data = true;
   return { group, update };
 }

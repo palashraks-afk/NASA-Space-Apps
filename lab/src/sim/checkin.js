@@ -39,7 +39,7 @@ export function buildCheckins(H, seed = 77) {
   // value for crew k, day index i, indicator key: { value, source: "you" | "model" | "simulated" }
   function get(k, i, key) {
     const own = store[k]?.[i]?.[key];
-    if (own) return { value: own, source: "you" };
+    if (own) return { value: own, source: own._src === "import" ? "imported" : "you" };
     const v = crew[k].sim[i]?.[key];
     if (!v) return null;
     return { value: v, source: key === "hr" || key === "temp" || key === "sleep" ? "model" : "simulated" };
