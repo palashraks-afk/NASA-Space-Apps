@@ -69,27 +69,26 @@ export function buildEvidence(mats) {
   const bandEdges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 2 * YS, 2 * ZS)), new THREE.LineBasicMaterial({ color: 0xc9d1d8, transparent: true, opacity: 0.25 }));
   group.add(bandEdges);
 
+  // Plates are riveted to the plinth's tapered flank (radius R+0.05 at the top edge to R+0.07 at the
+  // bottom, over 0.07 m): seat each one on the surface at its height and tilt it to the slope, so
+  // no corner sinks into the housing.
+  const TAPER = Math.atan(0.02 / 0.07);
+  const mountOnRing = (plate, th, y) => {
+    const rb = R + 0.06 + 0.003; // flank radius at the plate's centre, plus its seat
+    plate.rotation.order = "YXZ";
+    plate.position.set(rb * Math.sin(th), y, rb * Math.cos(th));
+    plate.rotation.set(-TAPER, th, 0);
+    group.add(plate);
+    return plate;
+  };
   const labels = [
     { text: "worse", x: -XS + 0.03 },
     { text: "too small to matter", x: 0 },
     { text: "better", x: XS - 0.03 },
   ].map((l, i) => {
-    const t = plateMesh(l.text, { w: i === 1 ? 0.17 : 0.095, h: 0.03 });
-    // follow the round plinth instead of floating flat in front of it
-    const rb = R + 0.06, th = Math.asin(THREE.MathUtils.clamp(l.x / rb, -0.95, 0.95));
-    t.position.set(rb * Math.sin(th), -HGT / 2 - 0.035, rb * Math.cos(th));
-    t.rotation.y = th;
-    group.add(t);
-    return t;
+    const th = Math.asin(THREE.MathUtils.clamp(l.x / (R + 0.063), -0.95, 0.95));
+    return mountOnRing(plateMesh(l.text, { w: i === 1 ? 0.17 : 0.095, h: 0.03 }), th, -HGT / 2 - 0.035);
   });
-  // Every plate is riveted to the plinth: the spread plate on the base's left flank, the name on the cap.
-  const mountOnRing = (plate, th, y) => {
-    const rb = R + 0.06;
-    plate.position.set(rb * Math.sin(th), y, rb * Math.cos(th));
-    plate.rotation.y = th;
-    group.add(plate);
-    return plate;
-  };
   const spreadLabel = mountOnRing(plateMesh("day-to-day spread", { w: 0.2, h: 0.03 }), -1.0, -HGT / 2 - 0.035);
   const nameTape = mountOnRing(plateMesh("Evidence chamber", { w: 0.2, h: 0.036 }), 0, HGT / 2 + 0.035);
 
