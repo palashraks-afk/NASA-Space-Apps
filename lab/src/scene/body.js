@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { gltfLoader } from "./gltf.js";
 
 // Clickable body figure: a holographic crew member floating above a projector pad.
 //
@@ -183,6 +184,85 @@ export function buildBody(mats) {
   const baseY = -0.56 - box.min.y * fit;
   figure.position.set(-mid.x * fit, baseY, -mid.z * fit);
 
+  // ---------- real anatomy ----------
+  // The hand-built figure above is only a fallback. The real body is BodyParts3D anatomy (DBCLS,
+  // CC BY 4.0) via open-anatomy-3d (CC BY 4.0): each structure is mapped to one of Sol Lab's body
+  // systems and merged into one mesh per system, so the figure costs about 10 draw calls.
+  const SYSTEM_OF = {};
+  const assign = (key, names) => names.forEach((n) => (SYSTEM_OF[n] = key));
+  assign("brain", ["brain", "brainstem", "cerebellum", "pituitary", "spinal_cord", "cranial_nerves"]);
+  assign("eyes", ["eye_l", "eye_r"]);
+  assign("heart", ["heart", "aorta", "coronary_arteries", "vena_cava_inferior", "vena_cava_superior", "carotid_l", "carotid_r"]);
+  assign("lungs", ["lung_l", "lung_r", "bronchi", "trachea", "larynx", "diaphragm"]);
+  assign("gut", ["liver", "stomach", "small_intestine", "colon", "appendix", "gallbladder", "pancreas", "esophagus", "kidney_l", "kidney_r", "adrenal_l", "adrenal_r", "ureter_l", "ureter_r", "bladder"]);
+  assign("muscles", ["quadriceps_l", "quadriceps_r", "hamstrings_l", "hamstrings_r", "calf_l", "calf_r", "back_muscles_l", "back_muscles_r"]);
+  assign("immune", ["spleen", "thymus"]);
+  const real = new THREE.Group();
+  real.visible = false;
+  group.add(real);
+  let realHeart = null;
+  const v3 = new THREE.Vector3(), n3 = new THREE.Vector3(), nm = new THREE.Matrix3();
+  function bake(list) { // merge meshes into one float geometry in model space
+    let nv = 0, ni = 0;
+    for (const m of list) { nv += m.geometry.attributes.position.count; ni += m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count; }
+    const pos = new Float32Array(nv * 3), nor = new Float32Array(nv * 3), idx = new Uint32Array(ni);
+    let ov = 0, oi = 0;
+    for (const m of list) {
+      const g = m.geometry, P = g.attributes.position, N = g.attributes.normal;
+      nm.getNormalMatrix(m.matrixWorld);
+      for (let i = 0; i < P.count; i++) {
+        v3.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld);
+        pos.set([v3.x, v3.y, v3.z], (ov + i) * 3);
+        if (N) { n3.fromBufferAttribute(N, i).applyMatrix3(nm).normalize(); nor.set([n3.x, n3.y, n3.z], (ov + i) * 3); }
+      }
+      if (g.index) for (let i = 0; i < g.index.count; i++) idx[oi + i] = g.index.getX(i) + ov;
+      else for (let i = 0; i < P.count; i++) idx[oi + i] = i + ov;
+      ov += P.count; oi += g.index ? g.index.count : P.count;
+    }
+    const out = new THREE.BufferGeometry();
+    out.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+    out.setAttribute("normal", new THREE.BufferAttribute(nor, 3));
+    out.setIndex(new THREE.BufferAttribute(idx, 1));
+    if (!list.every((m) => m.geometry.attributes.normal)) out.computeVertexNormals();
+    return out;
+  }
+  gltfLoader().load(`${import.meta.env.BASE_URL}models/anatomy/anatomy-male.glb`, (gltf) => {
+    const root = gltf.scene;
+    root.updateMatrixWorld(true);
+    const groups = {}, skinList = [];
+    root.traverse((o) => {
+      if (!o.isMesh) return;
+      const sys = o.parent && o.parent.name;
+      if (o.name === "skin" || sys === "skin") skinList.push(o);
+      else if (sys === "skeleton") (groups.bones ||= []).push(o);
+      else if (SYSTEM_OF[o.name]) (groups[SYSTEM_OF[o.name]] ||= []).push(o);
+    });
+    const holder = new THREE.Group();
+    if (skinList.length) { const sk = new THREE.Mesh(bake(skinList), skinMat); sk.renderOrder = 3; holder.add(sk); }
+    for (const [key, list] of Object.entries(groups)) {
+      const geo = bake(list);
+      geo.computeBoundingBox();
+      const c = geo.boundingBox.getCenter(new THREE.Vector3());
+      geo.translate(-c.x, -c.y, -c.z);
+      const mesh = new THREE.Mesh(geo, parts[key].material);
+      mesh.position.copy(c);
+      mesh.name = `part:${key}`;
+      mesh.renderOrder = 2;
+      holder.add(mesh);
+      parts[key].meshes = [mesh];
+      if (key === "heart") realHeart = mesh;
+    }
+    // Fit like the fallback figure: about 1.04 units tall, feet just above the pad, centred.
+    const box = new THREE.Box3().setFromObject(holder), size = box.getSize(new THREE.Vector3()), mid = box.getCenter(new THREE.Vector3());
+    const k = 1.04 / size.y;
+    holder.scale.setScalar(k);
+    holder.position.set(-mid.x * k, -0.56 - box.min.y * k, -mid.z * k);
+    real.add(holder);
+    real.visible = true;
+    figure.visible = false;
+    gltf.scene.traverse((o) => { if (o.geometry) o.geometry.dispose(); });
+  }, undefined, (err) => console.warn("Anatomy model not loaded; using the built-in figure.", err && err.message));
+
   let selected = null, t = 0;
   function setStatus(map) {
     for (const [key, p] of Object.entries(parts)) {
@@ -195,7 +275,7 @@ export function buildBody(mats) {
     if (!reduced) holoTime.value += dt;
     t += dt;
     if (!reduced) {
-      figure.rotation.y = Math.sin(t * 0.35) * 0.5;
+      figure.rotation.y = real.rotation.y = Math.sin(t * 0.35) * 0.5;
       figure.position.y = baseY + 0.012 * Math.sin(t * 0.8); // drifting, as a relaxed body does in orbit
     }
     for (const [key, p] of Object.entries(parts)) {
@@ -205,7 +285,7 @@ export function buildBody(mats) {
         if (mt.emissive) mt.emissiveIntensity = on ? 1.0 + (reduced ? 0 : 0.25 * Math.sin(t * 4)) : 0.5;
       }
     }
-    if (!reduced) heart.scale.setScalar(1 + 0.08 * Math.max(0, Math.sin(t * 7)));
+    if (!reduced) (realHeart || heart).scale.setScalar(1 + 0.05 * Math.max(0, Math.sin(t * 7)));
   }
   const shown = (o) => { for (; o; o = o.parent) if (!o.visible) return false; return true; };
   const pickables = () => Object.values(parts).flatMap((p) => p.meshes).filter(shown);

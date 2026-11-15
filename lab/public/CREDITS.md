@@ -19,3 +19,4 @@
 - Instrument specifications: Labrenz et al., J. Space Weather Space Clim. 5, A38 (2015), DOSTEL detector table; NASA technical reports NTRS 20000072884 and 20050210002 (CDRA), 20160010396 (Major Constituent Analyzer), 20150021957 (REM/Timepix), 20070011772, 20110012610 and 20100038357 (T2), 20060028227 (ARED); CERN Medipix (Timepix); Canadian Space Agency Bio-Monitor page; Pickering et al. 2005 and Whelton et al. 2017/2018 (blood pressure); Jubran 2015 and U.S. FDA (pulse oximetry); ISO 15197:2013 (glucose meters).
 - Space weather events: NASA DONKI (CCMC, NASA GSFC) via api.nasa.gov, 2022-01-01 to 2022-04-30 (lab/public/data/spaceweather.json).
 - Sol Lab logo: original mark by the team (docs/brand).
+- Anatomy: BodyParts3D © The Database Center for Life Science (CC BY 4.0), via open-anatomy-3d (github.com/MervinR07/open-anatomy-3d, CC BY 4.0); structures merged by body system and recoloured as a hologram by Sol Lab.

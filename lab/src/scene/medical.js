@@ -114,6 +114,7 @@ export function buildMedical(mats) {
   group.add(strip);
   const SECONDS_SHOWN = 3;
 
+  let drawT = 1; // real seconds since the screen texture was last re-uploaded
   function update(dt, info) {
     if (!info) return;
     pulseT += dt;
@@ -121,7 +122,8 @@ export function buildMedical(mats) {
     beatTex.repeat.x = (SECONDS_SHOWN * info.hr) / 60;
     beatTex.offset.x = (pulseT * info.hr) / 60;
     const key = `${info.id}|${info.day}|${info.hrNote}|${info.sleepNote}`;
-    if (key !== last) { last = key; draw(info); }
+    drawT += dt;
+    if (key !== last && (drawT >= 0.5 || last === null || !last.startsWith(info.id + "|"))) { drawT = 0; last = key; draw(info); }
   }
   // Live-data parts stay visible when a loaded model replaces the built-in props.
   screen.userData.data = true;

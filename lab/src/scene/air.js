@@ -126,8 +126,10 @@ export function buildAir(mats) {
 
   const warm = new THREE.Color(0xf0c27a), cool = new THREE.Color(0xdfe8f2), tmp = new THREE.Color();
   let lastEnv = null;
+  let drawT = 1; // real seconds since the screen texture was last re-uploaded
   function update(dt, env) {
-    if (env && (!lastEnv || env.day !== lastEnv.day)) { lastEnv = env; co2 = env.co2; draw(env); }
+    drawT += dt;
+    if (env && (!lastEnv || env.day !== lastEnv.day) && drawT >= 0.5) { drawT = 0; lastEnv = env; co2 = env.co2; draw(env); }
     const targetSpeed = 0.8 + 0.6 * Math.min(1, Math.max(0, (co2 - 2) / 1.8));
     fanSpeed += (targetSpeed - fanSpeed) * Math.min(1, dt);
     rotor.rotation.z -= dt * 14 * fanSpeed;

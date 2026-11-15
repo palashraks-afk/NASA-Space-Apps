@@ -50,7 +50,7 @@ Sol Lab follows the challenge's three steps: gather, evaluate, act.
 
 **The station**
 
-The app is a 3D ISS-style module with one station per topic: vitals, bloodwork, cabin air, radiation, galley, body clock, experiments, maps and instruments. A floating hologram of a crew member lights up each body system by status; click an organ to see its readings and what spaceflight does to it. The figure uses real body proportions and the relaxed posture NASA measured in astronauts in orbit. An "evidence chamber" shows the experiment's uncertainty as 1,600 moving points, each one a possible true effect. NASA's own 3D models (from NASA 3D Resources) appear in the scene: the ISS flies its real recorded track over the radiation globe, and a spacewalker drifts outside the window.
+The app is a 3D ISS-style module with one station per topic: vitals, bloodwork, cabin air, radiation, galley, body clock, experiments, maps and instruments. A floating hologram of a crew member lights up each body system by status; click an organ to see its readings and what spaceflight does to it. The figure is real anatomy from the BodyParts3D database (skeleton, organs, skin), shown as a hologram. An "evidence chamber" shows the experiment's uncertainty as 1,600 moving points, each one a possible true effect. NASA's own 3D models (from NASA 3D Resources) appear in the scene: the ISS flies its real recorded track over the radiation globe, and a spacewalker drifts outside the window.
 
 **Instruments**
 
@@ -143,7 +143,9 @@ If there is a text box:
 | Coskun et al., biological variation of blood counts | https://doi.org/10.1515/cclm-2019-0658 |
 | Forger, Jewett and Kronauer 1999, circadian model | https://doi.org/10.1177/074873099129000867 |
 | HCRSimPY circadian model code (Arcascope) | https://github.com/Arcascope/HCRSimPY |
-| Contini, Drillis and Bluestein 1963, body segment proportions | https://doi.org/10.1177/001872086300500508 |
+| BodyParts3D anatomy (DBCLS), CC BY 4.0 | https://dbarchive.biosciencedbc.jp/data/bodyparts3d/LATEST/ |
+| open-anatomy-3d models (CC BY 4.0) | https://github.com/MervinR07/open-anatomy-3d |
+| Contini, Drillis and Bluestein 1963, body segment proportions (fallback figure) | https://doi.org/10.1177/001872086300500508 |
 | Baigutanova et al. 2025, Scientific Data article | https://doi.org/10.1038/s41597-025-05801-3 |
 | html-to-image (MIT) | https://github.com/bubkoo/html-to-image |
 | Labrenz et al. 2015, Matroshka DOSTEL detector specifications | https://doi.org/10.1051/swsc/2015039 |

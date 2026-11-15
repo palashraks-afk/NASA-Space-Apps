@@ -106,8 +106,10 @@ export function buildGalley(mats) {
     bar(430, "Sodium", info.meal.sodium_mg, 2300);
     tex.needsUpdate = true;
   }
+  let drawT = 1; // real seconds since the screen texture was last re-uploaded
   function update(dt, info) {
-    if (info && (!last || info.day !== last.day || info.id !== last.id)) { last = info; draw(info); }
+    drawT += dt;
+    if (info && (!last || info.day !== last.day || info.id !== last.id) && (drawT >= 0.5 || !last || info.id !== last.id)) { drawT = 0; last = info; draw(info); }
     warmLight.material.emissiveIntensity = 2 + Math.sin(performance.now() / 600) * 0.6;
   }
   // Live-data parts stay visible when a loaded model replaces the built-in props.

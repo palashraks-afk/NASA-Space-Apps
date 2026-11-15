@@ -29,7 +29,7 @@ export function buildEvidence(mats) {
     group.add(ring);
   }
   const glass = new THREE.Mesh(new THREE.CylinderGeometry(R, R, HGT, 72, 1, true), new THREE.MeshPhysicalMaterial({
-    color: 0xffffff, roughness: 0.03, metalness: 0, transmission: 0.96, thickness: 0.01, ior: 1.45, transparent: true, side: THREE.DoubleSide, envMapIntensity: 1.4, depthWrite: false,
+    color: 0xdfeaff, roughness: 0.04, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.03, transparent: true, opacity: 0.1, side: THREE.DoubleSide, envMapIntensity: 1.6, depthWrite: false, // clear-coat glass: no transmission pass (that re-rendered the whole scene every frame)
   }));
   group.add(glass);
   const back = new THREE.Mesh(new THREE.CylinderGeometry(R - 0.012, R - 0.012, HGT, 64, 1, true, Math.PI / 2, Math.PI), new THREE.MeshStandardMaterial({ color: 0x0b0f14, roughness: 0.9, metalness: 0.1, side: THREE.DoubleSide }));

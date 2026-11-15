@@ -128,7 +128,7 @@ export function buildRadiation(mats, { earthDay, data }) {
   group.add(boxTag);
 
   const scv = document.createElement("canvas");
-  const RES = 2;
+  const RES = 1.25; // lighter texture upload; the screen is small on camera
   scv.width = 640 * RES; scv.height = 300 * RES;
   const sx = scv.getContext("2d");
   const stex = new THREE.CanvasTexture(scv);
@@ -156,6 +156,7 @@ export function buildRadiation(mats, { earthDay, data }) {
     stex.needsUpdate = true;
   }
 
+  let drawT = 1;
   function update(dt, next) {
     if (next) info = next;
     // About one orbit every 12 seconds along the real track.
@@ -179,7 +180,10 @@ export function buildRadiation(mats, { earthDay, data }) {
     rateColor(rate, marker.material.color);
     globe.rotation.y += dt * 0.05;
     led.material.color.copy(marker.material.color);
-    if (Math.floor(hours * 60) !== lastDraw) { lastDraw = Math.floor(hours * 60); draw(rate); }
+    // Redraw the screen at most twice a second: each redraw re-uploads a 1280x600 texture, and
+    // redrawing on every replayed minute (about 8 times a second) stalled the GPU every few frames.
+    drawT += dt;
+    if (drawT >= 0.5 && Math.floor(hours * 60) !== lastDraw) { drawT = 0; lastDraw = Math.floor(hours * 60); draw(rate); }
   }
   // Live-data parts stay visible when a loaded model replaces the built-in props.
   globe.userData.data = true;
