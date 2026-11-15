@@ -50,7 +50,11 @@ Sol Lab follows the challenge's three steps: gather, evaluate, act.
 
 **The station**
 
-The app is a 3D ISS-style module with one station per topic: vitals, bloodwork, cabin air, radiation, galley, body clock, experiments, maps and instruments. A floating hologram of a crew member lights up each body system by status; click an organ to see its readings and what spaceflight does to it. The figure uses real body proportions and the relaxed posture NASA measured in astronauts in orbit. An "evidence chamber" shows the experiment's uncertainty as 1,600 moving points, each one a possible true effect.
+The app is a 3D ISS-style module with one station per topic: vitals, bloodwork, cabin air, radiation, galley, body clock, experiments, maps and instruments. A floating hologram of a crew member lights up each body system by status; click an organ to see its readings and what spaceflight does to it. The figure uses real body proportions and the relaxed posture NASA measured in astronauts in orbit. An "evidence chamber" shows the experiment's uncertainty as 1,600 moving points, each one a possible true effect. NASA's own 3D models (from NASA 3D Resources) appear in the scene: the ISS flies its real recorded track over the radiation globe, and a spacewalker drifts outside the window.
+
+**Instruments**
+
+Ten instruments show the real hardware behind each reading, in exploded 3D views with a true-size scale bar: DOSTEL and the REM Timepix detector (radiation), the CO2 removal assembly and the Major Constituent Analyzer (air), the Bio-Monitor smart shirt, blood pressure cuff, pulse oximeter and glucose meter (vitals), and the T2 treadmill and ARED (exercise). Specifications come from NASA technical reports and published papers, each cited: for example DOSTEL's two silicon detectors (154 and 315 µm thick, 6.93 cm², 124° telescope), the CO2 assembly's 288-minute cycle and 115,000 to 120,000 RPM blower, and ARED's two 20.3 cm vacuum cylinders giving up to 272 kgf. Parts built to a published dimension are outlined in green.
 
 **Real data**
 
