@@ -54,7 +54,7 @@ for (const sc of process.argv.slice(2)) {
   await send("Page.navigate", { url: `http://localhost:5199/?auto=${sc}` });
   // wait for boot (the app exposes __sol when ready) and for the scripted steps to run
   for (let i = 0; i < 120; i++) { if (await evaluate("!!window.__sol")) break; await sleep(500); }
-  await sleep(2500 + (after[sc] ?? 0));
+  await sleep(2500 + (after[sc] ?? (sc.startsWith("m3d_") ? 7000 : 0)));
   const shot = await send("Page.captureScreenshot", { format: "png" });
   fs.writeFileSync(path.join(outDir, `C_${sc}.png`), Buffer.from(shot.result.data, "base64"));
   const fps = await evaluate("window.__solFps");

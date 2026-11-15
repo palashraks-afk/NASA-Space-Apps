@@ -1478,6 +1478,7 @@ async function boot() {
         demoend: () => { window.__solInstant = false; runDemoExperiment(); },
         // inst_<key>: open the Instruments tab on one device (for screenshots)
         ...Object.fromEntries(INSTRUMENTS.map((x) => [`inst_${x.key}`, () => { instKey = x.key; showTab("instruments"); }])),
+        ...Object.fromEntries(INSTRUMENTS.map((x) => [`m3d_${x.key}`, () => { instKey = x.key; showTab("instruments"); setTimeout(() => document.querySelector('.blueprint [data-bp="three"]')?.click(), 2000); }])),
         mapsystems: () => { S.met = 60.3; showTab("maps"); document.querySelector('[data-seg="mapMode"] [data-v="systems"]').click(); },
         bloodwork: () => { S.crewSel = 1; showTab("bloodwork"); },
         radiation: () => { S.met = 60; refresh(); showTab("radiation"); },

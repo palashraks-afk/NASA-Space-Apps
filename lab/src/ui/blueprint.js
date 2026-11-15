@@ -9,7 +9,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 // and draws a scale bar in real units. Parts built to a published dimension are outlined in green.
 // A slider pulls the parts apart along their own directions (exploded view). Labels are HTML.
 const INK = 0xe8f1ff, EXACT = 0x45ef74;
-const FIT = 0.26; // assemblies are scaled so their largest size is about this many scene units
+const FIT = 0.34; // assemblies are scaled so their largest size is about this many scene units
 
 function geometryFor(p) {
   const s = p.size;
@@ -161,8 +161,22 @@ export function createBlueprint({ host, onSelect = () => {} }) {
     inst.parts.forEach((p, idx) => {
       const g = new THREE.Group();
       const meshes = [];
-      const n = p.count || 1;
-      const geo = geometryFor(p);
+      if (p.build) {
+        // A hand-modelled part: its own materials (cloned so selecting one part does not dim
+        // another), no wireframe edges.
+        const sub = p.build();
+        if (p.scaleZ) sub.scale.z = p.scaleZ;
+        sub.traverse((o) => {
+          if (!o.isMesh) return;
+          o.material = o.material.clone();
+          o.material.userData.baseOpacity = o.material.transparent ? o.material.opacity : 1;
+          o.userData.part = idx;
+          meshes.push(o);
+        });
+        g.add(sub);
+      }
+      const n = p.build ? 0 : p.count || 1;
+      const geo = p.build ? null : geometryFor(p);
       for (let c = 0; c < n; c++) {
         const color = new THREE.Color(p.color || "#9cc4ff");
         // Solid, physically lit parts: grey and pale parts read as brushed metal, coloured ones as
@@ -254,7 +268,8 @@ export function createBlueprint({ host, onSelect = () => {} }) {
       p.label.element.classList.toggle("on", on);
       p.label.element.classList.toggle("dim", idx >= 0 && !on);
       for (const m of p.meshes) {
-        const base = ghost ? 0.14 : xray ? 0.45 : 1;
+        const own = m.material.userData.baseOpacity ?? 1;
+        const base = ghost ? Math.min(own, 0.3) : xray ? 0.45 : own;
         const op = idx < 0 ? base : on ? Math.max(base, 0.95) : xray ? 0.08 : ghost ? 0.06 : 0.25;
         m.material.opacity = op;
         m.material.transparent = op < 1;

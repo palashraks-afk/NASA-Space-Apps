@@ -10,6 +10,9 @@
 // "feeds": check-in indicator keys or app stations the readings go to.
 // "path": "import" (CSV or FHIR file), "dataset" (loaded from a public record), "reference".
 
+import { MODEL_PARTS } from "../ui/instModels.js";
+import "../ui/instModels2.js";
+
 const NTRS = (id) => `https://ntrs.nasa.gov/citations/${id}`;
 
 export const INSTRUMENTS = [
@@ -246,6 +249,9 @@ export const INSTRUMENTS = [
     ],
   },
 ];
+
+// The hand-modelled parts (instModels.js) replace the simple shape lists wherever they exist.
+for (const x of INSTRUMENTS) if (MODEL_PARTS[x.key]) x.parts = MODEL_PARTS[x.key];
 
 // ---------- universal import ----------
 // Any device that can export CSV or a FHIR bundle can feed the check-in. FHIR Observations
