@@ -51,3 +51,13 @@ Common shape across nearly all of them: self-report check-ins and/or simulated w
 **Conclusion:** concept-level novelty in "AI health-monitoring dashboard for astronauts" is now exhausted. None of the 15+ repos found use voice/speech biomarkers, keystroke dynamics, cabin-environment (CO2) driven cognitive-risk modeling, or 3D/WebGL visualization — these remain the open gaps as of this sweep. See `docs/design.md` for the resulting "ECHO" concept built on these specific gaps.
 
 **Standing caveat:** re-check again closer to submission — this field is growing fast.
+
+## Update 2026-11-14/15: rivals during the event
+
+GitHub search for public repos created since 2026-09-15 on this challenge found 60+ teams (most created Nov 13 to 15). Common pattern: daily check-in, traffic-light status, "AI-powered" triage, simulated vitals, offline-first.
+
+- **Closest: edmundzen/crew-health-ops (Team Cloud Catalyst, Singapore).** 3D astronaut with 5 clickable health sites, green/amber/red, guidance cards citing NASA sources, real NASA OSDR RadLab DOSTEL data (one day, 1 Mar 2022), 5 locations, 22-minute delay framing. So "3D + RadLab + hazards" is not unique.
+- **Abdriel369/Argonaut:** personal baselines plus four specialist models across three laptops; simulated data.
+- Others with "personal baseline" wording exist; several claim AI/ML risk prediction on simulated data.
+
+What no rival repo mentions (searches for n-of-1, self-experiment, randomized, crossover returned no relevant 2026 repos): crew-run randomized self-experiments with a validated Bayesian engine; pre-registered studies with failures reported; a measured false-flag rate on real diaries; a tested ML-vs-personal-average comparison; real ISS cabin air and Inspiration4 bloodwork alongside radiation. Lead the pitch with these, not with the 3D.

@@ -41,3 +41,15 @@ Question: the app compares each day with a usual range built from a person's fir
 | Time to fall asleep | 7 | 11.3% | 13 of 49 | 1.29% |
 
 Reading: a single day outside a 14-day personal range happens on about 7 to 8% of healthy days, above the nominal 5%, and a minority of people are much noisier. Shorter baselines are worse. Requiring three consecutive days outside cuts false escalations to under 1% of days for every measure. This is why the app shows a single day only as "keep an eye on it" and escalates to the flight surgeon for sleep, mood and exercise only after three days. Limits: exploratory (analysis choices made while looking at the data), sleep diaries only, 28-day records, no true changes to detect, so this measures false flags, not sensitivity.
+
+## Study 5 (exploratory, not pre-registered): does machine learning beat a person's own average?
+
+Question: the app centres each person's usual range on their own running average. Would a model learned from other people predict the next night better, and give a sharper range? Data: the same 49 people's sleep diaries (28 nights each). Training: leave one person out, train on the other 48, predict every night from night 8 on using only earlier nights; 1,029 nights scored per measure. Script: `lab/scripts/study_forecast.py`; output: `analysis/forecast_study.json`.
+
+| Measure | Own running average | Yesterday's value | Ridge regression | Gradient-boosted trees |
+|---|---|---|---|---|
+| Sleep duration (mean absolute error, h) | 1.106 | 1.480 | 1.114 | 1.070 |
+| Sleep efficiency | 0.0380 | 0.0467 | 0.0378 | 0.0388 |
+| Time to fall asleep | 0.347 | 0.407 | 0.343 | 0.359 |
+
+Reading: neither model reliably beats the person's own running average. Ridge is within about 1% everywhere, and a bootstrap over people puts the ridge-minus-average difference on both sides of zero for every measure. Boosted trees win by 3% on duration and lose on the other two, so we treat that as noise. Ranges centred on the ridge forecast flagged healthy nights more often (7.5 to 13.0%) than ranges centred on the average (7.3 to 11.0%). "Yesterday's value" is clearly worse. So we kept the simple personal average, and the app says why. Limits: exploratory, sleep only, short records, four simple features; a model with richer inputs (activity, light, workload) might do better.

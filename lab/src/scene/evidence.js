@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { cholesky } from "../engine/linalg.js";
+import { crnDraws } from "../engine/crn.js";
 import { mulberry32, normal } from "../engine/rng.js";
 import { tapeMesh } from "./textures.js";
 
@@ -133,22 +133,9 @@ export function buildEvidence(mats) {
   }
 
   function setPosterior(post, { snap = false } = {}) {
-    const comps = post.comps;
-    const chol = comps.map((c) => cholesky(c.Vn));
-    const cum = [];
-    comps.reduce((a, c, i) => (cum[i] = a + c.w), 0);
+    const draws = crnDraws(post, Z);
     for (let i = 0; i < N; i++) {
-      const [z1, z2, z3, z4, u] = Z[i];
-      let ci = cum.findIndex((c) => u <= c);
-      if (ci < 0) ci = comps.length - 1;
-      const c = comps[ci], L = chol[ci];
-      const k = c.an;
-      const wh = 1 - 1 / (9 * k) + z4 * Math.sqrt(1 / (9 * k));
-      const G = Math.max(1e-6, k * wh * wh * wh); // Wilson-Hilferty approximation to Gamma(k, 1)
-      const sd = Math.sqrt(c.bn / G);
-      const zz = [z1, z2, z3];
-      const b = c.mn.map((m, r) => m + sd * L[r].reduce((s, l, q) => s + l * zz[q], 0));
-      const eff = b[1], drift = b[2];
+      const { effect: eff, drift, sigma: sd } = draws[i];
       target[3 * i] = THREE.MathUtils.clamp(eff / range.eff, -1, 1) * XS;
       target[3 * i + 1] = -YS + THREE.MathUtils.clamp(sd / range.sig, 0, 1) * 2 * YS;
       target[3 * i + 2] = THREE.MathUtils.clamp(drift / range.drift, -1, 1) * ZS;

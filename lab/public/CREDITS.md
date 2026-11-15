@@ -10,5 +10,8 @@
 - Health limits and targets: NASA-STD-3001 Vol. 2 (cabin temperature and humidity); NASA nominal 1-hour CO2 limit of 3 mmHg; Law et al. 2014 (CO2 and headache on the ISS); NASA JSC-67378 (2020) nutrition requirements; Stahn et al. 2017 (core body temperature in flight).
 - Biological variation numbers used in research notes: Coskun et al., Clin Chem Lab Med 2018.
 - Circadian model: Forger, Jewett and Kronauer 1999 with Serkh and Forger 2014 parameters, as implemented in HCRSimPY (Arcascope).
-- Libraries: three.js (MIT), gsap (Standard "no charge" license), cannon-es (MIT), satellite.js (MIT), Archivo and Permanent Marker fonts (SIL Open Font License) via Fontsource.
+- Body figure: segment proportions after Contini, Drillis and Bluestein (Human Factors, 1963); weightless neutral body posture after NASA-STD-3000 and Kim, Young and Rajulu, "Neutral Body Posture in Spaceflight", NASA JSC 2019 (ntrs.nasa.gov/citations/20190032496). Angles approximate.
+- Neutron share of ISS radiation (about 30%): Canadian Space Agency, "Monitoring radiation for astronaut health", 2026.
+- Machine-learning comparison (study 5): NumPy and scikit-learn (BSD).
+- Libraries: three.js (MIT), gsap (Standard "no charge" license), cannon-es (MIT), satellite.js (MIT), html-to-image (MIT); Archivo, Barlow and Permanent Marker fonts via Fontsource.
 - Code written with Claude Code (AI) assistance, disclosed as the NASA Space Apps rules require.

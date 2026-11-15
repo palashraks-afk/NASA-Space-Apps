@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Sol Lab demo</title>
+<style>
+  @page { size: 1280px 720px; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #000; }
+  body { font-family: "Barlow", "Segoe UI", system-ui, sans-serif; color: #eef2f5; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .slide { width: 1280px; height: 720px; position: relative; overflow: hidden; page-break-after: always; break-after: page; padding: 56px 64px; background: radial-gradient(ellipse 80% 70% at 70% 40%, #0b1622 0%, #000 70%); }
+  .slide:last-child { page-break-after: auto; break-after: auto; }
+  .slide::before { content: ""; position: absolute; inset: 22px; border: 1px solid rgba(255, 255, 255, 0.08); pointer-events: none; }
+  .corner { position: absolute; width: 22px; height: 22px; border: 1px solid rgba(255, 255, 255, 0.55); }
+  .tl { left: 22px; top: 22px; border-right: 0; border-bottom: 0; } .br { right: 22px; bottom: 22px; border-left: 0; border-top: 0; }
+  .num { position: absolute; right: 64px; top: 50px; font-size: 13px; letter-spacing: 0.24em; color: #8d99a5; }
+  .kicker { font-size: 14px; letter-spacing: 0.28em; text-transform: uppercase; color: #39c6f4; margin: 0 0 14px; }
+  h1 { font-size: 92px; font-weight: 500; letter-spacing: 0.18em; margin: 0; text-transform: uppercase; }
+  h2 { font-size: 46px; font-weight: 500; line-height: 1.08; margin: 0 0 22px; max-width: 900px; }
+  p, li { font-size: 22px; line-height: 1.42; color: #c7d0d8; }
+  ul { padding-left: 22px; margin: 0; } li { margin: 0 0 10px; }
+  b, .g { color: #45ef74; font-weight: 500; }
+  .a { color: #f2b84b; } .r { color: #ff6b57; } .c { color: #39c6f4; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: start; }
+  .shot { width: 100%; border: 1px solid rgba(255, 255, 255, 0.25); display: block; }
+  .stat { font-size: 64px; font-weight: 300; color: #45ef74; line-height: 1; }
+  .statl { font-size: 15px; letter-spacing: 0.16em; text-transform: uppercase; color: #8d99a5; margin-top: 8px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; border: 1px solid rgba(255, 255, 255, 0.15); margin-top: 26px; }
+  .grid3 > div { padding: 22px 24px; border-right: 1px solid rgba(255, 255, 255, 0.15); }
+  .grid3 > div:last-child { border-right: 0; }
+  .grid3 h3 { margin: 0 0 8px; font-size: 15px; letter-spacing: 0.22em; text-transform: uppercase; color: #39c6f4; font-weight: 500; }
+  .grid3 p { font-size: 19px; margin: 0; }
+  .lvl { display: inline-block; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid; padding: 3px 9px; border-radius: 3px; margin-right: 8px; }
+  .small { font-size: 16px; color: #8d99a5; }
+  .foot { position: absolute; left: 64px; bottom: 46px; font-size: 15px; color: #8d99a5; letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+
+<section class="slide">
+  <span class="corner tl"></span><span class="corner br"></span><span class="num">01 / 07</span>
+  <div style="margin-top:120px">
+    <p class="kicker">NASA Space Apps 2026 · Create Health Monitoring Software for Astronauts on Space Missions</p>
+    <h1>Sol Lab</h1>
+    <p style="font-size:30px;margin-top:18px;color:#eef2f5">Health checks that know <b>your</b> normal.</p>
+  </div>
+  <div class="foot">Team <span class="c">{{TEAM_NAME}}</span> · {{MEMBERS}} · Local event: Temecula, CA</div>
+</section>
+
+<section class="slide">
+  <span class="corner tl"></span><span class="corner br"></span><span class="num">02 / 07</span>
+  <p class="kicker">The problem</p>
+  <h2>Far from Earth, astronauts have to judge their own health.</h2>
+  <div class="cols">
+    <ul>
+      <li>From Mars, a message to Earth takes up to <b>22 minutes</b> each way. No doctor on board.</li>
+      <li>Population "normal" ranges miss changes that are big for one person but ordinary for another.</li>
+      <li>Constant alarms wear crews out, and a lucky week can look like a cure.</li>
+    </ul>
+    <div>
+      <p class="small" style="letter-spacing:.18em;text-transform:uppercase;margin:0 0 10px">NASA's five hazards of human spaceflight</p>
+      <p style="font-size:24px;line-height:1.7;margin:0">Radiation<br>Isolation and confinement<br>Distance from Earth<br>Altered gravity<br>Hostile closed environment</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <span class="corner tl"></span><span class="corner br"></span><span class="num">03 / 07</span>
+  <p class="kicker">Gather and evaluate</p>
+  <div class="cols" style="grid-template-columns: 0.9fr 1.1fr">
+    <div>
+      <h2 style="font-size:40px">A two-minute daily check-in, judged against each person's own normal.</h2>
+      <p>Blood pressure, heart rate, blood sugar, temperature, sleep, mood, exercise. Typed in or imported from a device.</p>
+      <p><span class="lvl g">Within range</span><span class="lvl a">Keep an eye on it</span><br><span class="lvl r" style="margin-top:8px">Talk to the flight surgeon</span></p>
+      <p class="small">Every level says what to do next. One odd day is only "keep an eye on it".</p>
+    </div>
+    <img class="shot" src="checkin.png" alt="Check-in screen">
+  </div>
+</section>
+
+<section class="slide">
+  <span class="corner tl"></span><span class="corner br"></span><span class="num">04 / 07</span>
+  <p class="kicker">Inside the station</p>
+  <div class="cols" style="grid-template-columns: 1.1fr 0.9fr">
+    <img class="shot" src="body.png" alt="3D body hologram in the station">
+    <div>
+      <h2 style="font-size:40px">A 3D module with a body you can click.</h2>
+      <ul>
+        <li>Each organ lights up by status. Click it for today's readings and what spaceflight does to it.</li>
+        <li>Real body proportions, in the floating posture NASA measured in astronauts on the ISS.</li>
+        <li>Stations for vitals, bloodwork, air, radiation, food, body clock and experiments.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <span class="corner tl"></span><span class="corner br"></span><span class="num">05 / 07</span>
+  <p class="kicker">Built on NASA data</p>
+  <div class="cols" style="grid-template-columns: 1.1fr 0.9fr">
+    <img class="shot" src="radiation.png" alt="Radiation station with globe">
+    <div>
+      <ul>
+        <li><b>123,695</b> real ISS radiation readings (NASA OSDR RadLab, DLR DOSTEL). Over half the dose comes over the South Atlantic.</li>
+        <li><b>358 days</b> of ISS cabin CO2, temperature and humidity (NASA OSDR Environmental Data App).</li>
+        <li>Inspiration4 crew blood tests (NASA OSDR OSD-569, OSD-575).</li>
+        <li>Sleep diaries of 49 people; USDA food data; ISS orbit from CelesTrak.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide">
+  <span class="corner tl"></span><span class="corner br"></span><span class="num">06 / 07</span>
+  <p class="kicker">Act, and prove it works</p>
+  <h2>When something drifts, the crew runs a fair self-experiment.</h2>
+  <p style="max-width:1000px">Pick a change, lock the plan, let the schedule randomize the days. The answer can be "works", "backfires", "no difference" or "not settled yet".</p>
+  <div class="grid3">
+    <div><div class="stat">0.68%</div><div class="statl">Wrong calls on 49 real people's sleep records</div></div>
+    <div><div class="stat">&lt;1%</div><div class="statl">Healthy days flagged 3 days running</div></div>
+    <div><div class="stat">0</div><div class="statl">Gain from machine learning over your own average, so we kept it simple</div></div>
+  </div>
+  <p class="small" style="margin-top:16px">Study plans and pass/fail bars written down before running. Failures reported too.</p>
+</section>
+
+<section class="slide">
+  <span class="corner tl"></span><span class="corner br"></span><span class="num">07 / 07</span>
+  <p class="kicker">What's next</p>
+  <h2>From the ISS to the Moon, Mars, and anyone far from a doctor.</h2>
+  <div class="grid3">
+    <div><h3>Space</h3><p>Moon and Mars day lengths are built in. Next: real wearables and neutron dose data.</p></div>
+    <div><h3>Earth</h3><p>Polar and offshore crews, rural patients, people tracking a long-term condition at home.</p></div>
+    <div><h3>Try it</h3><p>Runs in any browser.<br><span class="c" style="font-size:16px">palashraks-afk.github.io/NASA-Space-Apps</span></p></div>
+  </div>
+  <p class="small" style="margin-top:22px">Not a medical device. Built with AI coding assistance (Claude Code), disclosed per the rules. Code: Apache 2.0.</p>
+</section>
+
+</body>
+</html>
