@@ -3,8 +3,9 @@ import "./theme-flight.css";
 import * as THREE from "three";
 import { createRenderer } from "./scene/renderer.js";
 import { makeMaterials } from "./scene/materials.js";
-import { buildModule, W, ZMAX } from "./scene/module.js";
-import { mergeStatic, atlasLabels } from "./scene/bake.js";
+import { CEIL, placeOnWall, faceCentre, buildViews, fitOverview as fitCutaway, anchor, buildFallbackHub, BODY, EVIDENCE } from "./scene/layout.js";
+import { loadStationModule, stationLights, dressStations, glazeScreens, texturizeMaterials, CABIN_EXPOSURE } from "./scene/station.js";
+import { buildAtmosphere } from "./scene/atmosphere.js";
 import { buildEvidence, priorAsPosterior } from "./scene/evidence.js";
 import { buildClock } from "./scene/clock.js";
 import { buildBoard } from "./scene/board.js";
@@ -67,35 +68,56 @@ async function boot() {
   const quality = { low: "low", ultra: "ultra" }[new URLSearchParams(location.search).get("q")] || "high";
   const R = createRenderer(stage, { quality, viewRect: () => document.getElementById("nav").getBoundingClientRect() });
   const { scene, camera, composer, renderer } = R;
-  // From outside the hatch end the closed hatch would block the view down the module, so a global
-  // clip plane slices the hatch end away while the camera is out there (no clipping otherwise).
-  // The cut sits 0.2 behind the hatch wall so its handle bar and posts (0.1 to 0.2 deep) go with it.
-  const HATCH_CUT = ZMAX - 0.2;
-  const hatchCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 1e4);
-  renderer.clippingPlanes = [hatchCut];
   const mats = makeMaterials();
   const loader = new THREE.TextureLoader();
   const loadTex = (u) => new Promise((res) => loader.load(u, (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; res(t); }, undefined, () => res(null)));
   const [earthDay, earthNight, moonT, marsT] = await Promise.all(["textures/earth_day.jpg", "textures/earth_night.jpg", "textures/moon.jpg", "textures/mars.jpg"].map((u) => loadTex(import.meta.env.BASE_URL + u)));
 
-  const moduleGroup = buildModule(mats);
-  const merged = mergeStatic(moduleGroup); // hundreds of static parts into a few draw calls
-  scene.add(moduleGroup);
+  // Blender-built, light-baked command hub with its reflection probe; a plain stand-in drum is the
+  // fallback if the files cannot be loaded.
+  loadingText.textContent = "Powering up the cabin lights";
+  const BASE = import.meta.env.BASE_URL;
+  const probeReady = R.loadProbe(BASE + "textures/hub_probe.hdr", CABIN_EXPOSURE);
+  let station = null;
+  try {
+    station = await loadStationModule({ base: BASE, renderer });
+    scene.add(station.group, stationLights());
+    texturizeMaterials(mats, station.sets);
+  } catch (err) {
+    console.warn(`Baked hub not loaded (${err.message}); using the stand-in.`);
+    scene.add(buildFallbackHub(mats));
+  }
+  await probeReady;
+  const atmosphere = buildAtmosphere();
+  scene.add(atmosphere.group);
   const outside = buildOutside({ earthDay, earthNight, moon: moonT, mars: marsT });
   scene.add(outside.group);
-  const place = (obj, x, y, z, ry) => { obj.group.position.set(x, y, z); obj.group.rotation.y = ry; scene.add(obj.group); return obj; };
-  const evidence = place(buildEvidence(mats), W - 0.44, -0.04, -1.9, -Math.PI / 2);
+  // Wall stations hang in their bays around the hub (layout.js); the body hologram stands on the
+  // centre pedestal and the evidence chamber on its plinth beside the airlock.
+  const onWall = (obj, name) => { placeOnWall(obj.group, name); scene.add(obj.group); return obj; };
+  const evidence = buildEvidence(mats);
+  evidence.group.position.copy(EVIDENCE.pos);
+  faceCentre(evidence.group);
+  const bracket = evidence.group.getObjectByName("bracket");
+  if (bracket) bracket.visible = false; // free-standing on its plinth now, no wall bracket
+  scene.add(evidence.group);
   evidence.setMotion(reduced);
-  const clock = place(buildClock(mats), W - 0.05, 0.08, 1.95, -Math.PI / 2);
-  const board = place(buildBoard(mats), -W + 0.07, 0.04, 0.55, Math.PI / 2);
-  const medical = place(buildMedical(mats), -W + 0.06, 0.05, -2.45, Math.PI / 2);
-  const galley = place(buildGalley(mats), -W + 0.06, 0.05, 2.8, Math.PI / 2);
-  const air = place(buildAir(mats), W - 0.06, 0.08, 3.7, -Math.PI / 2);
-  const radiation = place(buildRadiation(mats, { earthDay, data: RAD }), W - 0.06, 0.06, 0.05, -Math.PI / 2);
-  const body = place(buildBody(mats), -0.35, 0.0, -1.1, 0.5);
+  const clock = onWall(buildClock(mats), "clock");
+  const board = onWall(buildBoard(mats), "board");
+  const medical = onWall(buildMedical(mats), "medical");
+  const galley = onWall(buildGalley(mats), "galley");
+  const air = onWall(buildAir(mats), "air");
+  const radiation = onWall(buildRadiation(mats, { earthDay, data: RAD }), "radiation");
+  const body = buildBody(mats);
+  body.group.position.copy(BODY.pos);
+  body.group.rotation.y = 0.74;
+  scene.add(body.group);
 
-  // All printed labels into shared atlas pages: one draw call per page instead of one per label.
-  const labelCount = atlasLabels(scene);
+  if (station) {
+    dressStations([medical, air, galley, radiation], station.rackTemplate);
+    glazeScreens(scene);
+  }
+
   // Sharpest texture filtering the GPU offers, so labels and screens stay crisp at angles.
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
   scene.traverse((o) => { for (const mt of [].concat(o.material || [])) for (const key of ["map", "emissiveMap", "roughnessMap", "bumpMap"]) if (mt[key]) mt[key].anisotropy = maxAniso; });
@@ -110,19 +132,7 @@ async function boot() {
     .then((files) => { if (files.length) { console.info(`Loaded models: ${files.join(", ")}`); renderer.shadowMap.needsUpdate = true; } });
 
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
-  const views = {
-    // Parked just outside the hatch end so both walls, galley to air, fit in frame; see `hatchCut` in tick().
-    overview: { pos: V(0, 0.3, 7.2), look: V(0, -0.05, -2) },
-    window: { pos: V(0, -0.05, -3.05), look: V(0, -0.42, -6) },
-    board: { pos: V(0.9, -0.04, 0.55), look: V(-1.1, -0.2, 0.55) },
-    evidence: { pos: V(-0.9, 0.02, -1.9), look: V(W - 0.44, -0.18, -1.9) },
-    clock: { pos: V(-0.55, 0.02, 1.95), look: V(W, -0.12, 1.95) },
-    medical: { pos: V(0.3, 0.0, -2.45), look: V(-1.1, -0.06, -2.45) },
-    galley: { pos: V(0.3, 0.0, 2.8), look: V(-1.1, -0.06, 2.8) },
-    air: { pos: V(-0.3, 0.04, 3.7), look: V(1.1, 0.02, 3.7) },
-    radiation: { pos: V(-0.5, 0.08, 0.05), look: V(W, -0.02, 0.05) },
-    body: { pos: V(0.1, 0.1, 0.3), look: V(-0.35, -0.04, -1.1) },
-  };
+  const views = buildViews();
   const rig = createCameraRig(camera, renderer.domElement, views);
   const patchToast = document.createElement("div");
   patchToast.className = "toast patch-toast";
@@ -140,14 +150,9 @@ async function boot() {
   const blueprint = createBlueprint({ host: $("#app"), onSelect: (k) => document.querySelectorAll(".parts-ol [data-part]").forEach((b) => b.classList.toggle("on", +b.dataset.part === k)) });
   const maps = createMaps({ host: $("#app"), rad: RAD, iss, epoch: issEpoch, earthImg: earthDay && earthDay.image, onTab: (t) => showTab(t), onMode: (m) => patches.see("maps", m, ["earth", "station", "systems"], "navigator") });
   rig.setReduced(reduced);
-  // Park the overview camera just far enough back that the outermost modules (galley and air, near
-  // the hatch end, on the side walls) sit inside the frame at the stage's current shape.
+  // The overview is a cutaway from above; back it up until the whole drum fits the stage's shape.
   const fitOverview = () => {
-    const halfW = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect;
-    // A page opened in a hidden or zero-size window has no aspect yet; keep the default view
-    // until a real size arrives (a NaN here used to break every later camera move).
-    if (!Number.isFinite(halfW) || halfW <= 0) return;
-    views.overview.pos.z = THREE.MathUtils.clamp(3.7 + (W + 0.05) / (0.8 * halfW), 5.4, 8.5);
+    fitCutaway(views.overview, camera);
     if (rig.current === "overview") rig.go("overview", { duration: 0 });
   };
   fitOverview();
@@ -1296,17 +1301,12 @@ async function boot() {
     canvas: renderer.domElement,
     root: $("#nav"), camera, home: "overview", getCurrent: () => rig.current, goTo: goView,
     blocked: () => tour.active(), // the guided tour owns Escape and the arrows while it is open
-    // Left to right as they appear from the overview camera; `view` is the camera view each one goes to.
+    // Clockwise round the hub from the galley (back left) to the evidence chamber by the airlock;
+    // `view` is the camera view each one goes to.
     stops: [
-      { view: "galley", label: "Galley", anchor: V(-W + 0.22, 0.16, 2.8) },
-      { view: "board", label: "Experiments · board", anchor: V(-W + 0.22, 0.22, 0.55) },
-      { view: "medical", label: "Vitals", anchor: V(-W + 0.22, 0.16, -2.45) },
-      { view: "body", label: "Body", anchor: V(-0.35, 0.3, -1.1) },
-      { view: "window", label: "Window", anchor: V(0, -0.15, -4.8) },
-      { view: "evidence", label: "Experiments · evidence", anchor: V(W - 0.55, 0.2, -1.9) },
-      { view: "radiation", label: "Radiation", anchor: V(W - 0.22, 0.2, 0.05) },
-      { view: "clock", label: "Body clock", anchor: V(W - 0.22, 0.2, 1.95) },
-      { view: "air", label: "Air", anchor: V(W - 0.22, 0.2, 3.7) },
+      ...[["galley", "Galley"], ["board", "Experiments · board"], ["medical", "Vitals"], ["window", "Window"], ["body", "Body"],
+        ["radiation", "Radiation"], ["clock", "Body clock"], ["air", "Air"], ["evidence", "Experiments · evidence"]]
+        .map(([view, label]) => ({ view, label, anchor: anchor(view) })),
       { view: "overview", label: "Overview" },
     ],
   });
@@ -1421,13 +1421,15 @@ async function boot() {
     uiT += dt;
     if (uiT > 0.25) { uiT = 0; refreshIfChanged(); }
     rig.update();
-    hatchCut.constant = camera.position.z > HATCH_CUT + 0.05 ? HATCH_CUT : 1e4;
+    // Cutaway: the ceiling disappears as the camera rises through it to the overview.
+    if (station) { const under = camera.position.y < CEIL; for (const o of station.ceiling) o.visible = under; }
     nav.update();
+    atmosphere.update(dt, camera);
     updateCallout();
-    outside.tick(dt, reduced);
+    outside.tick(dt, renderer.getPixelRatio(), reduced);
     hud.setOverview(S.tab === "overview" && rig.current === "overview");
     const cpu1 = performance.now();
-    if (draw) composer.render(dt);
+    if (draw) R.render(dt);
     // CPU cost per frame (update vs render), summed; scripts/perf.mjs resets and reads it
     const cpu2 = performance.now();
     const cm = (window.__solCpu = window.__solCpu || { update: 0, render: 0, n: 0, max: 0 });
@@ -1451,7 +1453,7 @@ async function boot() {
   requestAnimationFrame(frame);
 
   // ---------------- development hooks ----------------
-  window.__sol = { merged, labelCount, S, E, H, showTab, goStep, selectCrew, body, camera, goView, R, rig, scene, hatchCut };
+  window.__sol = { S, E, H, showTab, goStep, selectCrew, body, camera, goView, R, rig, scene };
   if (import.meta.env.DEV) {
     window.__solAdvance = (seconds, step = 1 / 60) => { for (let k = 0; k < seconds / step; k++) tick(step, false); return E.day; };
     const auto = new URLSearchParams(location.search).get("auto");
@@ -1494,7 +1496,7 @@ async function boot() {
       setTimeout(() => { steps[auto] && steps[auto](); }, 1200);
     }
     window.__solShot = async (name = "shot") => {
-      composer.render(0);
+      R.render(0);
       const url = renderer.domElement.toDataURL("image/jpeg", 0.9);
       await fetch(`/__shot?name=${encodeURIComponent(name)}`, { method: "POST", body: url });
       return "saved";

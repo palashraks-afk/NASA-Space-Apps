@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { step, settle, lightSchedule, DEFAULTS } from "../engine/circadian.js";
 import { mulberry32, normal } from "../engine/rng.js";
-import { tapeMesh } from "./textures.js";
+import { plateMesh } from "./textures.js";
 
 // Body clock station. Four crew members run the Forger-Jewett-Kronauer pacemaker live.
 // Intrinsic periods are drawn around 24.18 h (Czeisler et al. 1999 mean); the 0.14 h spread
@@ -39,12 +39,12 @@ export function buildClock(mats) {
   }
   [["midnight", 0], ["6 h", 6], ["noon", 12], ["18 h", 18]].forEach(([txt, h], i) => {
     const a = Math.PI / 2 - (h / 24) * Math.PI * 2;
-    const tp = tapeMesh(txt, { w: 0.2, h: 0.058, width: 384, height: 112, fontSize: 70, seed: 500 + i });
+    const tp = plateMesh(txt, { w: 0.17, h: 0.04 });
     tp.position.set(Math.cos(a) * (RD - 0.105), Math.sin(a) * (RD - 0.105), 0.022);
     group.add(tp);
   });
-  const nameTape = tapeMesh("Body clock", { w: 0.42, h: 0.105, fontSize: 72, seed: 520 });
-  nameTape.position.set(0, RD + 0.13, 0.02);
+  const nameTape = plateMesh("Body clock", { w: 0.42, h: 0.07 });
+  nameTape.position.set(0, RD + 0.13, -0.056); // on the bay wall behind the dial (the clock hangs 9 cm off it)
   group.add(nameTape);
 
   // Lights-on arc, rebuilt when the schedule changes.
@@ -85,7 +85,7 @@ export function buildClock(mats) {
     const m = new THREE.Mesh(beadGeo, new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.55, roughness: 0.3 }));
     m.position.z = 0.04;
     group.add(m);
-    const tag = tapeMesh("ABCD"[i], { w: 0.036, h: 0.032, width: 128, height: 112, fontSize: 80, seed: 540 + i });
+    const tag = plateMesh("ABCD"[i], { w: 0.034, h: 0.034, round: true });
     tag.position.z = 0.041;
     group.add(tag);
     m.userData.tag = tag;
@@ -178,7 +178,7 @@ export function buildClock(mats) {
       const a = Math.PI / 2 - frac * Math.PI * 2;
       const rr = RD - 0.19 - i * 0.045;
       beads[i].position.set(Math.cos(a) * rr, Math.sin(a) * rr, 0.04);
-      beads[i].userData.tag.position.set(Math.cos(a) * rr, Math.sin(a) * rr, 0.075); // on the bead, in front of its neighbours
+      beads[i].userData.tag.position.set(Math.cos(a) * rr, Math.sin(a) * rr, 0.04 + 0.022 * (i === sim.selected ? 1.35 : 1) + 0.001); // on the bead, in front of its neighbours
       beads[i].scale.setScalar(i === sim.selected ? 1.35 : 1);
     });
     const sel = sim.members[sim.selected];

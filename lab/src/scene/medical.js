@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
-import { tapeMesh } from "./textures.js";
+import { plateMesh } from "./textures.js";
 
 // Medical station (crew health care rack): a monitor showing the selected crew member's
 // daily measures, with a blood-pressure cuff, pulse oximeter, forehead temperature sensor
@@ -11,6 +11,7 @@ export function buildMedical(mats) {
 
   const rack = new THREE.Mesh(new RoundedBoxGeometry(1.0, 1.25, 0.05, 3, 0.015), new THREE.MeshStandardMaterial({ color: 0xe6e9eb, roughness: 0.7, metalness: 0.1 }));
   rack.receiveShadow = true;
+  rack.name = "rack"; // swapped for the Blender rack housing when it loads (station.js)
   group.add(rack);
 
   const bezel = new THREE.Mesh(new RoundedBoxGeometry(0.62, 0.42, 0.04, 3, 0.015), mats.graphite);
@@ -58,10 +59,10 @@ export function buildMedical(mats) {
   const strap = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.2, 0.11), mats.strap);
   strap.position.copy(kit.position);
   group.add(strap);
-  const kitTag = tapeMesh("Medical kit", { w: 0.15, h: 0.04, fontSize: 60, seed: 801 });
-  kitTag.position.set(0.25, -0.32, 0.131);
+  const kitTag = plateMesh("Med kit", { w: 0.115, h: 0.026 });
+  kitTag.position.set(0.222, -0.355, 0.1305); // left of the strap, flat on the kit front
   group.add(kitTag);
-  const name = tapeMesh("Crew medical", { w: 0.26, h: 0.055, fontSize: 70, seed: 802 });
+  const name = plateMesh("Crew medical", { w: 0.3, h: 0.05 });
   name.position.set(0, 0.52, 0.03);
   group.add(name);
 

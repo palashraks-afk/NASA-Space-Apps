@@ -6,7 +6,7 @@ import { gltfLoader } from "./gltf.js";
 //   replaces a station's built-in props ("replace": "medical" | "air" | "galley" |
 //   "radiation" | "body" | "clock" | "evidence" | "board"), keeping the parts that show live
 //   data (screens, globe, airflow), or
-//   adds decoration anywhere in the module ("replace" omitted, "position" in module space).
+//   adds decoration anywhere in the hub ("replace" omitted, "position" in hub space).
 // A missing or broken file never stops the app: it logs a warning and keeps the built-in shapes.
 const PART_KEYS = ["brain", "eyes", "heart", "lungs", "gut", "bones", "muscles", "immune"];
 

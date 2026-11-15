@@ -2,3 +2,5 @@ node_modules
 dist
 data-raw
 .shots
+blender/out
+blender/__pycache__

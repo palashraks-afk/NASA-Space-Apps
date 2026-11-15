@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
 import { mulberry32 } from "../engine/rng.js";
-import { tapeMesh } from "./textures.js";
+import { plateMesh } from "./textures.js";
 
 // Air station (life support): carbon dioxide scrubber cabinet, a cabin fan behind an intake
 // grille, ducting, and visible airflow. Cabin air drifts toward the intake and speeds up as
@@ -13,6 +13,7 @@ export function buildAir(mats) {
 
   const rack = new THREE.Mesh(new RoundedBoxGeometry(1.0, 1.3, 0.05, 3, 0.015), new THREE.MeshStandardMaterial({ color: 0xe1e5e8, roughness: 0.7, metalness: 0.12 }));
   rack.receiveShadow = true;
+  rack.name = "rack"; // swapped for the Blender rack housing when it loads (station.js)
   group.add(rack);
 
   // Scrubber cabinet with vent slats.
@@ -25,8 +26,8 @@ export function buildAir(mats) {
     slat.position.set(-0.24, -0.45 + k * 0.035, 0.205);
     group.add(slat);
   }
-  const cabTag = tapeMesh("CO2 scrubber", { w: 0.2, h: 0.045, fontSize: 64, seed: 901 });
-  cabTag.position.set(-0.24, -0.05, 0.204);
+  const cabTag = plateMesh("CO2 scrubber", { w: 0.3, h: 0.036 });
+  cabTag.position.set(-0.24, -0.115, 0.2); // on the cabinet face, clear of its top edge
   group.add(cabTag);
 
   // Fan housing, blades and intake grille.
@@ -63,8 +64,8 @@ export function buildAir(mats) {
   }
   grille.position.set(fanC.x, fanC.y, fanC.z + 0.045);
   group.add(grille);
-  const fanTag = tapeMesh("Cabin fan intake", { w: 0.24, h: 0.045, fontSize: 60, seed: 902 });
-  fanTag.position.set(fanC.x, fanC.y - 0.26, 0.04);
+  const fanTag = plateMesh("Cabin fan intake", { w: 0.3, h: 0.036 });
+  fanTag.position.set(fanC.x, fanC.y - 0.3, 0.0245);
   group.add(fanTag);
 
   // Duct from the rack along the overhead.
