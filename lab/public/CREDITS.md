@@ -20,3 +20,4 @@
 - Space weather events: NASA DONKI (CCMC, NASA GSFC) via api.nasa.gov, 2022-01-01 to 2022-04-30 (lab/public/data/spaceweather.json).
 - Sol Lab logo: original mark by the team (docs/brand).
 - Anatomy: BodyParts3D © The Database Center for Life Science (CC BY 4.0), via open-anatomy-3d (github.com/MervinR07/open-anatomy-3d, CC BY 4.0); structures merged by body system and recoloured as a hologram by Sol Lab.
+- Instrument photos: NASA Image and Video Library (images.nasa.gov): iss033e007246, iss018e043409, iss058e003984, iss062e103552, iss020e048842, iss009e13739.

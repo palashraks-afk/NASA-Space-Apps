@@ -63,7 +63,7 @@ export const INSTRUMENTS = [
   },
   // ---------------------------------------------------------------- air
   {
-    key: "cdra", name: "CO2 removal assembly (CDRA)", flight: "ISS: Carbon Dioxide Removal Assembly, a four-bed molecular sieve in the Atmosphere Revitalization rack",
+    key: "cdra", photo: { src: "img/instruments/cdra.jpg", id: "iss033e007246", caption: "JAXA astronaut Aki Hoshide replaces valves in the station's Carbon Dioxide Removal Assembly (Sept. 2012)" }, name: "CO2 removal assembly (CDRA)", flight: "ISS: Carbon Dioxide Removal Assembly, a four-bed molecular sieve in the Atmosphere Revitalization rack",
     agency: "NASA", measures: "Removes CO2 from cabin air (CO2 is measured by the Major Constituent Analyzer)", feeds: ["air"], path: "dataset",
     how: "Cabin air first passes a desiccant bed that takes out water, then a blower pushes it through a precooler and into a zeolite bed that traps CO2. Four beds work in pairs: while one desiccant bed and one CO2 bed adsorb, the other two desorb. Kapton heaters warm the full CO2 bed and space vacuum pulls its CO2 overboard. The air returning to the cabin picks up the water the other desiccant bed stored, so no water is lost. Six numbered selector valves swap the beds every half-cycle.",
     specs: [
@@ -91,7 +91,7 @@ export const INSTRUMENTS = [
     ],
   },
   {
-    key: "mca", name: "Major Constituent Analyzer", flight: "ISS: Major Constituent Analyzer (MCA), the mass spectrometer that measures cabin gases",
+    key: "mca", photo: { src: "img/instruments/mca.jpg", id: "iss062e103552", caption: "NASA astronaut Jessica Meir replaces the Major Constituent Analyzer's mass spectrometer (March 2020)" }, name: "Major Constituent Analyzer", flight: "ISS: Major Constituent Analyzer (MCA), the mass spectrometer that measures cabin gases",
     agency: "NASA", measures: "Nitrogen, oxygen, hydrogen, methane, water vapour and CO2 in cabin air", feeds: ["air"], path: "reference",
     how: "A sample of cabin air is drawn into a vacuum chamber, where a hot filament ionises the gas molecules. A magnet bends the ions; lighter ones bend more, so each gas lands on its own detector. Six electrometers, one per gas, measure the ion currents at once. An ion pump keeps the vacuum, and a bottle of known gas checks the calibration. Sol Lab's cabin CO2 values come from station telemetry of this kind.",
     specs: [
@@ -116,7 +116,7 @@ export const INSTRUMENTS = [
   },
   // ---------------------------------------------------------------- vitals
   {
-    key: "wearable", name: "Bio-Monitor smart shirt", flight: "ISS: Bio-Monitor (Canadian Space Agency), launched December 2018; built by Carré Technologies of Montreal",
+    key: "wearable", photo: { src: "img/instruments/wearable.jpg", id: "iss058e003984", caption: "CSA astronaut David Saint-Jacques demonstrates the Bio-Monitor headband and recorder (Jan. 2019)" }, name: "Bio-Monitor smart shirt", flight: "ISS: Bio-Monitor (Canadian Space Agency), launched December 2018; built by Carré Technologies of Montreal",
     agency: "CSA", measures: "Heart activity, blood pressure, breathing rate and volume, skin temperature, blood oxygen, physical activity", feeds: ["hr", "temp", "sleep"], path: "import",
     how: "A snug shirt and a headband carry sensors against the skin; adjustable straps keep small metal electrodes in contact. The crew can wear it while working, exercising and sleeping. After a session the astronaut unplugs the battery pack and docks it in a base, which sends the data to the ground through the station's communications. A tablet app shows vitals during exercise. Its commercial twin, Hexoskin, is used in research on Earth.",
     specs: [
@@ -139,7 +139,7 @@ export const INSTRUMENTS = [
     ],
   },
   {
-    key: "bp", name: "Blood pressure monitor", flight: "ISS: CDL Halter Arterial Blood Pressure Unit (named in NASA ISS daily reports); measures like any oscillometric cuff",
+    key: "bp", photo: { src: "img/instruments/bp.jpg", id: "iss009e13739", caption: "Cosmonaut Gennady Padalka records cardiovascular data, including blood pressure cuffs, for the Cardiocog experiment (July 2004)" }, name: "Blood pressure monitor", flight: "ISS: CDL Halter Arterial Blood Pressure Unit (named in NASA ISS daily reports); measures like any oscillometric cuff",
     agency: "NASA / ESA", measures: "Systolic and diastolic blood pressure, pulse", feeds: ["bp", "hr"], path: "import",
     how: "A cuff around the upper arm inflates until the artery is squeezed shut, then lets air out at a steady rate. As blood starts to push through again, the artery wall makes small pulses in the cuff pressure. A pressure sensor records them; the pressure where the pulses are biggest is the mean arterial pressure, and the device calculates systolic and diastolic from how the pulses grow and shrink. Cuff size matters: the bladder should wrap about 80% of the arm and be about 40% as wide as the arm is around.",
     specs: [
@@ -201,7 +201,7 @@ export const INSTRUMENTS = [
   },
   // ---------------------------------------------------------------- exercise
   {
-    key: "treadmill", name: "T2 treadmill", flight: "ISS: T2, a flight-certified Woodway Path treadmill with an ESA subject loading device and a Boeing vibration isolation system",
+    key: "treadmill", photo: { src: "img/instruments/treadmill.jpg", id: "iss020e048842", caption: "Installing the new T2 (COLBERT) treadmill: the slat belt is visible (2009)" }, name: "T2 treadmill", flight: "ISS: T2, a flight-certified Woodway Path treadmill with an ESA subject loading device and a Boeing vibration isolation system",
     agency: "NASA / ESA", measures: "Exercise time, speed, harness load", feeds: ["exercise"], path: "import",
     how: "In orbit a runner would float off the belt, so a harness and the Subject Loading Device pull them down onto it with a set fraction of their body weight. Running forces would shake the whole station and disturb experiments, so the treadmill rides on a vibration isolation system with two stages of springs in series, which isolates an order of magnitude better at running frequencies than one stage.",
     specs: [
@@ -223,7 +223,7 @@ export const INSTRUMENTS = [
     ],
   },
   {
-    key: "ared", name: "ARED resistance machine", flight: "ISS: Advanced Resistive Exercise Device (flew on assembly flight ULF 2); squats, deadlifts and heel raises against vacuum cylinders",
+    key: "ared", photo: { src: "img/instruments/ared.jpg", id: "iss018e043409", caption: "JAXA astronaut Koichi Wakata exercises on the Advanced Resistive Exercise Device in the Unity node (March 2009)" }, name: "ARED resistance machine", flight: "ISS: Advanced Resistive Exercise Device (flew on assembly flight ULF 2); squats, deadlifts and heel raises against vacuum cylinders",
     agency: "NASA", measures: "Strength training load and repetitions", feeds: ["exercise"], path: "reference",
     how: "Weights mean nothing in orbit, so ARED makes resistance from vacuum. Two cylinders hold a vacuum on one side of each piston and cabin air on the other; pulling the bar drags the pistons against that pressure difference, a nearly constant force. A lever arm with a ball screw sets the load in 1 lb steps, and flywheels add the inertia of lifting a real barbell. Regular heavy lifting is the main defence against the bone and muscle loss of spaceflight.",
     specs: [

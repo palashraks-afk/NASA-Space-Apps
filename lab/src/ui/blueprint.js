@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 // Blueprint viewer: an instrument's parts as translucent solids with white outlines on a
 // blueprint grid. Parts are given in metres at real size; the viewer scales the assembly to fit
@@ -13,9 +14,9 @@ const FIT = 0.26; // assemblies are scaled so their largest size is about this m
 function geometryFor(p) {
   const s = p.size;
   switch (p.shape) {
-    case "box": return new THREE.BoxGeometry(s[0], s[1], s[2]);
+    case "box": { const r = Math.min(s[0], s[1], s[2]) * 0.18; return r > 0.0004 ? new RoundedBoxGeometry(s[0], s[1], s[2], 3, r) : new THREE.BoxGeometry(s[0], s[1], s[2]); }
     case "rbox": return new RoundedBoxGeometry(s[0], s[1], s[2], 3, Math.min(s[3], Math.min(s[0], s[1], s[2]) / 2 - 1e-5));
-    case "cyl": return new THREE.CylinderGeometry(s[0], s[2] ?? s[0], s[1], 40);
+    case "cyl": return new THREE.CylinderGeometry(s[0], s[2] ?? s[0], s[1], 56);
     case "tube": return new THREE.CylinderGeometry(s[1], s[1], s[0], 16);
     case "cone": { // apex at the centre, opening upward and downward: a double cone of particle paths
       const g = new THREE.CylinderGeometry(s[0], 0.0001, s[0] / Math.tan((62 * Math.PI) / 180), 40, 1, true);
@@ -90,7 +91,7 @@ export function createBlueprint({ host, onSelect = () => {} }) {
   const el = document.createElement("div");
   el.className = "blueprint";
   el.hidden = true;
-  el.innerHTML = `<div class="bp-bar"><b class="bp-name"></b><label class="bp-explode">Explode <input type="range" min="0" max="1" step="0.01" value="0"></label><button type="button" class="bp-btn" data-bp="auto">Animate</button><button type="button" class="bp-btn" data-bp="reset">Reset view</button></div>
+  el.innerHTML = `<div class="bp-bar"><b class="bp-name"></b><label class="bp-explode">Explode <input type="range" min="0" max="1" step="0.01" value="0"></label><button type="button" class="bp-btn" data-bp="auto">Animate</button><button type="button" class="bp-btn" data-bp="xray" aria-pressed="false">X-ray</button><button type="button" class="bp-btn" data-bp="reset">Reset view</button></div>
     <div class="bp-stage"></div><div class="bp-scale"><i></i><span></span></div><div class="bp-note"><span class="bp-key"><b></b>Built to a published dimension</span> Other parts show how the device works; sizes are approximate. Drag to rotate, scroll to zoom, click a part.</div>`;
   host.appendChild(el);
   const stage = el.querySelector(".bp-stage");
@@ -110,14 +111,20 @@ export function createBlueprint({ host, onSelect = () => {} }) {
   controls.enableDamping = true;
   controls.minDistance = 0.12;
   controls.maxDistance = 1.6;
-  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x0b2545, 1.6));
-  const key = new THREE.DirectionalLight(0xffffff, 1.4);
+  // Studio lighting: an environment map for real reflections on metal and glossy plastic.
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.9;
+  renderer.toneMapping = THREE.AgXToneMapping;
+  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x0b2545, 0.6));
+  const key = new THREE.DirectionalLight(0xffffff, 1.6);
   key.position.set(0.4, 0.6, 0.8);
   scene.add(key);
   const grid = new THREE.GridHelper(0.8, 32, 0x5c86c4, 0x2b4c80);
   grid.position.y = -0.2;
   scene.add(grid);
 
+  let xray = false;
   let parts = [], selected = -1, explode = 0, autoT = null, current = null, fit = 1, size = 0.3, barLen = 0.1;
   const pa = new THREE.Vector3(), pb = new THREE.Vector3(), right = new THREE.Vector3();
   const root = new THREE.Group();
@@ -143,9 +150,21 @@ export function createBlueprint({ host, onSelect = () => {} }) {
       const geo = geometryFor(p);
       for (let c = 0; c < n; c++) {
         const color = new THREE.Color(p.color || "#9cc4ff");
-        const mat = new THREE.MeshStandardMaterial({ color, transparent: true, opacity: p.ghost ? 0.12 : p.screen ? 0.85 : 0.55, roughness: 0.5, metalness: 0.1, emissive: p.glow ? new THREE.Color(p.glow) : new THREE.Color(0x000000), emissiveIntensity: p.glow ? 0.8 : 0, depthWrite: false, side: p.ghost ? THREE.DoubleSide : THREE.FrontSide });
+        // Solid, physically lit parts: grey and pale parts read as brushed metal, coloured ones as
+        // plastic or fabric, screens as dark glass. Ghost parts (housings, the body) stay see-through.
+        const hsl = color.getHSL({});
+        const metal = p.metal ?? (hsl.s < 0.15 ? 0.85 : 0.05);
+        const mat = new THREE.MeshPhysicalMaterial({
+          color: p.screen ? new THREE.Color(0x0b131d) : color,
+          metalness: p.screen ? 0.2 : metal, roughness: p.screen ? 0.08 : metal > 0.5 ? 0.32 : 0.55,
+          clearcoat: p.screen ? 1 : 0.25, clearcoatRoughness: 0.15,
+          emissive: p.glow ? new THREE.Color(p.glow) : p.screen ? new THREE.Color(0x2a6fb0) : new THREE.Color(0x000000),
+          emissiveIntensity: p.glow ? 0.9 : p.screen ? 0.35 : 0,
+          transparent: !!p.ghost, opacity: p.ghost ? 0.14 : 1, depthWrite: !p.ghost, side: p.ghost ? THREE.DoubleSide : THREE.FrontSide,
+        });
         const mesh = new THREE.Mesh(geo, mat);
-        const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 25), new THREE.LineBasicMaterial({ color: p.exact ? EXACT : INK, transparent: true, opacity: p.ghost ? 0.35 : 0.9 }));
+        const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo, 30), new THREE.LineBasicMaterial({ color: p.exact ? EXACT : INK, transparent: true, opacity: p.ghost ? 0.3 : p.exact ? 0.55 : 0.12 }));
+        edges.userData.base = edges.material.opacity;
         const sub = new THREE.Group();
         sub.add(mesh, edges);
         if (p.rot) sub.rotation.set(...p.rot);
@@ -217,7 +236,14 @@ export function createBlueprint({ host, onSelect = () => {} }) {
       const ghost = current.parts[k].ghost;
       p.label.element.classList.toggle("on", on);
       p.label.element.classList.toggle("dim", idx >= 0 && !on);
-      for (const m of p.meshes) m.material.opacity = idx < 0 ? (ghost ? 0.12 : 0.55) : on ? 0.95 : 0.1;
+      for (const m of p.meshes) {
+        const base = ghost ? 0.14 : xray ? 0.45 : 1;
+        const op = idx < 0 ? base : on ? Math.max(base, 0.95) : xray ? 0.08 : ghost ? 0.06 : 0.25;
+        m.material.opacity = op;
+        m.material.transparent = op < 1;
+        m.material.depthWrite = op >= 1;
+        m.material.needsUpdate = true;
+      }
     });
     onSelect(idx);
   }
@@ -228,6 +254,12 @@ export function createBlueprint({ host, onSelect = () => {} }) {
     if (!b) return;
     if (b.dataset.bp === "auto") animate(explode > 0.5 ? 0 : 1);
     if (b.dataset.bp === "reset") resetView();
+    if (b.dataset.bp === "xray") {
+      xray = !xray;
+      b.setAttribute("aria-pressed", String(xray));
+      root.traverse((o) => { if (o.isLineSegments) o.material.opacity = xray ? Math.max(0.8, o.userData.base) : o.userData.base; });
+      select(selected);
+    }
   });
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   let down = null;

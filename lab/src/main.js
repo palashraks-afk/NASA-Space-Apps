@@ -617,6 +617,7 @@ async function boot() {
       $("#instDetail").innerHTML = `<div class="part-card"><h3>${esc(x.name)}</h3>
         <dl class="facts"><dt>On the ISS</dt><dd>${esc(x.flight)}</dd><dt>Measures</dt><dd>${esc(x.measures)}</dd><dt>Data path</dt><dd>${esc(path)}</dd></dl>
         <div class="chips">${x.feeds.map((f) => `<button class="chip" data-go="${instTab(f)}">${esc(instLabel(f))}</button>`).join("")}</div>
+        ${x.photo ? `<figure class="inst-photo"><img src="${import.meta.env.BASE_URL}${esc(x.photo.src)}" alt="${esc(x.photo.caption)}" loading="lazy"><figcaption>${esc(x.photo.caption)}. <a href="https://images.nasa.gov/details/${esc(x.photo.id)}" target="_blank" rel="noopener">NASA ${esc(x.photo.id)}</a></figcaption></figure>` : `<p class="src">No public NASA photo of this device was found; the 3D view shows how it works.</p>`}
         <p>${esc(x.how)}</p>
         ${x.specs ? `<h3>Specifications</h3><table class="spec"><tbody>${x.specs.map(([k, v, src]) => `<tr><th>${esc(k)}</th><td>${esc(v)}${src ? ` <sup>${src.split(",").map((s) => Object.keys(x.sources).indexOf(s.trim()) + 1).filter((n) => n > 0).join(",")}</sup>` : ""}</td></tr>`).join("")}</tbody></table>
         <ol class="spec-src">${Object.values(x.sources).map(([t, u]) => `<li>${u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${esc(t)}</a>` : esc(t)}</li>`).join("")}</ol>` : ""}
