@@ -44,7 +44,7 @@ Fresh profile, 1366 by 768, software rendering (no GPU, the worst case): all 10 
 ## Still open (blocks a 9+ mean)
 
 1. **Live link.** The deploy workflow is ready; the owner must make the repo public and set Settings > Pages > Source to "GitHub Actions". Without it a judge cannot open the app.
-2. **Demo video** (60 to 90 s), following the 3-minute script in `docs/PITCH.md`.
+2. **Demo**: the rules cap it at 30 s (video) or 7 slides; see `docs/SUBMISSION.md`.
 3. **Real 3D models** from the teammate for the body figure and stations (drop-in, `docs/MODELS.md`).
 4. **Clinician review** of the team-chosen escalation points.
 5. **Challenge Resources tab** not yet checked for listed datasets.
@@ -75,7 +75,7 @@ Feedback: "graphics are trash", "a lot of clutter", "very laggy", "make it make 
 | **Mean** | **8.5** | **8.7** | |
 
 What still keeps five criteria under 9, and what each needs:
-- **Impact (8):** a 60 to 90 s video of one crew member's problem caught and fixed.
+- **Impact (8):** a 30 s demo (the rules' limit) of one crew member's problem caught and fixed.
 - **Feasibility (8):** the live link (repo public, Pages on).
 - **Novelty (8):** honest ceiling; personal baselines and N-of-1 trials exist on Earth.
 - **Creativity and uniqueness (8.5):** the teammate's real 3D models in place of the simple shapes.
