@@ -10,9 +10,9 @@ Sol Lab
 
 ---
 
-## Summary (50 to 200 words; this is 187)
+## Summary (50 to 200 words; this is 189)
 
-Picture getting a bad headache three months into a Mars trip. You can't drive to urgent care, and a message home takes up to 20 minutes to arrive. So we made Sol Lab. Each astronaut spends about two minutes a day logging blood pressure, heart rate, blood sugar, temperature, sleep, mood and exercise. Sol Lab doesn't compare you to some textbook average. It compares you to you, then gives each number one of three tags: within range, keep an eye on it, or talk to the flight surgeon. The feature we spent the most time on is the self-experiment. Maybe you think coffee after lunch is wrecking your sleep. Sol Lab flips a coin for which days you skip it, locks that schedule before you see any results, and at the end tells you if it helped. Sometimes the honest answer is "not settled yet," and it says that. The whole app is a 3D space station running on real NASA data: ISS radiation, cabin CO2, and blood tests from the Inspiration4 crew. Tested on 49 people's sleep logs, it was wrong under 1% of the time.
+Astronauts on long missions cannot count on a doctor nearby. On the way to Mars, a message to Earth can take up to 20 minutes each way, so the crew has to catch health problems themselves. Sol Lab is built for that. Each crew member logs blood pressure, heart rate, blood sugar, temperature, sleep, mood and exercise in a two-minute daily check-in. The app compares every reading with that person's own baseline rather than a population average and gives it one of three levels: within range, keep an eye on it, or talk to the flight surgeon. Our main feature is the self-experiment. To test a change such as no caffeine after noon, Sol Lab randomizes which days get the change and locks the plan before any results are seen. At the end it reports whether the change worked, and it says "not settled yet" when the data are too weak. It all runs inside a 3D station built on NASA data for ISS radiation, cabin air and the Inspiration4 crew's blood tests. On sleep records from 49 people, the method was wrong less than 1% of the time.
 
 ---
 
