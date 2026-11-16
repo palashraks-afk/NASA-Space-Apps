@@ -10,19 +10,19 @@ Sol Lab
 
 ---
 
-## Summary (50 to 200 words; this is 188)
+## Summary (50 to 200 words; this is 189)
 
-Sol Lab is a health console for astronauts on long missions, where the nearest doctor can be days away. Each crew member does a two-minute daily check-in: blood pressure, heart rate, blood sugar, temperature, sleep, mood and exercise. Instead of comparing readings with a population average, Sol Lab compares each one with that person's own normal, gives it one of three plain levels, and says what to do next and when the flight surgeon needs to know. When something drifts, the crew can run a fair self-experiment, like no caffeine after noon: chance picks the days, the plan is locked before any results, and the answer is honest, including "not settled yet". It all happens inside a 3D station module with a clickable body, real ISS radiation and cabin air data from NASA's Open Science Data Repository, NASA space weather records, and the Inspiration4 crew's blood tests. We tested the method on 49 real people's sleep records and it made a wrong call less than 1% of the time. The same idea could help anyone far from a doctor on Earth, from polar research crews to rural patients.
+Astronauts on long missions can't walk into a doctor's office. On the way to Mars, a message to Earth can take up to 20 minutes each way. So we built Sol Lab: a health app where each crew member does a daily check-in (blood pressure, heart rate, blood sugar, temperature, sleep, mood and exercise). Every number gets compared to that person's own normal, not to an average person. Then it gets one of three labels: within range, keep an eye on it, or talk to the flight surgeon. The part we're proudest of is the self-experiment. Say an astronaut is sleeping badly and wants to try no caffeine after noon. Sol Lab picks the days at random and locks the plan before any results come in. At the end it says whether it worked, and if the data can't tell yet, it says that too. Everything runs inside a 3D space station built on real NASA data: ISS radiation, cabin air, space weather and the Inspiration4 crew's blood tests. We tested it on sleep records from 49 real people and it was wrong less than 1% of the time.
 
 ---
 
 ## Project Demonstration (link)
 
-Our 7-slide demo deck (PDF):
+The deck in PowerPoint for the web, with its transitions and animations (no login needed; judges click Slide Show):
 
-    https://github.com/palashraks-afk/NASA-Space-Apps/blob/main/docs/demo/Sol-Lab-deck.pdf
+    https://1drv.ms/p/c/82f87ab6bea1eabe/IQA3i0XuHsI-Rr-yLhXbPgheAXB41oUChSMppnh6q9QYSZk?e=u8fWhB
 
-Checked 2026-11-15: opens without a login.
+Checked 2026-11-15 in a signed-out browser: opens straight into the deck. Static PDF backup (linked at the end of Project Details): https://github.com/palashraks-afk/NASA-Space-Apps/blob/main/docs/demo/Sol-Lab-deck.pdf
 
 ---
 
@@ -38,49 +38,66 @@ Needs Settings > Pages > Source set to "GitHub Actions" (still "not found" on 20
 
 ## Project Details
 
-Paste everything between the lines into the box.
+The box is rich text: copy the formatted text below (from the rendered page on GitHub) so the bold carries over.
 
-```
-WHAT IT DOES
-Sol Lab follows the challenge's three steps: gather, evaluate, act.
+**What Sol Lab does**
 
-Gather. A short daily check-in covers blood pressure, resting heart rate, fasting blood sugar, temperature, sleep, mood and exercise. Values can be typed in or imported from a device file (CSV or FHIR). A daily routine puts each measurement at the right time (heart rate before getting up, blood sugar before breakfast), with a quiet reminder instead of an alarm. Every card has short "how to measure" steps written for weightlessness.
+Sol Lab works in three steps, the same ones the challenge asks for: gather, evaluate, act.
 
-Evaluate. Every reading is compared with the person's own usual range, built from their pre-flight days, and given one of three levels: within range, keep an eye on it, or talk to the flight surgeon. Levels use a word as well as a colour, so they don't depend on colour vision. Where published cut-offs exist we use them (ACC/AHA blood pressure, ADA blood sugar, CDC fever, AASM sleep). Where none exist, the team chose one and marked it for clinician review. One odd day only asks you to keep an eye on it; repeated days escalate.
+**1. Gather.** Each crew member does a short check-in every day. It covers blood pressure, resting heart rate, fasting blood sugar, temperature, sleep, mood and exercise. You can type the numbers in or import a file from a device (CSV or FHIR). The app also tells you when to measure. Heart rate is taken before getting up and blood sugar before breakfast. Each card has short steps for how to measure in weightlessness.
 
-Act (our signature feature). Every non-normal level comes with concrete next steps. For slow problems like poor sleep, the crew can run a small randomized self-experiment: pick a change, lock the plan before seeing any results, and let chance decide which days get the change. A Bayesian engine then says whether it worked, made things worse, made no difference, or isn't settled yet. Four crew members can pool their results. One button on the overview runs a narrated 40-second crew experiment so anyone can see all four steps.
+**2. Evaluate.** Each reading is compared to that person's own normal range, built from their days before launch. It then gets one of three levels: **within range**, **keep an eye on it** or **talk to the flight surgeon**. Each level has a word as well as a color, so it works for colorblind users. Where medical cut-offs exist we used them (ACC/AHA for blood pressure, ADA for blood sugar, CDC for fever, AASM for sleep). Where none exist we picked one and marked it for a doctor to review. One bad day only gets "keep an eye on it." The level only goes up if it keeps happening.
 
-THE STATION
-The app is a 3D ISS-style module with one station per topic: vitals, bloodwork, cabin air, radiation, galley, body clock, experiments, maps and instruments. A real anatomy model (BodyParts3D) lights up each body system by status; click one to see its readings and what spaceflight does to it. An "evidence chamber" shows the experiment's uncertainty as 1,600 moving points, each one a possible true effect. NASA's own 3D models appear in the scene: the ISS flies its real track over the radiation globe, and a spacewalker drifts past the window.
+**3. Act (our main feature).** Every warning comes with clear next steps. For slow problems like bad sleep, the crew can run a small experiment on themselves. They pick a change and lock the plan before seeing any results. Then chance decides which days get the change. At the end a Bayesian model gives one of four answers: it worked, it made things worse, it made no difference, or it's not settled yet. The four crew members can also combine their results. On the overview there's a button that runs a full crew experiment in about 40 seconds with captions, so you can watch all four steps.
 
-INSTRUMENTS
-Ten instruments show the real hardware behind each reading in 3D, with a true-size scale bar, an Explode button to see inside, and a NASA photo of the real device where one exists: DOSTEL and the REM Timepix detector (radiation), the CO2 removal assembly and the Major Constituent Analyzer (air), the Bio-Monitor smart shirt, blood pressure cuff, pulse oximeter and glucose meter (vitals), and the T2 treadmill and ARED (exercise). Specs come from NASA technical reports and published papers, for example DOSTEL's two silicon detectors (154 and 315 µm thick, 124° telescope), the CO2 assembly's 288-minute cycle, and ARED's vacuum cylinders giving up to 272 kgf.
+**The station**
 
-REAL DATA
-- ISS radiation: 123,695 DOSTEL-1 readings and six-module REM data from NASA OSDR RadLab. Over half the dose arrives over the South Atlantic Anomaly.
-- ISS cabin air: 358 days of CO2, temperature and humidity from the NASA OSDR Environmental Data App, checked against today's 3 mmHg CO2 limit.
-- Bloodwork: the four Inspiration4 crew's blood counts and metabolic panels (OSDR OSD-569, OSD-575).
-- Space weather: NASA DONKI logged 5 days of solar particle events and 6 geomagnetic storms in the same months. The dose inside Columbus did not rise on those days, because Earth's magnetic field shields low orbit. Crews bound for the Moon or Mars have no such shield.
-- Sleep: diaries from 49 people (Baigutanova et al. 2025).
-Readings nobody logged are simulated and labelled that way, and records from different people and years are combined into one 180-day mission. The app says so.
+Sol Lab is set inside a 3D model of a space station module. Each topic has its own station: vitals, bloodwork, cabin air, radiation, galley, body clock, experiments, maps and instruments. The body view uses real anatomy from BodyParts3D. Click a body system to see its readings and how spaceflight affects it. The **evidence chamber** shows how sure the experiment is: 1,600 moving dots, and each one is a possible size of the real effect. We also used NASA's own 3D models. The ISS flies its real path over the radiation globe and an astronaut floats past the window.
 
-HOW WE CHECKED IT
-We wrote down each study's plan and pass/fail bars before running it, and we report the ones that failed.
-1. On 49 real sleep records, the experiment engine made a wrong call 0.68% of the time, and its 95% intervals covered the truth 94.7% to 97.3% of the time.
-2. Pooling four crew members cut error by 20% to 45% in simulation. One simpler pooling method failed its bar, so we dropped it.
-3. A personal range built from 14 days flags 7 to 8% of healthy single days, but three days in a row outside happens on under 1% of days. That's why only repeated days escalate.
-4. We tested whether machine learning (ridge regression and gradient-boosted trees, trained on 48 people, tested on the 49th) could predict tomorrow's sleep better than a person's own average. It couldn't, so the app keeps the simpler method.
+**Instruments**
+
+There are 10 instruments, each shown in 3D with a real-size scale bar. Press Explode to see the parts inside, or open a NASA photo of the real device where one exists.
+
+- **Radiation:** DOSTEL and the REM Timepix detector
+- **Air:** the CO2 removal assembly (CDRA) and the Major Constituent Analyzer
+- **Vitals:** Bio-Monitor smart shirt, blood pressure cuff, pulse oximeter, glucose meter
+- **Exercise:** T2 treadmill and ARED
+
+The specs come from NASA technical reports and papers. For example: DOSTEL has two silicon detectors (154 and 315 µm thick), the CDRA runs a 288-minute cycle, and ARED can load up to 272 kgf.
+
+**Real data we used**
+
+- **ISS radiation:** 123,695 DOSTEL-1 readings plus REM data from six modules (NASA OSDR RadLab). Over half the dose comes from the South Atlantic Anomaly.
+- **ISS cabin air:** 358 days of CO2, temperature and humidity (NASA OSDR Environmental Data App), checked against the 3 mmHg CO2 limit.
+- **Bloodwork:** blood counts and metabolic panels from all four Inspiration4 crew members (OSDR OSD-569 and OSD-575).
+- **Space weather:** NASA DONKI recorded 5 days of solar particle events and 6 geomagnetic storms in the same months. The dose inside the station didn't go up on those days. Earth's magnetic field protects low orbit. Crews going to the Moon or Mars won't have that.
+- **Sleep:** sleep diaries from 49 people (Baigutanova et al. 2025).
+
+Any reading nobody actually logged is simulated, and the app labels it that way. Records from different people and years are combined into one 180-day mission, and the app says that too.
+
+**How we tested it**
+
+Before each study we wrote down the plan and what would count as a pass. We also report the ones that failed.
+
+1. On 49 real sleep records the experiment engine was wrong 0.68% of the time. Its 95% intervals covered the true answer 94.7% to 97.3% of the time.
+2. Combining four crew members cut the error by 20% to 45% in simulation. One simpler method failed our test, so we dropped it.
+3. A normal range built from 14 days flags 7 to 8% of healthy days. Three bad days in a row happens on less than 1% of days. That's why only repeated days move the level up.
+4. We tried machine learning (ridge regression and gradient-boosted trees, trained on 48 people and tested on the 49th) to predict tomorrow's sleep. It did no better than the person's own average, so we kept the simple method.
 5. All 44 automated tests pass.
 
-WHY IT MATTERS
-Crews heading to the Moon and Mars will have long communication delays and no doctor on board. They need to catch their own changes early without false alarms wearing them out, and a fair way to tell a real fix from a lucky week. The same idea helps people on Earth who live far from care: compare yourself with your own normal, and test changes fairly.
+**Why it matters**
 
-TOOLS
-JavaScript with three.js (3D), cannon-es (physics), satellite.js (orbit), GSAP (camera motion) and Vite (build), plus Python with NumPy and scikit-learn for the studies. It runs in any modern browser with no install.
+On the way to the Moon or Mars there's no doctor on board, and messages to Earth take a long time. Crews need to catch changes early without getting constant false alarms. They also need a fair way to tell whether a fix really helped or they just had a good week. This works on Earth too, for anyone who lives far from a doctor.
 
-LIMITS
-Sol Lab is not a medical device and has not been tested on astronauts. The escalation points need review by a clinician. The bloodwork comes from a 3-day mission, not a long one. The radiation detectors largely miss neutrons, which the Canadian Space Agency estimates make up about 30% of ISS radiation.
-```
+**What we used to build it**
+
+JavaScript with three.js (3D), cannon-es (physics), satellite.js (orbits), GSAP (camera movement) and Vite. Python with NumPy and scikit-learn for the studies. It runs in any modern browser and doesn't need to be installed.
+
+**Limits**
+
+Sol Lab is not a medical device and hasn't been tested on astronauts. A doctor still needs to review our warning levels. The bloodwork is from a 3-day mission, not a long one. The radiation detectors mostly miss neutrons, which the Canadian Space Agency says make up about 30% of ISS radiation.
+
+**Static copy of the demo deck (PDF):** https://github.com/palashraks-afk/NASA-Space-Apps/blob/main/docs/demo/Sol-Lab-deck.pdf
 
 ---
 
