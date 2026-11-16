@@ -77,6 +77,10 @@ We wrote down each study's plan and pass/fail bar before running it. Not everyth
 4. We tried machine learning (ridge regression and gradient-boosted trees, trained on 48 people, tested on the 49th) to predict tomorrow's sleep. It couldn't beat the person's own average, so we kept the average.
 5. All 44 automated tests pass.
 
+**Mental health**
+
+NASA lists isolation and confinement as one of the five hazards of spaceflight, so mood is part of the daily check-in, rated 1 to 5 before sleep. One low day gets "keep an eye on it" along with simple steps: schedule a private call home, get some exercise and light, tell a crewmate you trust. Three low days in a row go to the flight surgeon or the behavioral health team, and the app says that conversation is private. The answers stay with the astronaut unless they choose to share them. We also track cabin CO2, since high levels are linked to headaches and slower thinking. The air station turns the 7-day average into a headache risk using the curve from Law et al. 2014, a study of ISS crews. In the 3D body, the brain shows mood and sleep, and clicking it explains how confinement and distance from home wear on a crew over time.
+
 **Why it matters**
 
 On a Mars mission there's no clinic to call and every message takes a while. Crews need to catch changes early without getting buried in false alarms, and they need a fair way to tell a real fix from a lucky week. People on Earth who live far from a doctor have the same problem.
