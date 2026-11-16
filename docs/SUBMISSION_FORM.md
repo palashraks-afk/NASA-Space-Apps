@@ -10,9 +10,9 @@ Sol Lab
 
 ---
 
-## Summary (50 to 200 words; this is 166)
+## Summary (50 to 200 words; this is 188)
 
-Sol Lab is a health console for astronauts on long missions, where the nearest doctor may be days away. Each crew member does a two-minute daily check-in: blood pressure, heart rate, blood sugar, temperature, sleep, mood and exercise. Sol Lab compares every reading with that person's own normal instead of a population average, gives it one of three plain levels, and says what to do next and when the flight surgeon needs to hear about it. When something drifts, the crew can run a fair self-experiment, such as no caffeine after noon, and get an honest answer, including "not settled yet". Everything happens in a 3D station module with a clickable body, real ISS radiation and cabin air from NASA's Open Science Data Repository, and the Inspiration4 crew's blood tests. We checked the method on 49 real people's sleep records: wrong calls happened under 1% of the time. The same approach could help anyone far from a doctor on Earth, from polar crews to rural patients.
+Sol Lab is a health console for astronauts on long missions, where the nearest doctor can be days away. Each crew member does a two-minute daily check-in: blood pressure, heart rate, blood sugar, temperature, sleep, mood and exercise. Instead of comparing readings with a population average, Sol Lab compares each one with that person's own normal, gives it one of three plain levels, and says what to do next and when the flight surgeon needs to know. When something drifts, the crew can run a fair self-experiment, like no caffeine after noon: chance picks the days, the plan is locked before any results, and the answer is honest, including "not settled yet". It all happens inside a 3D station module with a clickable body, real ISS radiation and cabin air data from NASA's Open Science Data Repository, NASA space weather records, and the Inspiration4 crew's blood tests. We tested the method on 49 real people's sleep records and it made a wrong call less than 1% of the time. The same idea could help anyone far from a doctor on Earth, from polar research crews to rural patients.
 
 ---
 
@@ -22,7 +22,7 @@ Our 7-slide demo deck (PDF):
 
     https://github.com/palashraks-afk/NASA-Space-Apps/blob/main/docs/demo/Sol-Lab-deck.pdf
 
-Works only after the repo is public.
+Checked 2026-11-15: opens without a login.
 
 ---
 
@@ -32,72 +32,67 @@ The app (runs in any modern browser, no install):
 
     https://palashraks-afk.github.io/NASA-Space-Apps/
 
-Needs the repo public and Settings > Pages > Source set to "GitHub Actions". If Pages is not live in time, use the repo instead: https://github.com/palashraks-afk/NASA-Space-Apps
+Needs Settings > Pages > Source set to "GitHub Actions" (still "not found" on 2026-11-15 evening). If Pages is not live in time, use the repo instead, which already works: https://github.com/palashraks-afk/NASA-Space-Apps
 
 ---
 
 ## Project Details
 
-**What it does**
+Paste everything between the lines into the box.
 
+```
+WHAT IT DOES
 Sol Lab follows the challenge's three steps: gather, evaluate, act.
 
-*Gather.* A short daily check-in covers blood pressure, resting heart rate, fasting blood sugar, temperature, sleep, mood and exercise. Values can be typed in or imported from a device file (CSV or FHIR). A daily routine puts each measurement at the right time (heart rate before getting up, blood sugar before breakfast), with a quiet reminder instead of an alarm. Every card has short "how to measure" steps written for weightlessness.
+Gather. A short daily check-in covers blood pressure, resting heart rate, fasting blood sugar, temperature, sleep, mood and exercise. Values can be typed in or imported from a device file (CSV or FHIR). A daily routine puts each measurement at the right time (heart rate before getting up, blood sugar before breakfast), with a quiet reminder instead of an alarm. Every card has short "how to measure" steps written for weightlessness.
 
-*Evaluate.* Every reading is compared with the person's own usual range, built from their pre-flight days, and given one of three levels: within range, keep an eye on it, or talk to the flight surgeon. Levels use colour plus a word, so they don't depend on colour vision. Where published cut-offs exist we use them (ACC/AHA blood pressure, ADA blood sugar, CDC fever, AASM sleep). Where none exist the team chose one and marked it for clinician review. A single odd day only asks you to keep an eye on it; repeated days escalate.
+Evaluate. Every reading is compared with the person's own usual range, built from their pre-flight days, and given one of three levels: within range, keep an eye on it, or talk to the flight surgeon. Levels use a word as well as a colour, so they don't depend on colour vision. Where published cut-offs exist we use them (ACC/AHA blood pressure, ADA blood sugar, CDC fever, AASM sleep). Where none exist, the team chose one and marked it for clinician review. One odd day only asks you to keep an eye on it; repeated days escalate.
 
-*Act (our signature feature).* Every non-normal level comes with concrete next steps. For slow problems like poor sleep, the crew can design a small randomized self-experiment: pick a change, lock the plan before seeing results, and let the schedule decide which days get the change. A Bayesian engine then says whether it worked, made things worse, made no difference, or is not settled yet. Four crew members can pool their results.
+Act (our signature feature). Every non-normal level comes with concrete next steps. For slow problems like poor sleep, the crew can run a small randomized self-experiment: pick a change, lock the plan before seeing any results, and let chance decide which days get the change. A Bayesian engine then says whether it worked, made things worse, made no difference, or isn't settled yet. Four crew members can pool their results. One button on the overview runs a narrated 40-second crew experiment so anyone can see all four steps.
 
-**The station**
+THE STATION
+The app is a 3D ISS-style module with one station per topic: vitals, bloodwork, cabin air, radiation, galley, body clock, experiments, maps and instruments. A real anatomy model (BodyParts3D) lights up each body system by status; click one to see its readings and what spaceflight does to it. An "evidence chamber" shows the experiment's uncertainty as 1,600 moving points, each one a possible true effect. NASA's own 3D models appear in the scene: the ISS flies its real track over the radiation globe, and a spacewalker drifts past the window.
 
-The app is a 3D ISS-style module with one station per topic: vitals, bloodwork, cabin air, radiation, galley, body clock, experiments, maps and instruments. A floating hologram of a crew member lights up each body system by status; click an organ to see its readings and what spaceflight does to it. The figure is real anatomy from the BodyParts3D database (skeleton, organs, skin), shown as a hologram. An "evidence chamber" shows the experiment's uncertainty as 1,600 moving points, each one a possible true effect. NASA's own 3D models (from NASA 3D Resources) appear in the scene: the ISS flies its real recorded track over the radiation globe, and a spacewalker drifts outside the window.
+INSTRUMENTS
+Ten instruments show the real hardware behind each reading in 3D, with a true-size scale bar, an Explode button to see inside, and a NASA photo of the real device where one exists: DOSTEL and the REM Timepix detector (radiation), the CO2 removal assembly and the Major Constituent Analyzer (air), the Bio-Monitor smart shirt, blood pressure cuff, pulse oximeter and glucose meter (vitals), and the T2 treadmill and ARED (exercise). Specs come from NASA technical reports and published papers, for example DOSTEL's two silicon detectors (154 and 315 µm thick, 124° telescope), the CO2 assembly's 288-minute cycle, and ARED's vacuum cylinders giving up to 272 kgf.
 
-**Instruments**
-
-Ten instruments show the real hardware behind each reading, in exploded 3D views with a true-size scale bar: DOSTEL and the REM Timepix detector (radiation), the CO2 removal assembly and the Major Constituent Analyzer (air), the Bio-Monitor smart shirt, blood pressure cuff, pulse oximeter and glucose meter (vitals), and the T2 treadmill and ARED (exercise). Specifications come from NASA technical reports and published papers, each cited: for example DOSTEL's two silicon detectors (154 and 315 µm thick, 6.93 cm², 124° telescope), the CO2 assembly's 288-minute cycle and 115,000 to 120,000 RPM blower, and ARED's two 20.3 cm vacuum cylinders giving up to 272 kgf. Parts built to a published dimension are outlined in green.
-
-**Real data**
-
-- ISS radiation: 123,695 DOSTEL-1 readings (DLR, 2022) and six-module REM data, from NASA OSDR RadLab. The globe shows where on the orbit the dose comes from; over half arrives over the South Atlantic Anomaly.
+REAL DATA
+- ISS radiation: 123,695 DOSTEL-1 readings and six-module REM data from NASA OSDR RadLab. Over half the dose arrives over the South Atlantic Anomaly.
 - ISS cabin air: 358 days of CO2, temperature and humidity from the NASA OSDR Environmental Data App, checked against today's 3 mmHg CO2 limit.
-- Bloodwork: the four Inspiration4 crew's complete blood counts and metabolic panels (OSDR OSD-569, OSD-575), flagged only when a change is larger than normal day-to-day variation.
+- Bloodwork: the four Inspiration4 crew's blood counts and metabolic panels (OSDR OSD-569, OSD-575).
+- Space weather: NASA DONKI logged 5 days of solar particle events and 6 geomagnetic storms in the same months. The dose inside Columbus did not rise on those days, because Earth's magnetic field shields low orbit. Crews bound for the Moon or Mars have no such shield.
 - Sleep: diaries from 49 people (Baigutanova et al. 2025).
-- Space weather: NASA DONKI logged 5 days of solar particle events and 6 geomagnetic storms during the same months. The dose inside Columbus did not rise on those days (299.5 and 306.8 µGy/day against 305.9 on quiet days): Earth's magnetic field shields low orbit, while crews bound for the Moon or Mars have no such shield.
-- Food: USDA FoodData Central. Orbit: CelesTrak elements propagated with SGP4.
-
 Readings nobody logged are simulated and labelled that way, and records from different people and years are combined into one 180-day mission. The app says so.
 
-**How we checked it**
-
+HOW WE CHECKED IT
 We wrote down each study's plan and pass/fail bars before running it, and we report the ones that failed.
+1. On 49 real sleep records, the experiment engine made a wrong call 0.68% of the time, and its 95% intervals covered the truth 94.7% to 97.3% of the time.
+2. Pooling four crew members cut error by 20% to 45% in simulation. One simpler pooling method failed its bar, so we dropped it.
+3. A personal range built from 14 days flags 7 to 8% of healthy single days, but three days in a row outside happens on under 1% of days. That's why only repeated days escalate.
+4. We tested whether machine learning (ridge regression and gradient-boosted trees, trained on 48 people, tested on the 49th) could predict tomorrow's sleep better than a person's own average. It couldn't, so the app keeps the simpler method.
+5. All 44 automated tests pass.
 
-1. On the 49 real sleep records, the self-experiment engine made a wrong call 0.68% of the time, and its 95% intervals covered the truth 94.7% to 97.3% of the time.
-2. Pooling four crew members cut error by 20% to 45% in simulation. One simpler pooling method failed its coverage bar, so we dropped it.
-3. A personal range built from 14 days flags 7 to 8% of healthy single days, but three days in a row outside happens on under 1% of days. That is why only repeated days escalate.
-4. We tested whether machine learning (ridge regression and gradient-boosted trees, trained on 48 people and tested on the 49th) could predict tomorrow's sleep better than a person's own average. It could not, so the app keeps the simpler personal average.
-5. All 44 automated tests pass, including one that checks the evidence chamber's points match the experiment's real probabilities.
+WHY IT MATTERS
+Crews heading to the Moon and Mars will have long communication delays and no doctor on board. They need to catch their own changes early without false alarms wearing them out, and a fair way to tell a real fix from a lucky week. The same idea helps people on Earth who live far from care: compare yourself with your own normal, and test changes fairly.
 
-**Why it matters**
+TOOLS
+JavaScript with three.js (3D), cannon-es (physics), satellite.js (orbit), GSAP (camera motion) and Vite (build), plus Python with NumPy and scikit-learn for the studies. It runs in any modern browser with no install.
 
-Crews heading to the Moon and Mars will have long communication delays and no doctor on board. They need to notice their own changes early without false alarms wearing them out, and they need a fair way to tell a real fix from a lucky week. The same idea helps people on Earth who are far from care or living with a long-term condition: compare yourself with your own normal, and test changes fairly.
-
-**Tools**
-
-JavaScript with three.js (3D), cannon-es (physics), satellite.js (orbit), GSAP (camera motion) and Vite (build), plus Python with NumPy and scikit-learn for the studies. It runs in any modern browser, works offline once loaded, and every push is built and tested automatically.
-
-**Limits**
-
-Sol Lab is not a medical device and has not been tested on astronauts. The escalation points we chose need review by a clinician. Bloodwork comes from a 3-day mission, not a long one. The radiation detectors measure charged particles and largely miss neutrons, which the Canadian Space Agency estimates are about 30% of ISS radiation.
+LIMITS
+Sol Lab is not a medical device and has not been tested on astronauts. The escalation points need review by a clinician. The bloodwork comes from a 3-day mission, not a long one. The radiation detectors largely miss neutrons, which the Canadian Space Agency estimates make up about 30% of ISS radiation.
+```
 
 ---
 
 ## Use of Super Intelligence (SI)
 
-Tick the options that match. From what the form describes, this means code and text/writing assistance. Leave image, video and audio unticked: we generated none.
+Tick the options for code and for text/writing. Leave image, video and audio unticked: none were generated, and the slides use real screenshots of the app.
 
 If there is a text box:
 
-> We used Claude Code (Anthropic) as a coding and writing assistant. The team chose the challenge, the concept, the features, the judging priorities and the study pass/fail bars, and reviewed what was built. The assistant wrote most of the code, the analysis scripts and drafts of the documentation under our direction. No images, video or audio were generated; all visuals are the app's own 3D renders. This is also stated in the repository README.
+```
+We used Claude Code (Anthropic) as a coding and writing assistant, and ChatGPT to help lay out the slide deck. The team chose the challenge, the idea, the features and the pass/fail bars for every study, and reviewed what was built. The AI tools wrote most of the code, the analysis scripts and drafts of the text under our direction. No images, video or audio were generated; every visual is a screenshot of the app's own 3D scenes. This is also stated in the repository README.
+```
 
 ---
 
@@ -176,7 +171,7 @@ The RadLab page itself (https://visualization.osdr.nasa.gov/radlab/gui/) was ret
 
 ## Before clicking "Submit for Judging"
 
-- [ ] williamsel is on the Temecula event (the form still flags them)
+- [x] Whole team registered to the Temecula event
 - [ ] Repo public; app link and demo link open in a private window
 - [ ] Every field above pasted; "Save Progress"
 - [ ] Both boxes ticked
