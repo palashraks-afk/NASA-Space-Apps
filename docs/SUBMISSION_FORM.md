@@ -10,9 +10,9 @@ Sol Lab
 
 ---
 
-## Summary (50 to 200 words; this is 189)
+## Summary (50 to 200 words; this is 188)
 
-Astronauts on long missions cannot count on a doctor nearby. On the way to Mars, a message to Earth can take up to 20 minutes each way, so the crew has to catch health problems themselves. Sol Lab is built for that. Each crew member logs blood pressure, heart rate, blood sugar, temperature, sleep, mood and exercise in a two-minute daily check-in. The app compares every reading with that person's own baseline rather than a population average and gives it one of three levels: within range, keep an eye on it, or talk to the flight surgeon. Our main feature is the self-experiment. To test a change such as no caffeine after noon, Sol Lab randomizes which days get the change and locks the plan before any results are seen. At the end it reports whether the change worked, and it says "not settled yet" when the data are too weak. It all runs inside a 3D station built on NASA data for ISS radiation, cabin air and the Inspiration4 crew's blood tests. On sleep records from 49 people, the method was wrong less than 1% of the time.
+Astronauts on long missions cannot count on a doctor nearby. On the way to Mars, a message to Earth can take up to 20 minutes each way, so the crew has to catch health problems themselves. Sol Lab is built for that. Each crew member logs blood pressure, heart rate, blood sugar, temperature, sleep, mood and exercise in a two-minute daily check-in. The app compares every reading with that person's own baseline rather than a population average and gives it one of three levels: within range, keep an eye on it, or talk to the flight surgeon. Our main feature is the self-experiment. To test whether bright light after waking improves disrupted sleep, Sol Lab randomizes which days get the light and locks the plan before any results are seen. At the end it reports whether the light helped, and it says "not settled yet" when the data are too weak. It runs inside a 3D station built on NASA data for ISS radiation, cabin air and the Inspiration4 crew's blood tests. On sleep records from 49 people, the method was wrong less than 1% of the time.
 
 ---
 
