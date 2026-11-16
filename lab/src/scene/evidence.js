@@ -51,23 +51,29 @@ export function buildEvidence(mats) {
   lamp.position.y = HGT / 2 - 0.012;
   group.add(lamp);
 
-  // Axes, faint etched lines.
-  const axisMat = new THREE.LineBasicMaterial({ color: 0x8796a8, transparent: true, opacity: 0.55 });
-  const axes = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(-XS, -YS, 0), new THREE.Vector3(XS, -YS, 0),
-    new THREE.Vector3(-XS, -YS, 0), new THREE.Vector3(-XS, YS, 0),
-    new THREE.Vector3(-XS, -YS, -ZS), new THREE.Vector3(-XS, -YS, ZS),
-  ]);
-  group.add(new THREE.LineSegments(axes, axisMat));
-
-  // Zero-effect plane and the band of "too small to matter".
-  const zeroPlane = new THREE.Mesh(new THREE.PlaneGeometry(2 * ZS, 2 * YS), new THREE.MeshBasicMaterial({ color: 0x9fb7d6, transparent: true, opacity: 0.12, side: THREE.DoubleSide, depthWrite: false }));
-  zeroPlane.rotation.y = Math.PI / 2;
-  group.add(zeroPlane);
-  const band = new THREE.Mesh(new THREE.BoxGeometry(1, 2 * YS, 2 * ZS), new THREE.MeshBasicMaterial({ color: 0xc9d1d8, transparent: true, opacity: 0.06, depthWrite: false }));
+  // The "too small to matter" band: a soft frosted slab across the chamber (no hard outline),
+  // with a faint etched zero line on the floor. Its walls fade out toward the top and edges.
+  const bandTex = (() => {
+    const c = document.createElement("canvas"); c.width = 4; c.height = 64;
+    const g = c.getContext("2d"), gr = g.createLinearGradient(0, 64, 0, 0);
+    gr.addColorStop(0, "rgba(255,255,255,0.9)"); gr.addColorStop(0.75, "rgba(255,255,255,0.35)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr; g.fillRect(0, 0, 4, 64);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+  })();
+  const bandMat = new THREE.MeshBasicMaterial({ color: 0xc9d6e4, map: bandTex, transparent: true, opacity: 0.1, side: THREE.DoubleSide, depthWrite: false });
+  const band = new THREE.Group();
+  const bandDepth = 2 * (R - 0.035) * 0.92;
+  for (const s of [-1, 1]) {
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(bandDepth, 2 * YS), bandMat);
+    wall.rotation.y = Math.PI / 2;
+    wall.userData.side = s;
+    band.add(wall);
+  }
   group.add(band);
-  const bandEdges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 2 * YS, 2 * ZS)), new THREE.LineBasicMaterial({ color: 0xc9d1d8, transparent: true, opacity: 0.25 }));
-  group.add(bandEdges);
+  const zeroLine = new THREE.Mesh(new THREE.PlaneGeometry(0.004, bandDepth), new THREE.MeshBasicMaterial({ color: 0x9fb7d6, transparent: true, opacity: 0.5, depthWrite: false }));
+  zeroLine.rotation.x = -Math.PI / 2;
+  zeroLine.position.y = -HGT / 2 + 0.003;
+  group.add(zeroLine);
 
   // Plates are riveted to the plinth's tapered flank (radius R+0.05 at the top edge to R+0.07 at the
   // bottom, over 0.07 m): seat each one on the surface at its height and tilt it to the slope, so
@@ -130,20 +136,26 @@ export function buildEvidence(mats) {
   const COL = { works: new THREE.Color(0x5b9cf0), harms: new THREE.Color(0xef5a4c), none: new THREE.Color(0xc4ccd3) };
   let range = { eff: 1, sig: 1, drift: 1, delta: 0.3 };
 
+  // Values far out in the tails are squashed smoothly (tanh) instead of clamped, so motes never
+  // stack up flat against an invisible wall, and every mote stays inside the round glass.
+  const MAXR = R - 0.035;
   function setRange({ delta, sd }) {
     range = { eff: Math.max(3 * delta, 2.6 * sd), sig: 2.4 * sd, drift: 0.8 * sd, delta };
-    const w = (2 * delta / range.eff) * XS;
-    band.scale.x = Math.max(0.002, w);
-    bandEdges.scale.x = Math.max(0.002, w);
+    const half = Math.max(0.001, Math.tanh(delta / range.eff) * XS);
+    for (const wall of band.children) wall.position.x = wall.userData.side * half;
   }
 
   function setPosterior(post, { snap = false } = {}) {
     const draws = crnDraws(post, Z);
     for (let i = 0; i < N; i++) {
       const { effect: eff, drift, sigma: sd } = draws[i];
-      target[3 * i] = THREE.MathUtils.clamp(eff / range.eff, -1, 1) * XS;
-      target[3 * i + 1] = -YS + THREE.MathUtils.clamp(sd / range.sig, 0, 1) * 2 * YS;
-      target[3 * i + 2] = THREE.MathUtils.clamp(drift / range.drift, -1, 1) * ZS;
+      let x = Math.tanh(eff / range.eff) * XS;
+      let z = Math.tanh(drift / range.drift) * ZS;
+      const r = Math.hypot(x, z);
+      if (r > MAXR) { x *= MAXR / r; z *= MAXR / r; }
+      target[3 * i] = x;
+      target[3 * i + 1] = -YS + Math.tanh(Math.max(0, sd) / range.sig) * 2 * YS * 0.96;
+      target[3 * i + 2] = z;
       const cc = eff >= range.delta ? COL.works : eff <= -range.delta ? COL.harms : COL.none;
       colTarget[3 * i] = cc.r; colTarget[3 * i + 1] = cc.g; colTarget[3 * i + 2] = cc.b;
     }
@@ -164,7 +176,8 @@ export function buildEvidence(mats) {
     mat.uniforms.uTime.value = time;
   }
 
-  return { group, setRange, setPosterior, update, labels, setMotion(reduced) { stiffness = reduced ? 400 : 26; damping = reduced ? 40 : 7.5; } };
+  const setPixelRatio = (pr) => { mat.uniforms.uScale.value = 11 * pr; };
+  return { group, setRange, setPosterior, update, labels, setPixelRatio, setMotion(reduced) { stiffness = reduced ? 400 : 26; damping = reduced ? 40 : 7.5; } };
 }
 
 export function priorAsPosterior(prior) {

@@ -16,9 +16,9 @@ const CinematicShader = {
     tDiffuse: { value: null },
     toneMappingExposure: { value: 1 },
     uTime: { value: 0 },
-    uAberration: { value: 0.0016 },
-    uVignette: { value: 0.32 },
-    uGrain: { value: 0.035 },
+    uAberration: { value: 0.0004 },  // was 0.0016: smeared colour fringes onto every edge and label
+    uVignette: { value: 0.28 },
+    uGrain: { value: 0.012 },        // was 0.035: visible noise over the whole picture
     uSaturation: { value: 1.16 },
     uContrast: { value: 1.12 },
     uSplit: { value: 0.035 },
@@ -66,8 +66,12 @@ const CinematicShader = {
 // so station views line up as before and the scene simply continues under the panels.
 export function createRenderer(container, { quality = "high", viewRect = null } = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: false, powerPreference: "high-performance", stencil: false });
-  const dprCap = quality === "high" ? 1.75 : 1;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, dprCap));
+  // Supersample: on a standard 1x screen render at 1.25x and let the browser scale down, which
+  // sharpens edges, nameplates and screens (1.5x measured 55 fps on a GTX 1060; 1.25x keeps 60).
+  // High-density screens stay capped at 2x. main.js drops to 1x in the first seconds if the GPU
+  // cannot hold 54 fps.
+  const dprCap = quality === "high" ? 2 : 1;
+  renderer.setPixelRatio(quality === "high" ? Math.min(Math.max(window.devicePixelRatio, 1) * 1.25, dprCap) : 1);
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFShadowMap;

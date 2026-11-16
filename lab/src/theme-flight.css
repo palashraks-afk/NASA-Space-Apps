@@ -298,3 +298,15 @@ ul.wx a:hover { color: var(--accent); }
   .tab { font-size: 0.68em; padding: 8px 6px; }
 }
 .body-callout { z-index: 7; } /* above the tour spotlight overlay (5) and card */
+
+/* Narrated caption for the one-click crew experiment */
+.demo-caption { position: fixed; left: 28px; bottom: 96px; z-index: 8; max-width: 520px; padding: 14px 18px 15px; background: rgba(6, 12, 20, 0.86); border: 1px solid rgba(57, 198, 244, 0.35); border-left: 3px solid var(--accent); backdrop-filter: blur(6px); color: var(--text); pointer-events: none; opacity: 0; transform: translateY(8px); transition: opacity 0.45s var(--ease, ease), transform 0.45s var(--ease, ease); }
+.demo-caption.show { opacity: 1; transform: none; }
+.demo-caption .dc-steps { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+.demo-caption .dc-steps i { width: 22px; height: 3px; background: rgba(238, 242, 245, 0.18); }
+.demo-caption .dc-steps i.done { background: rgba(57, 198, 244, 0.55); }
+.demo-caption .dc-steps i.on { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.demo-caption .dc-steps span { margin-left: 6px; }
+.demo-caption b { display: block; font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+.demo-caption p { margin: 0; font-size: 14px; line-height: 1.45; color: rgba(238, 242, 245, 0.82); }
+@media (prefers-reduced-motion: reduce) { .demo-caption { transition: none; } }

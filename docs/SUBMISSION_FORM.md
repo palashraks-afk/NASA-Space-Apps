@@ -20,7 +20,7 @@ Sol Lab is a health console for astronauts on long missions, where the nearest d
 
 Our 7-slide demo deck (PDF):
 
-    https://github.com/palashraks-afk/NASA-Space-Apps/blob/main/docs/demo/Sol-Lab-demo.pdf
+    https://github.com/palashraks-afk/NASA-Space-Apps/blob/main/docs/demo/Sol-Lab-deck.pdf
 
 Works only after the repo is public.
 

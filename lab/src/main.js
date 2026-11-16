@@ -356,7 +356,7 @@ async function boot() {
           <h3>Did that change really help, or was it a lucky week?</h3>
           <p>Crew members test a fix the way a clinical trial does: the schedule is randomized, the plan is locked before any results, and the answer is allowed to be "not settled". Checked on 49 real people's sleep records: wrong calls 0.68% of the time.</p>
           <button type="button" class="btn hero-btn" data-act="demoExp"><span aria-hidden="true">▶</span> Watch a crew experiment</button>
-          <span class="hero-note">About 20 seconds: four crew, 56 days, live. The demo uses a large real effect; real tests often end "not settled".</span>
+          <span class="hero-note">About 40 seconds, all four steps: four crew, 56 days, live. The demo uses a large real effect; real tests often end "not settled".</span>
         </section>
         <table class="grid" id="ovCrew"><thead><tr><th>Crew</th><th>Slept</th><th>HR</th><th>Temp</th><th>Vitals</th><th>Check-in</th></tr></thead><tbody></tbody></table>
         <h3>Cabin</h3><div class="kpis" id="ovCabin"></div>
@@ -1052,12 +1052,27 @@ async function boot() {
   }
   // One-click demonstration of the signature feature: randomize a crew experiment on the board,
   // lock the plan, then run 56 days at 10 days a second while the evidence chamber settles.
+  // Every step is shown and narrated in a caption, slow enough to read:
+  //   1 set up (5 s) -> 2 randomize, then lock (about 9 s) -> 3 run: first days at 1 day/s, then
+  //   4 days/s (about 18 s) -> 4 result (stays up). About 40 seconds in all.
   let demoRunning = false;
+  function demoCaption(step, title, text) {
+    let el = document.getElementById("demoCaption");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "demoCaption"; el.className = "demo-caption"; el.setAttribute("role", "status"); el.setAttribute("aria-live", "polite");
+      document.body.appendChild(el);
+    }
+    if (!title) { el.classList.remove("show"); return; }
+    el.innerHTML = `<div class="dc-steps">${[1, 2, 3, 4].map((n) => `<i class="${n < step ? "done" : n === step ? "on" : ""}"></i>`).join("")}<span>Step ${step} of 4</span></div><b>${esc(title)}</b><p>${esc(text)}</p>`;
+    el.classList.remove("show"); void el.offsetWidth; el.classList.add("show");
+  }
   async function runDemoExperiment() {
     if (demoRunning) return;
     demoRunning = true;
     const wait = (ms) => new Promise((r) => setTimeout(r, reduced ? 30 : ms));
     const act = (a) => { const el = document.querySelector(`#inspector [data-act="${a}"]`); if (el && !el.disabled) { el.click(); return true; } return false; };
+    const setSpeed = (v) => { S.speed = v; const tl = document.getElementById("timeline"); if (tl) setPressed(tl, "tlSpeed", v); };
     try {
       S.playing = false;
       if (E.mission || E.started || E.done) newExperiment(false);
@@ -1070,21 +1085,40 @@ async function boot() {
       syncDays();
       showTab("experiments");
       goStep(1);
-      await wait(900);
+      document.getElementById("inspector")?.scrollTo?.({ top: 0 });
+      const iv = intervention(), o = outcome();
+      demoCaption(1, "Set up the test", `The whole crew tries "${iv.label.toLowerCase()}", measured by ${o.label.toLowerCase()}. Before anything runs, they write down the smallest change worth acting on.`);
+      await wait(5500);
+
       act("toRandomize");
-      await wait(700);
+      demoCaption(2, "Randomize the days", `Chance decides which of the ${E.days} days get the change (B) and which stay as usual (A). Watch the tokens land on the board.`);
+      await wait(1800);
       act("randomize");
-      for (let k = 0; k < 80 && E.randomizing; k++) await wait(150);
-      await wait(600);
+      for (let k = 0; k < 100 && E.randomizing; k++) await wait(150);
+      await wait(1200);
+      demoCaption(2, "Lock the plan", "Once locked, nobody can move a day or change the rule for the verdict, so the answer can't be bent after the fact.");
+      await wait(1400);
       act("lock");
-      await wait(500);
+      await wait(2600);
+
       act("toRun");
-      await wait(500);
+      demoCaption(3, "Run it on the mission timeline", "One measurement per crew member per day. Each dot in the chamber is one possible size of the real change: blue means it helps, grey too small to matter, red means it backfires.");
+      await wait(4500);
       act("start");
-      const fast = document.querySelector('#timeline [data-v="10"]');
-      if (fast) fast.click(); else S.speed = 10; // the button keeps the speed control in sync
+      setSpeed(1);
       S.playing = true;
       refresh();
+      await wait(6000);
+      demoCaption(3, "Watch the cloud settle", "As days add up, the cloud shrinks and drifts toward the answer. Speeding up to 4 days a second.");
+      setSpeed(4);
+      for (let k = 0; k < 200 && !E.done; k++) await wait(150);
+      S.playing = false; // stop on the verdict instead of racing on through the mission
+      setSpeed(1);
+      refresh();
+
+      demoCaption(4, "Read the verdict once", "The verdict is read on the last day, by the rule fixed before the start. This demo uses a large effect so it settles; real tests often end \"not settled\", and Sol Lab says so.");
+      await wait(9000);
+      demoCaption(0);
     } finally { demoRunning = false; }
   }
   function newExperiment(keep) {
@@ -1408,6 +1442,7 @@ async function boot() {
     maps.render({ simHours: S.simHours, day: d, env: { co2: H.env.co2[i], peak1h: H.env.peak1h[i], temp: H.env.temp[i], rh: H.env.rh[i], date: H.env.date[i] } });
     checkRoutine();
     clock.render();
+    evidence.setPixelRatio(renderer.getPixelRatio());
     evidence.update(dt, simT);
     board.update(dt);
     for (let k = confetti.length - 1; k >= 0; k--) {
@@ -1444,7 +1479,8 @@ async function boot() {
       // to one pixel per CSS pixel. Done early so it cannot flicker in the middle of use.
       if (!dprChecked && simT > 4) {
         dprChecked = true;
-        if (fps < 40 && renderer.getPixelRatio() > 1) { renderer.setPixelRatio(1); R.composer.setPixelRatio(1); R.onResize(); }
+        // 54, not 40: the 1.5x supersampling must never cost smoothness (camera glides need 60)
+        if (fps < 54 && renderer.getPixelRatio() > 1) { renderer.setPixelRatio(1); R.composer.setPixelRatio(1); R.onResize(); }
       }
       window.__solFps = fps;
       fpsT = 0; fpsN = 0;
@@ -1478,6 +1514,10 @@ async function boot() {
         instruments: () => showTab("instruments"),
         demo: () => { window.__solInstant = false; runDemoExperiment(); },
         demoend: () => { window.__solInstant = false; runDemoExperiment(); },
+        demo1: () => { window.__solInstant = false; runDemoExperiment(); },
+        demo2: () => { window.__solInstant = false; runDemoExperiment(); },
+        demo3: () => { window.__solInstant = false; runDemoExperiment(); },
+        demo3b: () => { window.__solInstant = false; runDemoExperiment(); },
         // inst_<key>: open the Instruments tab on one device (for screenshots)
         ...Object.fromEntries(INSTRUMENTS.map((x) => [`inst_${x.key}`, () => { instKey = x.key; showTab("instruments"); }])),
         ...Object.fromEntries(INSTRUMENTS.map((x) => [`m3d_${x.key}`, () => { instKey = x.key; showTab("instruments"); setTimeout(() => document.querySelector('.blueprint [data-bp="three"]')?.click(), 2000); }])),
