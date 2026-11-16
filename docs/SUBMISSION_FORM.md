@@ -28,11 +28,11 @@ Checked 2026-11-15 in a signed-out browser: opens straight into the deck. Static
 
 ## Project (link)
 
-The app (runs in any modern browser, no install):
+Entered on the form (works without a login):
 
-    https://palashraks-afk.github.io/NASA-Space-Apps/
+    https://github.com/palashraks-afk/NASA-Space-Apps
 
-Needs Settings > Pages > Source set to "GitHub Actions" (still "not found" on 2026-11-15 evening). If Pages is not live in time, use the repo instead, which already works: https://github.com/palashraks-afk/NASA-Space-Apps
+The live app will be at https://palashraks-afk.github.io/NASA-Space-Apps/ once Settings > Pages > Source is set to "GitHub Actions" (still "not found" on 2026-11-15 at 8 p.m.). If it goes live before the deadline, swap it in and click Submit for Judging again.
 
 ---
 
@@ -95,7 +95,9 @@ Sol Lab isn't a medical device and hasn't been tested on real astronauts. A doct
 
 ## Use of Super Intelligence (SI)
 
-Tick the options for code and for text/writing. Leave image, video and audio unticked: none were generated, and the slides use real screenshots of the app.
+Ticked on the form: **Data Analysis and Interpretation** and **Coding, Debugging, or Troubleshooting**.
+
+Not ticked: "Building SI/ML Into the Project". Sol Lab has no AI inside it: we tested machine learning, it did not beat the simple method, and we left it out. No images, video or audio were generated; the slides use real screenshots of the app.
 
 If there is a text box:
 
@@ -136,11 +138,14 @@ We used Claude Code (Anthropic) as a coding and writing assistant, and ChatGPT t
 
 ## Space Agency Partner & Other Data (Link Text | Link URL)
 
+The form allows 25 rows, so the code libraries and fonts share one row that links to the credits file, which lists each with its license.
+
 | Link Text | Link URL |
 |---|---|
 | Canadian Space Agency: Monitoring radiation for astronaut health | https://www.asc-csa.gc.ca/eng/news/articles/2026/2026-02-26-monitoring-radiation-astronaut-health.asp |
 | Canadian Space Agency: Bio-Monitor | https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp |
 | Baigutanova et al. 2025 sleep and wearable dataset (CC BY 4.0) | https://doi.org/10.6084/m9.figshare.28509740 |
+| Baigutanova et al. 2025, Scientific Data article | https://doi.org/10.1038/s41597-025-05801-3 |
 | USDA FoodData Central (public domain) | https://fdc.nal.usda.gov/ |
 | Solar System Scope Moon and Mars textures (CC BY 4.0) | https://www.solarsystemscope.com/textures/ |
 | Law et al. 2014, CO2 and headaches on the ISS | https://doi.org/10.1097/jom.0000000000000268 |
@@ -151,8 +156,6 @@ We used Claude Code (Anthropic) as a coding and writing assistant, and ChatGPT t
 | BodyParts3D anatomy (DBCLS), CC BY 4.0 | https://dbarchive.biosciencedbc.jp/data/bodyparts3d/LATEST/ |
 | open-anatomy-3d models (CC BY 4.0) | https://github.com/MervinR07/open-anatomy-3d |
 | Contini, Drillis and Bluestein 1963, body segment proportions (fallback figure) | https://doi.org/10.1177/001872086300500508 |
-| Baigutanova et al. 2025, Scientific Data article | https://doi.org/10.1038/s41597-025-05801-3 |
-| html-to-image (MIT) | https://github.com/bubkoo/html-to-image |
 | Labrenz et al. 2015, Matroshka DOSTEL detector specifications | https://doi.org/10.1051/swsc/2015039 |
 | CERN Medipix collaboration (Timepix chip) | https://medipix.web.cern.ch/ |
 | Pickering et al. 2005, blood pressure measurement recommendations | https://doi.org/10.1161/01.HYP.0000150859.47929.8e |
@@ -160,19 +163,9 @@ We used Claude Code (Anthropic) as a coding and writing assistant, and ChatGPT t
 | Jubran 2015, Pulse oximetry | https://doi.org/10.1186/s13054-015-0984-8 |
 | U.S. FDA, Pulse Oximeters | https://www.fda.gov/medical-devices/products-and-medical-procedures/pulse-oximeters |
 | ISO 15197:2013, blood glucose meter accuracy | https://www.iso.org/standard/54976.html |
-| Draco 3D mesh decoder (via three.js) | https://github.com/google/draco |
 | CelesTrak orbital elements | https://celestrak.org/NORAD/elements/ |
-| three.js (MIT) | https://threejs.org/ |
-| cannon-es (MIT) | https://github.com/pmndrs/cannon-es |
-| satellite.js (MIT) | https://github.com/shashwatak/satellite-js |
-| GSAP | https://gsap.com/ |
-| Vite (MIT) | https://vite.dev/ |
-| Barlow font (SIL OFL) | https://fonts.google.com/specimen/Barlow |
-| Archivo font (SIL OFL) | https://fonts.google.com/specimen/Archivo |
-| Permanent Marker font | https://fonts.google.com/specimen/Permanent+Marker |
-| NumPy | https://numpy.org/ |
-| scikit-learn | https://scikit-learn.org/ |
 | Sol Lab source code (Apache 2.0) | https://github.com/palashraks-afk/NASA-Space-Apps |
+| Open-source code libraries and fonts: three.js, cannon-es, satellite.js, GSAP, Vite, Draco, html-to-image, NumPy, scikit-learn, Barlow, Archivo and Permanent Marker fonts | https://github.com/palashraks-afk/NASA-Space-Apps/blob/main/lab/public/CREDITS.md |
 
 The RadLab page itself (https://visualization.osdr.nasa.gov/radlab/gui/) was returning a server error on 2026-11-14, so the table links the OSDR visualization home. Swap it back if RadLab is up when you paste.
 
@@ -180,8 +173,11 @@ The RadLab page itself (https://visualization.osdr.nasa.gov/radlab/gui/) was ret
 
 ## Before clicking "Submit for Judging"
 
+Status at 8 p.m. on 2026-11-15: every section of the project page shows Complete and was saved at 20:00.
+
 - [x] Whole team registered to the Temecula event
-- [ ] Repo public; app link and demo link open in a private window
-- [ ] Every field above pasted; "Save Progress"
-- [ ] Both boxes ticked
-- [ ] Submit before Sun Nov 15, 11:59 p.m. Pacific
+- [x] Repo public; demo link (OneDrive) and repo link open without a login
+- [x] Every field pasted and saved
+- [x] Both boxes ticked
+- [ ] Click Submit for Judging before Sun Nov 15, 11:59 p.m. Pacific, and check for the confirmation banner
+- [ ] Optional: turn on GitHub Pages, then swap the live app link into the Project field and resubmit
