@@ -13,7 +13,7 @@ Drafted 2026-11-19. Sources: https://moonbasechallenge.org/rules/ and https://mo
 
 Please answer these. None can be inferred from the repo.
 
-- [ ] Is every member currently enrolled in a U.S. high school (grades 9 to 12, age 13 to 18 when registration opened on 2026-11-07), a U.S. two-year college, or a U.S. four-year college?
+- [x] All members are high school students (confirmed by the team 2026-11-19), so the High School Division applies. Still to check for each: U.S. school or program, grades 9 to 12, and age 13 to 18 on 2026-11-07. See `moon-base-winners-and-rubric-analysis.md` for the full checklist.
 - [ ] Is there an adult (18+) with a formal role at the school or club (teacher, advisor, club leader) who will be the Team Coach? They cannot be a team member, and prize money goes to their U.S. bank account.
 - [ ] Who gets proof of enrollment for each member (transcript, registrar letter or coach letter)?
 - [ ] Is anyone on another Moon Base team already? A student can only be on one.
