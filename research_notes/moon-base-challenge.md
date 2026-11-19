@@ -15,7 +15,7 @@ This is a **currently-enrolled-student-only** competition, administered via NASA
 - **Work must be the students' own** — the Coach may only give logistical help; all design, analysis, visuals, and writing must be student-authored. AI use is allowed but must be disclosed and described.
 - Submissions are **anonymized** (no names, no institution, no NASA logos) when judged.
 
-Sol Lab was built as a Space Apps 2026 entry by an adult-led team (lead dev background: OncoVision AI). **Before treating this as a real target, confirm whether the actual submitting team members meet the student-enrollment + age rules above** — this isn't a "could we stretch to qualify" judgment call, it's a hard eligibility screen (section 11.1) that disqualifies incomplete/ineligible entries outright.
+Nothing in this repo records the team members' ages, schools or grades. (An earlier version of this note called the team "adult-led"; that came from a recruiting blurb on the Space Apps team page and is not evidence of anything.) **Before treating this as a real target, confirm each member's school, grade and age against the rules above, and whether an adult at a U.S. school or club will be the Team Coach.** This is a hard eligibility screen (section 11.1) that disqualifies incomplete or ineligible entries outright. The plan for what to change is in `moon-base-fit-plan.md`.
 
 ## What it actually is
 
@@ -71,7 +71,7 @@ Judging process: Challenge Administrator screens for completeness/eligibility fi
 - **Final Phase Runners-Up:** up to 12, $10,000 each ($120,000)
 - **Final Phase Grand Prize:** up to 12, $20,000 each ($240,000)
 - Max total: ~$500,000, **contingent on federal funding and NASA approval — not guaranteed**. Paid to the Team Coach's U.S. bank account; Coach decides split; tax/banking/eligibility forms required first.
-- Caveat: the source page's own finalist-count math doesn't cleanly reconcile (3 divisions × 6 categories doesn't divide evenly into "100 finalists" the way the page implies) — treat the exact per-category/division finalist count as unconfirmed until checked directly on the rules page.
+- Caveat: the rules page's own counts don't reconcile. It says "8 finalists per division per category" (3 divisions × 6 categories × 8 = 144) next to "up to 100", and "one per division per category" for 12 Grand Prizes (3 × 6 = 18). Treat the exact counts as unconfirmed and ask the organizers at Office Hours 1 (2027-01-14) if it matters.
 
 ## IP and process notes
 
